@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI エージェント ダッシュボード</title>
+<style>
+  :root {
+    --bg: #07071a;
+    --card-bg: #0e0e28;
+    --border: #1e1e4a;
+    --text: #dde0ff;
+    --dim: #6668a0;
+    --coder: #38bdf8;
+    --reviewer: #f472b6;
+    --researcher: #facc15;
+    --monitor: #4ade80;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(56,189,248,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(74,222,128,0.06) 0%, transparent 50%);
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  header h1 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #4ade80 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  header p { color: var(--dim); font-size: 0.82rem; }
+  #clock { color: #3a3a6a; font-size: 0.75rem; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
+  }
+
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .card.coder { --accent: var(--coder); }
+  .card.reviewer { --accent: var(--reviewer); }
+  .card.researcher { --accent: var(--researcher); }
+  .card.monitor { --accent: var(--monitor); }
+
+  .card::before { background: var(--accent); }
+  .card:hover { border-color: var(--accent); box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 20px color-mix(in srgb, var(--accent) 20%, transparent); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .avatar-wrap {
+    width: 88px;
+    height: 110px;
+    flex-shrink: 0;
+  }
+
+  .avatar-wrap svg { width: 100%; height: 100%; }
+
+  .agent-info h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+
+  .role-badge {
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 999px;
+    display: inline-block;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    margin-bottom: 8px;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--dim);
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot.active { background: var(--monitor); animation: pulse 2s infinite; }
+  .dot.busy { background: var(--researcher); animation: pulse 1.5s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+    50% { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
+  }
+
+  .task-box {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 13px;
+    font-size: 0.78rem;
+    margin-bottom: 11px;
+  }
+
+  .task-label {
+    font-size: 0.66rem;
+    color: var(--dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .log { font-size: 0.72rem; color: var(--dim); }
+
+  .log-row {
+    display: flex;
+    gap: 10px;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .log-row:last-child { border-bottom: none; }
+
+  .log-time {
+    color: #2e2e5a;
+    min-width: 38px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== ANIMATIONS ===== */
+
+  /* Shared blink */
+  @keyframes blink {
+    0%, 88%, 100% { transform: scaleY(1); }
+    92% { transform: scaleY(0.08); }
+  }
+
+  /* Coder: alternating arm typing */
+  @keyframes tap-l {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(5px) rotate(-5deg); }
+  }
+  @keyframes tap-r {
+    0%, 100% { transform: translateY(5px) rotate(5deg); }
+    50% { transform: translateY(0) rotate(5deg); }
+  }
+  @keyframes screen-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  @keyframes cursor-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  /* Reviewer: slight head tilt + pencil tap */
+  @keyframes head-tilt {
+    0%, 100% { transform: rotate(0deg); }
+    30% { transform: rotate(-4deg); }
+    70% { transform: rotate(3deg); }
+  }
+  @keyframes pencil-tap {
+    0%, 60%, 100% { transform: rotate(-22deg) translateY(0); }
+    75% { transform: rotate(-22deg) translateY(4px); }
+  }
+
+  /* Researcher: look left/right */
+  @keyframes look-lr {
+    0%, 20%, 100% { transform: translateX(0); }
+    40%, 60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  @keyframes glass-sweep {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(20deg); }
+  }
+
+  /* Monitor: scanning eyes */
+  @keyframes scan-eyes {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px); }
+    75% { transform: translateX(3px); }
+  }
+  @keyframes screen-flicker-a {
+    0%, 33%, 66%, 100% { fill: #1a3a5c; }
+    11% { fill: #0a2a4c; }
+    44% { fill: #2a4a6c; }
+    77% { fill: #1a4a3c; }
+  }
+  @keyframes screen-flicker-b {
+    0%, 33%, 66%, 100% { fill: #2a1a5c; }
+    22% { fill: #3a2a6c; }
+    55% { fill: #1a1a4c; }
+  }
+  @keyframes screen-flicker-c {
+    0%, 33%, 66%, 100% { fill: #3a2a1a; }
+    15% { fill: #4a3a2a; }
+    48% { fill: #2a1a0a; }
+    81% { fill: #3a3a1a; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>AI エージェント ダッシュボード</h1>
+  <p>Claude Code マルチエージェント管理システム</p>
+  <p id="clock"></p>
+</header>
+
+<div class="grid">
+
+  <!-- ========== CODER ========== -->
+  <div class="card coder">
+    <div class="card-top">
+      <div class="avatar-wrap">
+        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- ears -->
+          <polygon points="18,26 28,6 40,26" fill="#5ba3e8"/>
+          <polygon points="22,26 28,12 36,26" fill="#ffb3c8"/>
+          <polygon points="60,26 72,6 82,26" fill="#5ba3e8"/>
+          <polygon points="64,26 72,12 78,26" fill="#ffb3c8"/>
+          <!-- head -->
+          <circle cx="50" cy="44" r="28" fill="#5ba3e8"/>
+          <!-- laptop screen glow -->
+          <rect x="12" y="95" width="76" height="16" rx="4" fill="#1a2744" style="animation: screen-glow 2.2s ease-in-out infinite;"/>
+          <!-- screen content lines -->
+          <rect x="16" y="98" width="30" height="2" rx="1" fill="#38bdf8" opacity="0.6"/>
+          <rect x="16" y="103" width="20" height="2" rx="1" fill="#818cf8" opacity="0.4"/>
+          <rect x="16" y="108" width="25" height="2" rx="1" fill="#38bdf8" opacity="0.3"/>
+          <!-- cursor -->
+          <rect x="49" y="98" width="2" height="8" fill="#38bdf8" rx="1" style="animation: cursor-blink 0.8s infinite;"/>
+          <!-- laptop base -->
+          <rect x="8" y="111" width="84" height="4" rx="2" fill="#263244"/>
+          <!-- body -->
+          <rect x="26" y="72" width="48" height="30" rx="10" fill="#5ba3e8"/>
+          <!-- left arm typing -->
+          <g style="transform-origin: 32px 78px; animation: tap-l 0.55s ease-in-out infinite;">
+            <line x1="32" y1="78" x2="22" y2="98" stroke="#5ba3e8" stroke-width="7" stroke-linecap="round"/>
+          </g>
+          <!-- right arm typing -->
+          <g style="transform-origin: 68px 78px; animation: tap-r 0.55s ease-in-out infinite;">
+            <line x1="68" y1="78" x2="78" y2="98" stroke="#5ba3e8" stroke-width="7" stroke-linecap="round"/>
+          </g>
+          <!-- eyes -->
+          <g style="transform-origin: 50px 42px; animation: blink 5s infinite;">
+            <ellipse cx="38" cy="42" rx="5" ry="6" fill="#0f1f44"/>
+            <ellipse cx="62" cy="42" rx="5" ry="6" fill="#0f1f44"/>
+            <circle cx="40" cy="40" r="2" fill="white"/>
+            <circle cx="64" cy="40" r="2" fill="white"/>
+          </g>
+          <!-- nose -->
+          <polygon points="47,51 53,51 50,55" fill="#e8a0b0"/>
+          <!-- mouth (focused) -->
+          <line x1="44" y1="59" x2="56" y2="59" stroke="#8899bb" stroke-width="1.5"/>
+          <!-- whiskers -->
+          <line x1="12" y1="50" x2="36" y2="52" stroke="#8ab5e0" stroke-width="1"/>
+          <line x1="12" y1="54" x2="36" y2="54" stroke="#8ab5e0" stroke-width="1"/>
+          <line x1="64" y1="52" x2="88" y2="50" stroke="#8ab5e0" stroke-width="1"/>
+          <line x1="64" y1="54" x2="88" y2="54" stroke="#8ab5e0" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="agent-info">
+        <h2>コーダー</h2>
+        <span class="role-badge">Coder Agent</span>
+        <div class="status">
+          <span class="dot busy"></span>
+          コーディング中
+        </div>
+      </div>
+    </div>
+    <div class="task-box">
+      <div class="task-label">現在のタスク</div>
+      sui-room-crean の清掃スケジュール機能を実装中
+    </div>
+    <div class="log">
+      <div class="log-row"><span class="log-time">14:32</span><span>components/Schedule.tsx を作成</span></div>
+      <div class="log-row"><span class="log-time">14:28</span><span>API ルート /api/rooms を追加</span></div>
+      <div class="log-row"><span class="log-time">14:15</span><span>Supabase スキーマを更新</span></div>
+    </div>
+  </div>
+
+  <!-- ========== REVIEWER ========== -->
+  <div class="card reviewer">
+    <div class="card-top">
+      <div class="avatar-wrap">
+        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- ears -->
+          <polygon points="18,26 28,6 40,26" fill="#d96cad"/>
+          <polygon points="22,26 28,12 36,26" fill="#ffdde8"/>
+          <polygon points="60,26 72,6 82,26" fill="#d96cad"/>
+          <polygon points="64,26 72,12 78,26" fill="#ffdde8"/>
+          <!-- head with tilt animation -->
+          <g style="transform-origin: 50px 44px; animation: head-tilt 3.5s ease-in-out infinite;">
+            <circle cx="50" cy="44" r="28" fill="#d96cad"/>
+            <!-- glasses frame -->
+            <circle cx="37" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
+            <circle cx="63" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
+            <line x1="45" y1="42" x2="55" y2="42" stroke="#5d3a1a" stroke-width="1.8"/>
+            <line x1="12" y1="40" x2="29" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
+            <line x1="71" y1="40" x2="88" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
+            <!-- eyes behind glasses -->
+            <ellipse cx="37" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
+            <ellipse cx="63" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
+            <circle cx="39" cy="40" r="1.5" fill="white"/>
+            <circle cx="65" cy="40" r="1.5" fill="white"/>
+            <!-- nose -->
+            <polygon points="47,52 53,52 50,56" fill="#b0456a"/>
+            <!-- stern mouth -->
+            <line x1="43" y1="60" x2="57" y2="60" stroke="#8899bb" stroke-width="1.5"/>
+            <!-- whiskers -->
+            <line x1="12" y1="50" x2="36" y2="52" stroke="#e8a0c8" stroke-width="1"/>
+            <line x1="12" y1="54" x2="36" y2="54" stroke="#e8a0c8" stroke-width="1"/>
+            <line x1="64" y1="52" x2="88" y2="50" stroke="#e8a0c8" stroke-width="1"/>
+            <line x1="64" y1="54" x2="88" y2="54" stroke="#e8a0c8" stroke-width="1"/>
+          </g>
+          <!-- body -->
+          <rect x="26" y="72" width="48" height="30" rx="10" fill="#d96cad"/>
+          <!-- clipboard -->
+          <rect x="56" y="68" width="34" height="42" rx="4" fill="#fef3c7"/>
+          <rect x="64" y="64" width="18" height="7" rx="3" fill="#92400e"/>
+          <!-- check lines -->
+          <line x1="62" y1="82" x2="84" y2="82" stroke="#d1d5db" stroke-width="1.5"/>
+          <line x1="62" y1="90" x2="84" y2="90" stroke="#d1d5db" stroke-width="1.5"/>
+          <line x1="62" y1="98" x2="84" y2="98" stroke="#d1d5db" stroke-width="1.5"/>
+          <line x1="62" y1="106" x2="76" y2="106" stroke="#d1d5db" stroke-width="1.5"/>
+          <!-- checks -->
+          <path d="M60 82 L62 85 L66 79" fill="none" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M60 90 L62 93 L66 87" fill="none" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- x -->
+          <path d="M60 96 L64 100 M64 96 L60 100" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- pencil -->
+          <g style="transform-origin: 86px 72px; animation: pencil-tap 2s ease-in-out infinite;">
+            <rect x="84" y="68" width="4" height="18" rx="1" fill="#fbbf24"/>
+            <polygon points="84,86 88,86 86,92" fill="#f97316"/>
+            <rect x="84" y="68" width="4" height="4" rx="1" fill="#9ca3af"/>
+          </g>
+          <!-- left arm -->
+          <line x1="32" y1="80" x2="18" y2="100" stroke="#d96cad" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="agent-info">
+        <h2>レビュアー</h2>
+        <span class="role-badge">Reviewer Agent</span>
+        <div class="status">
+          <span class="dot busy"></span>
+          レビュー中
+        </div>
+      </div>
+    </div>
+    <div class="task-box">
+      <div class="task-label">現在のタスク</div>
+      PR #24 のコードレビュー（3件の指摘あり）
+    </div>
+    <div class="log">
+      <div class="log-row"><span class="log-time">14:30</span><span>型エラーを2件検出</span></div>
+      <div class="log-row"><span class="log-time">14:22</span><span>セキュリティチェック完了</span></div>
+      <div class="log-row"><span class="log-time">14:10</span><span>コードスタイル確認</span></div>
+    </div>
+  </div>
+
+  <!-- ========== RESEARCHER ========== -->
+  <div class="card researcher">
+    <div class="card-top">
+      <div class="avatar-wrap">
+        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- ears -->
+          <polygon points="18,26 28,6 40,26" fill="#d4a017"/>
+          <polygon points="22,26 28,12 36,26" fill="#fde68a"/>
+          <polygon points="60,26 72,6 82,26" fill="#d4a017"/>
+          <polygon points="64,26 72,12 78,26" fill="#fde68a"/>
+          <!-- full body group that looks around -->
+          <g style="animation: look-lr 3.8s ease-in-out infinite;">
+            <!-- head -->
+            <circle cx="50" cy="44" r="28" fill="#eab308"/>
+            <!-- eyes -->
+            <g style="transform-origin: 50px 42px; animation: blink 4.5s infinite;">
+              <ellipse cx="38" cy="42" rx="5" ry="6" fill="#1c1004"/>
+              <ellipse cx="62" cy="42" rx="5" ry="6" fill="#1c1004"/>
+              <circle cx="41" cy="40" r="2" fill="white"/>
+              <circle cx="65" cy="40" r="2" fill="white"/>
+            </g>
+            <!-- nose -->
+            <polygon points="47,52 53,52 50,56" fill="#b45309"/>
+            <!-- excited mouth -->
+            <path d="M43 60 Q50 67 57 60" fill="none" stroke="#8899bb" stroke-width="1.5"/>
+            <!-- whiskers -->
+            <line x1="12" y1="50" x2="36" y2="52" stroke="#fde68a" stroke-width="1"/>
+            <line x1="12" y1="54" x2="36" y2="54" stroke="#fde68a" stroke-width="1"/>
+            <line x1="64" y1="52" x2="88" y2="50" stroke="#fde68a" stroke-width="1"/>
+            <line x1="64" y1="54" x2="88" y2="54" stroke="#fde68a" stroke-width="1"/>
+            <!-- body -->
+            <rect x="26" y="72" width="48" height="30" rx="10" fill="#eab308"/>
+            <!-- left arm -->
+            <line x1="32" y1="80" x2="18" y2="98" stroke="#eab308" stroke-width="7" stroke-linecap="round"/>
+          </g>
+          <!-- magnifying glass (separate animation) -->
+          <g style="transform-origin: 68px 72px; animation: glass-sweep 2.5s ease-in-out infinite;">
+            <!-- right arm -->
+            <line x1="68" y1="80" x2="72" y2="66" stroke="#eab308" stroke-width="7" stroke-linecap="round"/>
+            <!-- glass -->
+            <circle cx="76" cy="58" r="12" fill="rgba(234,179,8,0.1)" stroke="#ca8a04" stroke-width="2.5"/>
+            <circle cx="76" cy="58" r="9" fill="rgba(253,230,138,0.08)"/>
+            <!-- glass shine -->
+            <line x1="70" y1="52" x2="73" y2="55" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+            <!-- handle -->
+            <line x1="85" y1="67" x2="92" y2="76" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/>
+          </g>
+          <!-- sparkle effects -->
+          <text x="4" y="25" font-size="9" fill="#fcd34d" opacity="0.7" style="animation: pulse 2s 0.3s infinite;">✦</text>
+          <text x="82" y="20" font-size="7" fill="#fcd34d" opacity="0.5" style="animation: pulse 2s 0.8s infinite;">✦</text>
+        </svg>
+      </div>
+      <div class="agent-info">
+        <h2>リサーチャー</h2>
+        <span class="role-badge">Research Agent</span>
+        <div class="status">
+          <span class="dot active"></span>
+          情報収集中
+        </div>
+      </div>
+    </div>
+    <div class="task-box">
+      <div class="task-label">現在のタスク</div>
+      Next.js 16 の新機能と互換性を調査中
+    </div>
+    <div class="log">
+      <div class="log-row"><span class="log-time">14:35</span><span>公式ドキュメントを参照</span></div>
+      <div class="log-row"><span class="log-time">14:29</span><span>GitHub Issues 24件を確認</span></div>
+      <div class="log-row"><span class="log-time">14:20</span><span>npm パッケージ互換性チェック</span></div>
+    </div>
+  </div>
+
+  <!-- ========== MONITOR ========== -->
+  <div class="card monitor">
+    <div class="card-top">
+      <div class="avatar-wrap">
+        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+          <!-- ears (bigger/bossier) -->
+          <polygon points="14,25 26,3 40,25" fill="#22a05a"/>
+          <polygon points="19,25 26,10 37,25" fill="#bbf7d0"/>
+          <polygon points="60,25 74,3 86,25" fill="#22a05a"/>
+          <polygon points="63,25 74,10 81,25" fill="#bbf7d0"/>
+          <!-- head (slightly larger) -->
+          <circle cx="50" cy="43" r="31" fill="#16a34a"/>
+          <!-- stern eyebrows -->
+          <line x1="28" y1="28" x2="44" y2="33" stroke="#14532d" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="56" y1="33" x2="72" y2="28" stroke="#14532d" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- scanning eyes -->
+          <g style="animation: scan-eyes 2.2s ease-in-out infinite;">
+            <ellipse cx="37" cy="40" rx="7" ry="8" fill="#052e16"/>
+            <ellipse cx="63" cy="40" rx="7" ry="8" fill="#052e16"/>
+            <circle cx="40" cy="37" r="2.5" fill="white"/>
+            <circle cx="66" cy="37" r="2.5" fill="white"/>
+          </g>
+          <!-- nose -->
+          <polygon points="47,51 53,51 50,56" fill="#15803d"/>
+          <!-- confident mouth -->
+          <path d="M42 61 Q50 66 58 61" fill="none" stroke="#1a5c33" stroke-width="2"/>
+          <!-- whiskers -->
+          <line x1="8" y1="49" x2="34" y2="52" stroke="#86efac" stroke-width="1"/>
+          <line x1="8" y1="54" x2="34" y2="55" stroke="#86efac" stroke-width="1"/>
+          <line x1="66" y1="52" x2="92" y2="49" stroke="#86efac" stroke-width="1"/>
+          <line x1="66" y1="55" x2="92" y2="54" stroke="#86efac" stroke-width="1"/>
+          <!-- body -->
+          <rect x="22" y="74" width="56" height="30" rx="12" fill="#16a34a"/>
+          <!-- 3 mini screens -->
+          <rect x="6" y="98" width="24" height="16" rx="3" style="animation: screen-flicker-a 3s infinite;"/>
+          <rect x="38" y="95" width="24" height="19" rx="3" style="animation: screen-flicker-b 3s 1s infinite;"/>
+          <rect x="70" y="98" width="24" height="16" rx="3" style="animation: screen-flicker-c 3s 2s infinite;"/>
+          <!-- screen text -->
+          <text x="18" y="108" font-size="4.5" fill="#4ade80" text-anchor="middle">CODE</text>
+          <text x="50" y="107" font-size="4.5" fill="#60a5fa" text-anchor="middle">REVIEW</text>
+          <text x="82" y="108" font-size="4.5" fill="#facc15" text-anchor="middle">SEARCH</text>
+          <!-- arms -->
+          <line x1="30" y1="85" x2="18" y2="101" stroke="#16a34a" stroke-width="7" stroke-linecap="round"/>
+          <line x1="70" y1="85" x2="82" y2="101" stroke="#16a34a" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="agent-info">
+        <h2>モニター</h2>
+        <span class="role-badge">Monitor Agent</span>
+        <div class="status">
+          <span class="dot active"></span>
+          全体監視中
+        </div>
+      </div>
+    </div>
+    <div class="task-box">
+      <div class="task-label">現在のタスク</div>
+      3エージェントの進捗を統括・監視中
+    </div>
+    <div class="log">
+      <div class="log-row"><span class="log-time">14:34</span><span>コーダーにタスク割り当て完了</span></div>
+      <div class="log-row"><span class="log-time">14:26</span><span>レビュアーの指摘を共有</span></div>
+      <div class="log-row"><span class="log-time">14:18</span><span>リサーチ結果を集約</span></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function tick() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('clock').textContent =
+      `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}  ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+  setInterval(tick, 1000);
+  tick();
+</script>
+
+</body>
+</html>
