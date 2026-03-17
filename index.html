@@ -3,564 +3,636 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI エージェント ダッシュボード</title>
+<title>AI Virtual Office</title>
 <style>
-  :root {
-    --bg: #07071a;
-    --card-bg: #0e0e28;
-    --border: #1e1e4a;
-    --text: #dde0ff;
-    --dim: #6668a0;
-    --coder: #38bdf8;
-    --reviewer: #f472b6;
-    --researcher: #facc15;
-    --monitor: #4ade80;
-  }
+:root {
+  --wall:      #d6c9b4;
+  --floor:     #c09060;
+  --desk-top:  #b08030;
+  --desk-side: #7a5010;
+  --chair:     #3a3a58;
+  --sofa-back: #7055a8;
+  --sofa-seat: #8a6abe;
+  --plant-g:   #2d6a3f;
+  --panel-bg:  #0c0c22;
+  --border:    #1e1e4a;
+  --text:      #dde0ff;
+  --dim:       #6668a0;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #08081a;
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 40px;
+}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
-    padding: 24px;
-    background-image:
-      radial-gradient(ellipse at 20% 10%, rgba(56,189,248,0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 90%, rgba(74,222,128,0.06) 0%, transparent 50%);
-  }
+header { text-align:center; margin-bottom:20px; }
+header h1 {
+  font-size:1.5rem; font-weight:700;
+  background:linear-gradient(135deg,#38bdf8,#818cf8,#4ade80);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  margin-bottom:4px;
+}
+header p { color:var(--dim); font-size:.8rem; }
+#clock   { color:#2e2e58; font-size:.72rem; margin-top:3px; font-variant-numeric:tabular-nums; }
 
-  header {
-    text-align: center;
-    margin-bottom: 32px;
-  }
+/* ── scene ── */
+.scene-wrap {
+  width:100%; max-width:900px;
+  border-radius:14px; overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);
+  border:1px solid #1a1a3a;
+}
+.office {
+  position:relative;
+  width:100%;
+  padding-top:57.8%;
+  background:var(--floor);
+  background-image:
+    repeating-linear-gradient(90deg,transparent,transparent 58px,rgba(0,0,0,.04) 58px,rgba(0,0,0,.04) 60px),
+    repeating-linear-gradient(0deg, transparent,transparent 58px,rgba(0,0,0,.03) 58px,rgba(0,0,0,.03) 60px);
+}
+.office > * { position:absolute; }
 
-  header h1 {
-    font-size: 1.7rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #4ade80 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 6px;
-  }
+/* wall */
+.wall {
+  top:0; left:0; right:0; height:42%;
+  background:linear-gradient(180deg,#d8c8b0,#c4b098);
+  z-index:1;
+}
+.wall-edge {
+  top:42%; left:0; right:0; height:2.2%;
+  background:#8a6030; z-index:3;
+  box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
 
-  header p { color: var(--dim); font-size: 0.82rem; }
-  #clock { color: #3a3a6a; font-size: 0.75rem; margin-top: 4px; font-variant-numeric: tabular-nums; }
+/* windows */
+.window {
+  top:6%; height:78%; width:13%;
+  background:linear-gradient(180deg,#b8d8f0,#daeeff);
+  border:5px solid #8a6020; border-radius:3px; z-index:2;
+}
+.window::before,.window::after{content:'';position:absolute;background:#8a6020;}
+.window::before{top:0;bottom:0;left:calc(50% - 2.5px);width:5px;}
+.window::after {left:0;right:0;top:calc(50% - 2.5px);height:5px;}
+.window-l{left:3.5%;}
+.window-r{right:3.5%;}
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    max-width: 860px;
-    margin: 0 auto;
-  }
+/* command station label */
+.cmd-label {
+  top:1%; left:50%; transform:translateX(-50%);
+  font-size:.46rem; letter-spacing:.14em; text-transform:uppercase; color:#9a8868;
+  z-index:5; white-space:nowrap;
+}
 
-  .card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 18px;
-    padding: 22px;
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    transition: border-color 0.3s, transform 0.2s, box-shadow 0.3s;
-  }
+/* command center */
+.cmd-station {
+  top:2%; left:50%; transform:translateX(-50%);
+  width:26%; z-index:4;
+  display:flex; flex-direction:column; align-items:center;
+}
+.cmd-screens { display:flex; gap:5px; margin-bottom:3px; }
+.cmd-screen {
+  width:52px; height:36px;
+  background:#081828; border:2px solid #2a4a6a; border-radius:3px;
+  padding:4px 3px 3px; display:flex; flex-direction:column; gap:2px; overflow:hidden;
+}
+.sl { height:2px; border-radius:1px; opacity:.75; }
+.cmd-desk {
+  width:100%; height:20px;
+  background:linear-gradient(180deg,#b08030,#8a6010);
+  border-radius:4px 4px 0 0;
+  box-shadow:0 4px 10px rgba(0,0,0,.35);
+}
 
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  }
+/* workstations */
+.ws { top:45%; z-index:4; display:flex; flex-direction:column; align-items:center; }
+.ws-1{left:6%; width:17%;}
+.ws-2{left:28%;width:17%;}
+.ws-3{left:50%;width:17%;}
 
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    border-radius: 18px 18px 0 0;
-  }
+.desk-item{ display:flex; flex-direction:column; align-items:center; width:100%; }
+.desk-monitor{
+  width:36px; height:24px;
+  background:#081828; border:2px solid #2a4060; border-radius:2px;
+  margin-bottom:3px; position:relative; overflow:hidden;
+}
+.desk-monitor-stand{ width:5px; height:5px; background:#5a6a7a; margin:0 auto; }
+.desk-surface{
+  width:100%; height:16px;
+  background:linear-gradient(180deg,#b28030,#8a5f10);
+  border-radius:3px 3px 0 0;
+  box-shadow:0 4px 8px rgba(0,0,0,.3); position:relative;
+}
+.desk-front{ width:100%; height:8px; background:#6b4010; border-radius:0 0 2px 2px; }
+.desk-chair{
+  width:42%; height:11px; background:var(--chair);
+  border-radius:3px; margin-top:3px;
+  box-shadow:0 3px 6px rgba(0,0,0,.3);
+}
 
-  .card.coder { --accent: var(--coder); }
-  .card.reviewer { --accent: var(--reviewer); }
-  .card.researcher { --accent: var(--researcher); }
-  .card.monitor { --accent: var(--monitor); }
+/* break area */
+.break-area{
+  top:46%; right:4%; width:22%; z-index:4;
+  display:flex; flex-direction:column; align-items:center;
+}
+.break-label{ font-size:.46rem; letter-spacing:.12em; text-transform:uppercase; color:#9a8868; margin-bottom:5px; }
+.sofa-back {
+  width:90%; height:20px;
+  background:linear-gradient(180deg,#7a5aaa,#6248a0);
+  border-radius:8px 8px 2px 2px;
+}
+.sofa-seat {
+  width:90%; height:17px; background:#8a6abe;
+  border-radius:0 0 6px 6px;
+  display:flex; gap:3px; padding:2px 8px 0;
+  box-shadow:0 5px 12px rgba(0,0,0,.3);
+}
+.sofa-cushion{ flex:1; height:9px; background:#9a7ace; border-radius:2px 2px 0 0; }
+.coffee-table{
+  width:48%; height:6px; background:#8a6010;
+  border-radius:2px; margin-top:14px;
+  box-shadow:0 2px 5px rgba(0,0,0,.25);
+}
 
-  .card::before { background: var(--accent); }
-  .card:hover { border-color: var(--accent); box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 20px color-mix(in srgb, var(--accent) 20%, transparent); }
+/* plants */
+.plant{ z-index:5; display:flex; flex-direction:column; align-items:center; }
+.plant-leaves{
+  width:28px; height:22px;
+  background:radial-gradient(ellipse,#3a8a50 30%,#226038 100%);
+  border-radius:50% 50% 30% 30%;
+}
+.plant-pot{ width:18px; height:14px; background:#8b4513; border-radius:1px 1px 4px 4px; }
 
-  .card-top {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    margin-bottom: 14px;
-  }
+/* characters */
+.char{
+  z-index:10; cursor:pointer;
+  transition:transform .2s, filter .2s;
+}
+.char:hover{
+  transform:scale(1.1) translateY(-4px) !important;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.5));
+}
+.char svg{ filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)); }
 
-  .avatar-wrap {
-    width: 88px;
-    height: 110px;
-    flex-shrink: 0;
-  }
+.sbubble{
+  position:absolute; top:-6px; right:-2px;
+  width:13px; height:13px; border-radius:50%;
+  border:2px solid #08081a; z-index:11;
+}
+.sbubble.active { background:#4ade80; animation:pdot 2s infinite; }
+.sbubble.busy   { background:#facc15; animation:pdot 1.4s infinite; }
+.sbubble.idle   { background:#94a3b8; }
 
-  .avatar-wrap svg { width: 100%; height: 100%; }
+@keyframes pdot{0%,100%{opacity:1;}50%{opacity:.55;}}
 
-  .agent-info h2 {
-    font-size: 1.05rem;
-    font-weight: 700;
-    margin-bottom: 5px;
-  }
+.char-label{
+  position:absolute; bottom:-18px; left:50%; transform:translateX(-50%);
+  font-size:.58rem; color:var(--dim); white-space:nowrap;
+  background:rgba(8,8,26,.85); padding:1px 6px; border-radius:4px;
+}
 
-  .role-badge {
-    font-size: 0.68rem;
-    padding: 3px 10px;
-    border-radius: 999px;
-    display: inline-block;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent);
-    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-    margin-bottom: 8px;
-  }
+/* panel */
+.overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.45);
+  z-index:100; opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.overlay.open{opacity:1;pointer-events:all;}
 
-  .status {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.78rem;
-    color: var(--dim);
-  }
+.panel{
+  position:fixed; top:0; right:0;
+  width:310px; height:100vh;
+  background:var(--panel-bg); border-left:1px solid var(--border);
+  z-index:101; transform:translateX(100%);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto; padding:28px 22px;
+}
+.panel.open{transform:translateX(0);}
 
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
+.panel-close{
+  position:absolute; top:14px; right:14px;
+  background:none; border:1px solid var(--border);
+  color:var(--text); width:30px; height:30px;
+  border-radius:7px; cursor:pointer; font-size:.95rem;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .2s;
+}
+.panel-close:hover{background:rgba(255,255,255,.07);}
+.panel-name { font-size:1.15rem; font-weight:700; text-align:center; margin-bottom:3px; }
+.panel-role { font-size:.7rem; color:var(--dim); text-align:center; margin-bottom:14px; }
+.panel-status-row{
+  display:flex; align-items:center; gap:8px; justify-content:center;
+  padding:7px 14px; background:rgba(255,255,255,.03);
+  border-radius:8px; margin-bottom:20px; border:1px solid rgba(255,255,255,.06);
+}
+.psdot{width:7px;height:7px;border-radius:50%;}
+.panel-section{ font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--dim); margin:16px 0 6px; }
+.panel-task{
+  font-size:.8rem; background:rgba(255,255,255,.03);
+  border:1px solid var(--border); border-radius:8px; padding:10px 12px;
+}
+.log-row{ display:flex; gap:10px; padding:4px 0; font-size:.73rem; color:var(--dim); border-bottom:1px solid rgba(255,255,255,.04); }
+.log-row:last-child{border-bottom:none;}
+.log-t{ color:#252550; min-width:38px; font-variant-numeric:tabular-nums; }
 
-  .dot.active { background: var(--monitor); animation: pulse 2s infinite; }
-  .dot.busy { background: var(--researcher); animation: pulse 1.5s infinite; }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
-    50% { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
-  }
-
-  .task-box {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 13px;
-    font-size: 0.78rem;
-    margin-bottom: 11px;
-  }
-
-  .task-label {
-    font-size: 0.66rem;
-    color: var(--dim);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 4px;
-  }
-
-  .log { font-size: 0.72rem; color: var(--dim); }
-
-  .log-row {
-    display: flex;
-    gap: 10px;
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-  }
-
-  .log-row:last-child { border-bottom: none; }
-
-  .log-time {
-    color: #2e2e5a;
-    min-width: 38px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* ===== ANIMATIONS ===== */
-
-  /* Shared blink */
-  @keyframes blink {
-    0%, 88%, 100% { transform: scaleY(1); }
-    92% { transform: scaleY(0.08); }
-  }
-
-  /* Coder: alternating arm typing */
-  @keyframes tap-l {
-    0%, 100% { transform: translateY(0) rotate(-5deg); }
-    50% { transform: translateY(5px) rotate(-5deg); }
-  }
-  @keyframes tap-r {
-    0%, 100% { transform: translateY(5px) rotate(5deg); }
-    50% { transform: translateY(0) rotate(5deg); }
-  }
-  @keyframes screen-glow {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-  @keyframes cursor-blink {
-    0%, 49% { opacity: 1; }
-    50%, 100% { opacity: 0; }
-  }
-
-  /* Reviewer: slight head tilt + pencil tap */
-  @keyframes head-tilt {
-    0%, 100% { transform: rotate(0deg); }
-    30% { transform: rotate(-4deg); }
-    70% { transform: rotate(3deg); }
-  }
-  @keyframes pencil-tap {
-    0%, 60%, 100% { transform: rotate(-22deg) translateY(0); }
-    75% { transform: rotate(-22deg) translateY(4px); }
-  }
-
-  /* Researcher: look left/right */
-  @keyframes look-lr {
-    0%, 20%, 100% { transform: translateX(0); }
-    40%, 60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
-  @keyframes glass-sweep {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(20deg); }
-  }
-
-  /* Monitor: scanning eyes */
-  @keyframes scan-eyes {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-3px); }
-    75% { transform: translateX(3px); }
-  }
-  @keyframes screen-flicker-a {
-    0%, 33%, 66%, 100% { fill: #1a3a5c; }
-    11% { fill: #0a2a4c; }
-    44% { fill: #2a4a6c; }
-    77% { fill: #1a4a3c; }
-  }
-  @keyframes screen-flicker-b {
-    0%, 33%, 66%, 100% { fill: #2a1a5c; }
-    22% { fill: #3a2a6c; }
-    55% { fill: #1a1a4c; }
-  }
-  @keyframes screen-flicker-c {
-    0%, 33%, 66%, 100% { fill: #3a2a1a; }
-    15% { fill: #4a3a2a; }
-    48% { fill: #2a1a0a; }
-    81% { fill: #3a3a1a; }
-  }
+/* animations */
+@keyframes blink{0%,87%,100%{transform:scaleY(1);}91%{transform:scaleY(.08);}}
+@keyframes tap-l{0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(-6deg) translateY(5px);}}
+@keyframes tap-r{0%,100%{transform:rotate(6deg) translateY(5px);}50%{transform:rotate(6deg) translateY(0);}}
+@keyframes head-tilt{0%,100%{transform:rotate(0);}30%{transform:rotate(-4deg);}70%{transform:rotate(3deg);}}
+@keyframes look-lr{0%,15%,100%{transform:translateX(0);}40%,55%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+@keyframes scan{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+@keyframes glass-sweep{0%,100%{transform:rotate(0);}50%{transform:rotate(20deg);}}
+@keyframes pencil-tap{0%,55%,100%{transform:rotate(-20deg) translateY(0);}72%{transform:rotate(-20deg) translateY(4px);}}
+@keyframes cursor-blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+@keyframes scr-glow{0%,100%{opacity:.55;}50%{opacity:1;}}
+@keyframes float-idle{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>AI エージェント ダッシュボード</h1>
-  <p>Claude Code マルチエージェント管理システム</p>
+  <h1>AI Virtual Office</h1>
+  <p>Claude Code マルチエージェント管理システム — キャラをタップして状況確認</p>
   <p id="clock"></p>
 </header>
 
-<div class="grid">
+<div class="scene-wrap">
+<div class="office">
 
-  <!-- ========== CODER ========== -->
-  <div class="card coder">
-    <div class="card-top">
-      <div class="avatar-wrap">
-        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-          <!-- ears -->
-          <polygon points="18,26 28,6 40,26" fill="#5ba3e8"/>
-          <polygon points="22,26 28,12 36,26" fill="#ffb3c8"/>
-          <polygon points="60,26 72,6 82,26" fill="#5ba3e8"/>
-          <polygon points="64,26 72,12 78,26" fill="#ffb3c8"/>
-          <!-- head -->
-          <circle cx="50" cy="44" r="28" fill="#5ba3e8"/>
-          <!-- laptop screen glow -->
-          <rect x="12" y="95" width="76" height="16" rx="4" fill="#1a2744" style="animation: screen-glow 2.2s ease-in-out infinite;"/>
-          <!-- screen content lines -->
-          <rect x="16" y="98" width="30" height="2" rx="1" fill="#38bdf8" opacity="0.6"/>
-          <rect x="16" y="103" width="20" height="2" rx="1" fill="#818cf8" opacity="0.4"/>
-          <rect x="16" y="108" width="25" height="2" rx="1" fill="#38bdf8" opacity="0.3"/>
-          <!-- cursor -->
-          <rect x="49" y="98" width="2" height="8" fill="#38bdf8" rx="1" style="animation: cursor-blink 0.8s infinite;"/>
-          <!-- laptop base -->
-          <rect x="8" y="111" width="84" height="4" rx="2" fill="#263244"/>
-          <!-- body -->
-          <rect x="26" y="72" width="48" height="30" rx="10" fill="#5ba3e8"/>
-          <!-- left arm typing -->
-          <g style="transform-origin: 32px 78px; animation: tap-l 0.55s ease-in-out infinite;">
-            <line x1="32" y1="78" x2="22" y2="98" stroke="#5ba3e8" stroke-width="7" stroke-linecap="round"/>
-          </g>
-          <!-- right arm typing -->
-          <g style="transform-origin: 68px 78px; animation: tap-r 0.55s ease-in-out infinite;">
-            <line x1="68" y1="78" x2="78" y2="98" stroke="#5ba3e8" stroke-width="7" stroke-linecap="round"/>
-          </g>
-          <!-- eyes -->
-          <g style="transform-origin: 50px 42px; animation: blink 5s infinite;">
-            <ellipse cx="38" cy="42" rx="5" ry="6" fill="#0f1f44"/>
-            <ellipse cx="62" cy="42" rx="5" ry="6" fill="#0f1f44"/>
-            <circle cx="40" cy="40" r="2" fill="white"/>
-            <circle cx="64" cy="40" r="2" fill="white"/>
-          </g>
-          <!-- nose -->
-          <polygon points="47,51 53,51 50,55" fill="#e8a0b0"/>
-          <!-- mouth (focused) -->
-          <line x1="44" y1="59" x2="56" y2="59" stroke="#8899bb" stroke-width="1.5"/>
-          <!-- whiskers -->
-          <line x1="12" y1="50" x2="36" y2="52" stroke="#8ab5e0" stroke-width="1"/>
-          <line x1="12" y1="54" x2="36" y2="54" stroke="#8ab5e0" stroke-width="1"/>
-          <line x1="64" y1="52" x2="88" y2="50" stroke="#8ab5e0" stroke-width="1"/>
-          <line x1="64" y1="54" x2="88" y2="54" stroke="#8ab5e0" stroke-width="1"/>
-        </svg>
+  <!-- wall + windows -->
+  <div class="wall"></div>
+  <div class="wall-edge"></div>
+  <div class="window window-l"></div>
+  <div class="window window-r"></div>
+
+  <!-- monitor station label -->
+  <div class="cmd-label">MONITOR STATION</div>
+
+  <!-- command center -->
+  <div class="cmd-station">
+    <div class="cmd-screens">
+      <div class="cmd-screen">
+        <div class="sl" style="background:#38bdf8;width:85%;animation:scr-glow 1.8s infinite;"></div>
+        <div class="sl" style="background:#818cf8;width:65%;animation:scr-glow 1.8s .3s infinite;"></div>
+        <div class="sl" style="background:#38bdf8;width:75%;animation:scr-glow 1.8s .6s infinite;"></div>
+        <div class="sl" style="background:#38bdf8;width:50%;animation:scr-glow 1.8s .9s infinite;"></div>
       </div>
-      <div class="agent-info">
-        <h2>コーダー</h2>
-        <span class="role-badge">Coder Agent</span>
-        <div class="status">
-          <span class="dot busy"></span>
-          コーディング中
+      <div class="cmd-screen">
+        <div style="height:8px;border-radius:1px;background:#1a3a5c;"></div>
+        <div style="height:8px;border-radius:1px;background:#2a1a5c;margin-top:2px;"></div>
+        <div style="height:8px;border-radius:1px;background:#1a3c28;margin-top:2px;"></div>
+      </div>
+      <div class="cmd-screen">
+        <div class="sl" style="background:#f472b6;width:80%;animation:scr-glow 2.2s infinite;"></div>
+        <div class="sl" style="background:#facc15;width:55%;animation:scr-glow 2.2s .4s infinite;"></div>
+        <div class="sl" style="background:#f472b6;width:70%;animation:scr-glow 2.2s .8s infinite;"></div>
+        <div class="sl" style="background:#facc15;width:40%;animation:scr-glow 2.2s 1.2s infinite;"></div>
+      </div>
+    </div>
+    <div class="cmd-desk"></div>
+  </div>
+
+  <!-- plants -->
+  <div class="plant" style="top:45%;left:1.5%;">
+    <div class="plant-leaves"></div><div class="plant-pot"></div>
+  </div>
+  <div class="plant" style="top:45%;right:1.5%;">
+    <div class="plant-leaves"></div><div class="plant-pot"></div>
+  </div>
+
+  <!-- workstation 1: coder -->
+  <div class="ws ws-1">
+    <div class="desk-item">
+      <div class="desk-monitor" style="animation:scr-glow 2s infinite;">
+        <div style="padding:3px;display:flex;flex-direction:column;gap:1.5px;position:relative;">
+          <div style="height:1.5px;background:#38bdf8;border-radius:1px;width:80%;"></div>
+          <div style="height:1.5px;background:#38bdf8;border-radius:1px;width:60%;"></div>
+          <div style="height:1.5px;background:#818cf8;border-radius:1px;width:70%;"></div>
+          <div style="position:absolute;top:4px;right:5px;width:2px;height:10px;background:#38bdf8;animation:cursor-blink .8s infinite;"></div>
         </div>
       </div>
-    </div>
-    <div class="task-box">
-      <div class="task-label">現在のタスク</div>
-      sui-room-crean の清掃スケジュール機能を実装中
-    </div>
-    <div class="log">
-      <div class="log-row"><span class="log-time">14:32</span><span>components/Schedule.tsx を作成</span></div>
-      <div class="log-row"><span class="log-time">14:28</span><span>API ルート /api/rooms を追加</span></div>
-      <div class="log-row"><span class="log-time">14:15</span><span>Supabase スキーマを更新</span></div>
+      <div class="desk-monitor-stand"></div>
+      <div class="desk-surface">
+        <div style="position:absolute;right:4px;top:3px;width:18px;height:9px;background:#263244;border-radius:1px;"></div>
+      </div>
+      <div class="desk-front"></div>
+      <div class="desk-chair"></div>
     </div>
   </div>
 
-  <!-- ========== REVIEWER ========== -->
-  <div class="card reviewer">
-    <div class="card-top">
-      <div class="avatar-wrap">
-        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-          <!-- ears -->
-          <polygon points="18,26 28,6 40,26" fill="#d96cad"/>
-          <polygon points="22,26 28,12 36,26" fill="#ffdde8"/>
-          <polygon points="60,26 72,6 82,26" fill="#d96cad"/>
-          <polygon points="64,26 72,12 78,26" fill="#ffdde8"/>
-          <!-- head with tilt animation -->
-          <g style="transform-origin: 50px 44px; animation: head-tilt 3.5s ease-in-out infinite;">
-            <circle cx="50" cy="44" r="28" fill="#d96cad"/>
-            <!-- glasses frame -->
-            <circle cx="37" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
-            <circle cx="63" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
-            <line x1="45" y1="42" x2="55" y2="42" stroke="#5d3a1a" stroke-width="1.8"/>
-            <line x1="12" y1="40" x2="29" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
-            <line x1="71" y1="40" x2="88" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
-            <!-- eyes behind glasses -->
-            <ellipse cx="37" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
-            <ellipse cx="63" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
-            <circle cx="39" cy="40" r="1.5" fill="white"/>
-            <circle cx="65" cy="40" r="1.5" fill="white"/>
-            <!-- nose -->
-            <polygon points="47,52 53,52 50,56" fill="#b0456a"/>
-            <!-- stern mouth -->
-            <line x1="43" y1="60" x2="57" y2="60" stroke="#8899bb" stroke-width="1.5"/>
-            <!-- whiskers -->
-            <line x1="12" y1="50" x2="36" y2="52" stroke="#e8a0c8" stroke-width="1"/>
-            <line x1="12" y1="54" x2="36" y2="54" stroke="#e8a0c8" stroke-width="1"/>
-            <line x1="64" y1="52" x2="88" y2="50" stroke="#e8a0c8" stroke-width="1"/>
-            <line x1="64" y1="54" x2="88" y2="54" stroke="#e8a0c8" stroke-width="1"/>
-          </g>
-          <!-- body -->
-          <rect x="26" y="72" width="48" height="30" rx="10" fill="#d96cad"/>
-          <!-- clipboard -->
-          <rect x="56" y="68" width="34" height="42" rx="4" fill="#fef3c7"/>
-          <rect x="64" y="64" width="18" height="7" rx="3" fill="#92400e"/>
-          <!-- check lines -->
-          <line x1="62" y1="82" x2="84" y2="82" stroke="#d1d5db" stroke-width="1.5"/>
-          <line x1="62" y1="90" x2="84" y2="90" stroke="#d1d5db" stroke-width="1.5"/>
-          <line x1="62" y1="98" x2="84" y2="98" stroke="#d1d5db" stroke-width="1.5"/>
-          <line x1="62" y1="106" x2="76" y2="106" stroke="#d1d5db" stroke-width="1.5"/>
-          <!-- checks -->
-          <path d="M60 82 L62 85 L66 79" fill="none" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round"/>
-          <path d="M60 90 L62 93 L66 87" fill="none" stroke="#22c55e" stroke-width="1.8" stroke-linecap="round"/>
-          <!-- x -->
-          <path d="M60 96 L64 100 M64 96 L60 100" fill="none" stroke="#ef4444" stroke-width="1.8" stroke-linecap="round"/>
-          <!-- pencil -->
-          <g style="transform-origin: 86px 72px; animation: pencil-tap 2s ease-in-out infinite;">
-            <rect x="84" y="68" width="4" height="18" rx="1" fill="#fbbf24"/>
-            <polygon points="84,86 88,86 86,92" fill="#f97316"/>
-            <rect x="84" y="68" width="4" height="4" rx="1" fill="#9ca3af"/>
-          </g>
-          <!-- left arm -->
-          <line x1="32" y1="80" x2="18" y2="100" stroke="#d96cad" stroke-width="7" stroke-linecap="round"/>
-        </svg>
+  <!-- workstation 2: reviewer -->
+  <div class="ws ws-2">
+    <div class="desk-item">
+      <div style="width:26px;height:32px;background:#fef3c7;border:1.5px solid #ca8a04;border-radius:2px;margin-bottom:3px;padding:3px;display:flex;flex-direction:column;gap:2px;">
+        <div style="height:2px;background:#d1d5db;border-radius:1px;"></div>
+        <div style="height:2px;background:#22c55e;border-radius:1px;width:75%;"></div>
+        <div style="height:2px;background:#d1d5db;border-radius:1px;"></div>
+        <div style="height:2px;background:#ef4444;border-radius:1px;width:60%;"></div>
+        <div style="height:2px;background:#d1d5db;border-radius:1px;"></div>
       </div>
-      <div class="agent-info">
-        <h2>レビュアー</h2>
-        <span class="role-badge">Reviewer Agent</span>
-        <div class="status">
-          <span class="dot busy"></span>
-          レビュー中
-        </div>
-      </div>
-    </div>
-    <div class="task-box">
-      <div class="task-label">現在のタスク</div>
-      PR #24 のコードレビュー（3件の指摘あり）
-    </div>
-    <div class="log">
-      <div class="log-row"><span class="log-time">14:30</span><span>型エラーを2件検出</span></div>
-      <div class="log-row"><span class="log-time">14:22</span><span>セキュリティチェック完了</span></div>
-      <div class="log-row"><span class="log-time">14:10</span><span>コードスタイル確認</span></div>
+      <div class="desk-surface"></div>
+      <div class="desk-front"></div>
+      <div class="desk-chair"></div>
     </div>
   </div>
 
-  <!-- ========== RESEARCHER ========== -->
-  <div class="card researcher">
-    <div class="card-top">
-      <div class="avatar-wrap">
-        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-          <!-- ears -->
-          <polygon points="18,26 28,6 40,26" fill="#d4a017"/>
-          <polygon points="22,26 28,12 36,26" fill="#fde68a"/>
-          <polygon points="60,26 72,6 82,26" fill="#d4a017"/>
-          <polygon points="64,26 72,12 78,26" fill="#fde68a"/>
-          <!-- full body group that looks around -->
-          <g style="animation: look-lr 3.8s ease-in-out infinite;">
-            <!-- head -->
-            <circle cx="50" cy="44" r="28" fill="#eab308"/>
-            <!-- eyes -->
-            <g style="transform-origin: 50px 42px; animation: blink 4.5s infinite;">
-              <ellipse cx="38" cy="42" rx="5" ry="6" fill="#1c1004"/>
-              <ellipse cx="62" cy="42" rx="5" ry="6" fill="#1c1004"/>
-              <circle cx="41" cy="40" r="2" fill="white"/>
-              <circle cx="65" cy="40" r="2" fill="white"/>
-            </g>
-            <!-- nose -->
-            <polygon points="47,52 53,52 50,56" fill="#b45309"/>
-            <!-- excited mouth -->
-            <path d="M43 60 Q50 67 57 60" fill="none" stroke="#8899bb" stroke-width="1.5"/>
-            <!-- whiskers -->
-            <line x1="12" y1="50" x2="36" y2="52" stroke="#fde68a" stroke-width="1"/>
-            <line x1="12" y1="54" x2="36" y2="54" stroke="#fde68a" stroke-width="1"/>
-            <line x1="64" y1="52" x2="88" y2="50" stroke="#fde68a" stroke-width="1"/>
-            <line x1="64" y1="54" x2="88" y2="54" stroke="#fde68a" stroke-width="1"/>
-            <!-- body -->
-            <rect x="26" y="72" width="48" height="30" rx="10" fill="#eab308"/>
-            <!-- left arm -->
-            <line x1="32" y1="80" x2="18" y2="98" stroke="#eab308" stroke-width="7" stroke-linecap="round"/>
-          </g>
-          <!-- magnifying glass (separate animation) -->
-          <g style="transform-origin: 68px 72px; animation: glass-sweep 2.5s ease-in-out infinite;">
-            <!-- right arm -->
-            <line x1="68" y1="80" x2="72" y2="66" stroke="#eab308" stroke-width="7" stroke-linecap="round"/>
-            <!-- glass -->
-            <circle cx="76" cy="58" r="12" fill="rgba(234,179,8,0.1)" stroke="#ca8a04" stroke-width="2.5"/>
-            <circle cx="76" cy="58" r="9" fill="rgba(253,230,138,0.08)"/>
-            <!-- glass shine -->
-            <line x1="70" y1="52" x2="73" y2="55" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-            <!-- handle -->
-            <line x1="85" y1="67" x2="92" y2="76" stroke="#ca8a04" stroke-width="3" stroke-linecap="round"/>
-          </g>
-          <!-- sparkle effects -->
-          <text x="4" y="25" font-size="9" fill="#fcd34d" opacity="0.7" style="animation: pulse 2s 0.3s infinite;">✦</text>
-          <text x="82" y="20" font-size="7" fill="#fcd34d" opacity="0.5" style="animation: pulse 2s 0.8s infinite;">✦</text>
-        </svg>
+  <!-- workstation 3: researcher -->
+  <div class="ws ws-3">
+    <div class="desk-item">
+      <div style="display:flex;gap:2px;margin-bottom:3px;align-items:flex-end;">
+        <div style="width:11px;height:24px;background:#3a7a5a;border-radius:1px;"></div>
+        <div style="width:9px;height:20px;background:#7a5a3a;border-radius:1px;"></div>
+        <div style="width:11px;height:26px;background:#5a3a7a;border-radius:1px;"></div>
+        <div style="width:9px;height:18px;background:#7a3a3a;border-radius:1px;"></div>
       </div>
-      <div class="agent-info">
-        <h2>リサーチャー</h2>
-        <span class="role-badge">Research Agent</span>
-        <div class="status">
-          <span class="dot active"></span>
-          情報収集中
-        </div>
-      </div>
-    </div>
-    <div class="task-box">
-      <div class="task-label">現在のタスク</div>
-      Next.js 16 の新機能と互換性を調査中
-    </div>
-    <div class="log">
-      <div class="log-row"><span class="log-time">14:35</span><span>公式ドキュメントを参照</span></div>
-      <div class="log-row"><span class="log-time">14:29</span><span>GitHub Issues 24件を確認</span></div>
-      <div class="log-row"><span class="log-time">14:20</span><span>npm パッケージ互換性チェック</span></div>
+      <div class="desk-surface"></div>
+      <div class="desk-front"></div>
+      <div class="desk-chair"></div>
     </div>
   </div>
 
-  <!-- ========== MONITOR ========== -->
-  <div class="card monitor">
-    <div class="card-top">
-      <div class="avatar-wrap">
-        <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-          <!-- ears (bigger/bossier) -->
-          <polygon points="14,25 26,3 40,25" fill="#22a05a"/>
-          <polygon points="19,25 26,10 37,25" fill="#bbf7d0"/>
-          <polygon points="60,25 74,3 86,25" fill="#22a05a"/>
-          <polygon points="63,25 74,10 81,25" fill="#bbf7d0"/>
-          <!-- head (slightly larger) -->
-          <circle cx="50" cy="43" r="31" fill="#16a34a"/>
-          <!-- stern eyebrows -->
-          <line x1="28" y1="28" x2="44" y2="33" stroke="#14532d" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="56" y1="33" x2="72" y2="28" stroke="#14532d" stroke-width="2.5" stroke-linecap="round"/>
-          <!-- scanning eyes -->
-          <g style="animation: scan-eyes 2.2s ease-in-out infinite;">
-            <ellipse cx="37" cy="40" rx="7" ry="8" fill="#052e16"/>
-            <ellipse cx="63" cy="40" rx="7" ry="8" fill="#052e16"/>
-            <circle cx="40" cy="37" r="2.5" fill="white"/>
-            <circle cx="66" cy="37" r="2.5" fill="white"/>
-          </g>
-          <!-- nose -->
-          <polygon points="47,51 53,51 50,56" fill="#15803d"/>
-          <!-- confident mouth -->
-          <path d="M42 61 Q50 66 58 61" fill="none" stroke="#1a5c33" stroke-width="2"/>
-          <!-- whiskers -->
-          <line x1="8" y1="49" x2="34" y2="52" stroke="#86efac" stroke-width="1"/>
-          <line x1="8" y1="54" x2="34" y2="55" stroke="#86efac" stroke-width="1"/>
-          <line x1="66" y1="52" x2="92" y2="49" stroke="#86efac" stroke-width="1"/>
-          <line x1="66" y1="55" x2="92" y2="54" stroke="#86efac" stroke-width="1"/>
-          <!-- body -->
-          <rect x="22" y="74" width="56" height="30" rx="12" fill="#16a34a"/>
-          <!-- 3 mini screens -->
-          <rect x="6" y="98" width="24" height="16" rx="3" style="animation: screen-flicker-a 3s infinite;"/>
-          <rect x="38" y="95" width="24" height="19" rx="3" style="animation: screen-flicker-b 3s 1s infinite;"/>
-          <rect x="70" y="98" width="24" height="16" rx="3" style="animation: screen-flicker-c 3s 2s infinite;"/>
-          <!-- screen text -->
-          <text x="18" y="108" font-size="4.5" fill="#4ade80" text-anchor="middle">CODE</text>
-          <text x="50" y="107" font-size="4.5" fill="#60a5fa" text-anchor="middle">REVIEW</text>
-          <text x="82" y="108" font-size="4.5" fill="#facc15" text-anchor="middle">SEARCH</text>
-          <!-- arms -->
-          <line x1="30" y1="85" x2="18" y2="101" stroke="#16a34a" stroke-width="7" stroke-linecap="round"/>
-          <line x1="70" y1="85" x2="82" y2="101" stroke="#16a34a" stroke-width="7" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="agent-info">
-        <h2>モニター</h2>
-        <span class="role-badge">Monitor Agent</span>
-        <div class="status">
-          <span class="dot active"></span>
-          全体監視中
-        </div>
-      </div>
+  <!-- break area -->
+  <div class="break-area">
+    <div class="break-label">Break Area</div>
+    <div class="sofa-back"></div>
+    <div class="sofa-seat">
+      <div class="sofa-cushion"></div>
+      <div class="sofa-cushion"></div>
     </div>
-    <div class="task-box">
-      <div class="task-label">現在のタスク</div>
-      3エージェントの進捗を統括・監視中
-    </div>
-    <div class="log">
-      <div class="log-row"><span class="log-time">14:34</span><span>コーダーにタスク割り当て完了</span></div>
-      <div class="log-row"><span class="log-time">14:26</span><span>レビュアーの指摘を共有</span></div>
-      <div class="log-row"><span class="log-time">14:18</span><span>リサーチ結果を集約</span></div>
-    </div>
+    <div class="coffee-table"></div>
+    <div style="width:10px;height:10px;background:#7a5030;border-radius:1px 1px 3px 3px;margin-top:-3px;box-shadow:0 2px 4px rgba(0,0,0,.3);"></div>
   </div>
 
+  <!-- coffee station -->
+  <div style="position:absolute;bottom:4%;left:2%;z-index:5;display:flex;flex-direction:column;align-items:center;">
+    <div style="width:26px;height:30px;background:#3a2a1a;border-radius:2px;box-shadow:0 3px 6px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">
+      <div style="width:14px;height:18px;background:#1a0e06;border-radius:1px;"></div>
+    </div>
+    <div style="font-size:.44rem;color:#9a8868;margin-top:2px;letter-spacing:.06em;">COFFEE</div>
+  </div>
+
+  <!-- ═══════════ CHARACTERS ═══════════ -->
+
+  <!-- MONITOR — command desk (top center) -->
+  <div class="char" id="char-monitor"
+       style="top:10%;left:50%;transform:translateX(-50%);"
+       onclick="showPanel('monitor')">
+    <div class="sbubble active"></div>
+    <svg width="72" height="94" viewBox="0 0 100 130">
+      <polygon points="14,26 26,4 40,26"  fill="#16a34a"/>
+      <polygon points="19,26 26,11 37,26" fill="#bbf7d0"/>
+      <polygon points="60,26 74,4 86,26"  fill="#16a34a"/>
+      <polygon points="63,26 74,11 81,26" fill="#bbf7d0"/>
+      <circle cx="50" cy="43" r="31" fill="#22c55e"/>
+      <line x1="28" y1="30" x2="44" y2="35" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="56" y1="35" x2="72" y2="30" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
+      <g style="animation:scan 2.2s ease-in-out infinite;">
+        <ellipse cx="37" cy="41" rx="7" ry="8" fill="#052e16"/>
+        <ellipse cx="63" cy="41" rx="7" ry="8" fill="#052e16"/>
+        <circle cx="40" cy="38" r="2.5" fill="white"/>
+        <circle cx="66" cy="38" r="2.5" fill="white"/>
+      </g>
+      <polygon points="47,52 53,52 50,57" fill="#15803d"/>
+      <path d="M42,62 Q50,68 58,62" fill="none" stroke="#166534" stroke-width="2"/>
+      <line x1="8"  y1="50" x2="34" y2="53" stroke="#86efac" stroke-width="1"/>
+      <line x1="8"  y1="55" x2="34" y2="56" stroke="#86efac" stroke-width="1"/>
+      <line x1="66" y1="53" x2="92" y2="50" stroke="#86efac" stroke-width="1"/>
+      <line x1="66" y1="56" x2="92" y2="55" stroke="#86efac" stroke-width="1"/>
+      <rect x="22" y="74" width="56" height="32" rx="12" fill="#16a34a"/>
+      <line x1="30" y1="84" x2="16" y2="104" stroke="#16a34a" stroke-width="8" stroke-linecap="round"/>
+      <line x1="70" y1="84" x2="84" y2="104" stroke="#16a34a" stroke-width="8" stroke-linecap="round"/>
+    </svg>
+    <div class="char-label">モニター</div>
+  </div>
+
+  <!-- CODER — desk 1 (working) -->
+  <div class="char" id="char-coder"
+       style="top:30%;left:7%;"
+       onclick="showPanel('coder')">
+    <div class="sbubble busy"></div>
+    <svg width="60" height="78" viewBox="0 0 100 130">
+      <polygon points="18,26 28,6 40,26"  fill="#0369a1"/>
+      <polygon points="22,26 28,12 36,26" fill="#bae6fd"/>
+      <polygon points="60,26 72,6 82,26"  fill="#0369a1"/>
+      <polygon points="64,26 72,12 78,26" fill="#bae6fd"/>
+      <circle cx="50" cy="44" r="28" fill="#38bdf8"/>
+      <g style="transform-origin:50px 42px;animation:blink 5s infinite;">
+        <ellipse cx="38" cy="42" rx="5" ry="6" fill="#082f49"/>
+        <ellipse cx="62" cy="42" rx="5" ry="6" fill="#082f49"/>
+        <circle cx="40" cy="40" r="2" fill="white"/>
+        <circle cx="64" cy="40" r="2" fill="white"/>
+      </g>
+      <polygon points="47,52 53,52 50,56" fill="#93c5fd"/>
+      <line x1="44" y1="60" x2="56" y2="60" stroke="#5baad8" stroke-width="1.5"/>
+      <line x1="12" y1="50" x2="36" y2="52" stroke="#7dd3fc" stroke-width="1"/>
+      <line x1="12" y1="54" x2="36" y2="55" stroke="#7dd3fc" stroke-width="1"/>
+      <line x1="64" y1="52" x2="88" y2="50" stroke="#7dd3fc" stroke-width="1"/>
+      <line x1="64" y1="55" x2="88" y2="54" stroke="#7dd3fc" stroke-width="1"/>
+      <rect x="26" y="72" width="48" height="30" rx="10" fill="#0369a1"/>
+      <g style="transform-origin:32px 78px;animation:tap-l .55s ease-in-out infinite;">
+        <line x1="32" y1="78" x2="22" y2="98" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g style="transform-origin:68px 78px;animation:tap-r .55s ease-in-out infinite;">
+        <line x1="68" y1="78" x2="78" y2="98" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="char-label">コーダー</div>
+  </div>
+
+  <!-- REVIEWER — desk 2 (working) -->
+  <div class="char" id="char-reviewer"
+       style="top:30%;left:29%;"
+       onclick="showPanel('reviewer')">
+    <div class="sbubble busy"></div>
+    <svg width="60" height="78" viewBox="0 0 100 130">
+      <polygon points="18,26 28,6 40,26"  fill="#9d174d"/>
+      <polygon points="22,26 28,12 36,26" fill="#fce7f3"/>
+      <polygon points="60,26 72,6 82,26"  fill="#9d174d"/>
+      <polygon points="64,26 72,12 78,26" fill="#fce7f3"/>
+      <g style="transform-origin:50px 44px;animation:head-tilt 3.5s ease-in-out infinite;">
+        <circle cx="50" cy="44" r="28" fill="#f472b6"/>
+        <circle cx="37" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
+        <circle cx="63" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
+        <line x1="45" y1="42" x2="55" y2="42" stroke="#5d3a1a" stroke-width="1.8"/>
+        <line x1="12" y1="40" x2="29" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
+        <line x1="71" y1="40" x2="88" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
+        <ellipse cx="37" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
+        <ellipse cx="63" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
+        <circle cx="39" cy="40" r="1.5" fill="white"/>
+        <circle cx="65" cy="40" r="1.5" fill="white"/>
+        <polygon points="47,52 53,52 50,56" fill="#9d174d"/>
+        <line x1="43" y1="60" x2="57" y2="60" stroke="#9d5a7a" stroke-width="1.5"/>
+        <line x1="12" y1="50" x2="36" y2="52" stroke="#fbcfe8" stroke-width="1"/>
+        <line x1="12" y1="54" x2="36" y2="55" stroke="#fbcfe8" stroke-width="1"/>
+        <line x1="64" y1="52" x2="88" y2="50" stroke="#fbcfe8" stroke-width="1"/>
+        <line x1="64" y1="55" x2="88" y2="54" stroke="#fbcfe8" stroke-width="1"/>
+      </g>
+      <rect x="26" y="72" width="48" height="30" rx="10" fill="#9d174d"/>
+      <line x1="32" y1="78" x2="18" y2="98" stroke="#9d174d" stroke-width="7" stroke-linecap="round"/>
+      <g style="transform-origin:70px 80px;animation:pencil-tap 2s ease-in-out infinite;">
+        <line x1="68" y1="78" x2="80" y2="96" stroke="#9d174d" stroke-width="7" stroke-linecap="round"/>
+        <rect x="77" y="91" width="4" height="15" rx="1" fill="#fbbf24"/>
+        <polygon points="77,106 81,106 79,112" fill="#f97316"/>
+        <rect x="77" y="91" width="4" height="4" fill="#9ca3af"/>
+      </g>
+    </svg>
+    <div class="char-label">レビュアー</div>
+  </div>
+
+  <!-- RESEARCHER — desk 3 (working) -->
+  <div class="char" id="char-researcher"
+       style="top:30%;left:51%;"
+       onclick="showPanel('researcher')">
+    <div class="sbubble active"></div>
+    <svg width="60" height="78" viewBox="0 0 100 130">
+      <polygon points="18,26 28,6 40,26"  fill="#a16207"/>
+      <polygon points="22,26 28,12 36,26" fill="#fef9c3"/>
+      <polygon points="60,26 72,6 82,26"  fill="#a16207"/>
+      <polygon points="64,26 72,12 78,26" fill="#fef9c3"/>
+      <g style="animation:look-lr 3.8s ease-in-out infinite;">
+        <circle cx="50" cy="44" r="28" fill="#eab308"/>
+        <g style="transform-origin:50px 42px;animation:blink 4.5s infinite;">
+          <ellipse cx="38" cy="42" rx="5" ry="6" fill="#1c1004"/>
+          <ellipse cx="62" cy="42" rx="5" ry="6" fill="#1c1004"/>
+          <circle cx="41" cy="40" r="2" fill="white"/>
+          <circle cx="65" cy="40" r="2" fill="white"/>
+        </g>
+        <polygon points="47,52 53,52 50,56" fill="#b45309"/>
+        <path d="M43,60 Q50,67 57,60" fill="none" stroke="#8899bb" stroke-width="1.5"/>
+        <line x1="12" y1="50" x2="36" y2="52" stroke="#fef08a" stroke-width="1"/>
+        <line x1="12" y1="54" x2="36" y2="55" stroke="#fef08a" stroke-width="1"/>
+        <line x1="64" y1="52" x2="88" y2="50" stroke="#fef08a" stroke-width="1"/>
+        <line x1="64" y1="55" x2="88" y2="54" stroke="#fef08a" stroke-width="1"/>
+        <rect x="26" y="72" width="48" height="30" rx="10" fill="#a16207"/>
+        <line x1="32" y1="78" x2="18" y2="98" stroke="#a16207" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g style="transform-origin:68px 78px;animation:glass-sweep 2.5s ease-in-out infinite;">
+        <line x1="68" y1="78" x2="74" y2="63" stroke="#a16207" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="78" cy="55" r="11" fill="rgba(234,179,8,.1)" stroke="#b45309" stroke-width="2.5"/>
+        <line x1="86" y1="63" x2="93" y2="72" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+        <line x1="71" y1="49" x2="74" y2="52" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity=".45"/>
+      </g>
+    </svg>
+    <div class="char-label">リサーチャー</div>
+  </div>
+
+</div><!-- /office -->
+</div><!-- /scene-wrap -->
+
+<!-- legend -->
+<div style="display:flex;gap:18px;margin-top:14px;font-size:.72rem;color:var(--dim);">
+  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:5px;vertical-align:middle;"></span>稼働中</span>
+  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#facc15;margin-right:5px;vertical-align:middle;"></span>作業中</span>
+  <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:5px;vertical-align:middle;"></span>アイドル</span>
+  <span style="color:#3a3a68;">| キャラをタップ → 詳細を表示</span>
+</div>
+
+<!-- slide panel -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div id="panel-body"></div>
 </div>
 
 <script>
-  function tick() {
-    const d = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    document.getElementById('clock').textContent =
-      `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())}  ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const agents = {
+  monitor: {
+    emoji:'🟢', name:'モニター', role:'Monitor Agent',
+    color:'#4ade80', statusColor:'#4ade80', statusText:'全体監視中',
+    location:'指揮台',
+    task:'3エージェントの進捗を統括・監視中',
+    logs:[
+      {t:'14:34',tx:'コーダーにタスク割り当て完了'},
+      {t:'14:26',tx:'レビュアーの指摘を全体共有'},
+      {t:'14:18',tx:'リサーチ結果を集約・配布'},
+      {t:'14:05',tx:'全エージェント起動確認'},
+    ]
+  },
+  coder: {
+    emoji:'🔵', name:'コーダー', role:'Coder Agent',
+    color:'#38bdf8', statusColor:'#facc15', statusText:'コーディング中',
+    location:'デスク 1',
+    task:'sui-room-crean の清掃スケジュール機能を実装中',
+    logs:[
+      {t:'14:32',tx:'components/Schedule.tsx を作成'},
+      {t:'14:28',tx:'API ルート /api/rooms を追加'},
+      {t:'14:15',tx:'Supabase スキーマを更新'},
+      {t:'14:08',tx:'TypeScript 型定義を追加'},
+    ]
+  },
+  reviewer: {
+    emoji:'🩷', name:'レビュアー', role:'Reviewer Agent',
+    color:'#f472b6', statusColor:'#facc15', statusText:'レビュー中',
+    location:'デスク 2',
+    task:'PR #24 のコードレビュー（3件の指摘あり）',
+    logs:[
+      {t:'14:30',tx:'型エラーを2件検出'},
+      {t:'14:22',tx:'セキュリティチェック完了'},
+      {t:'14:10',tx:'コードスタイル確認'},
+      {t:'14:02',tx:'PR #24 レビュー開始'},
+    ]
+  },
+  researcher: {
+    emoji:'🟡', name:'リサーチャー', role:'Research Agent',
+    color:'#facc15', statusColor:'#4ade80', statusText:'情報収集中',
+    location:'デスク 3',
+    task:'Next.js 16 の新機能と互換性を調査中',
+    logs:[
+      {t:'14:35',tx:'公式ドキュメントを参照'},
+      {t:'14:29',tx:'GitHub Issues 24件を確認'},
+      {t:'14:20',tx:'npm パッケージ互換性チェック'},
+      {t:'14:11',tx:'調査タスク受信'},
+    ]
   }
-  setInterval(tick, 1000);
-  tick();
-</script>
+};
 
+function showPanel(id) {
+  const a = agents[id];
+  document.getElementById('panel-body').innerHTML = `
+    <div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid #1e1e4a;">
+      <div style="font-size:2.4rem;text-align:center;margin-bottom:8px;">${a.emoji}</div>
+      <div class="panel-name">${a.name}</div>
+      <div class="panel-role">${a.role}</div>
+      <div class="panel-status-row">
+        <div class="psdot" style="background:${a.statusColor};"></div>
+        <span style="font-size:.82rem;color:${a.color};font-weight:600;">${a.statusText}</span>
+        <span style="font-size:.7rem;color:#3a3a68;margin-left:4px;">@ ${a.location}</span>
+      </div>
+    </div>
+    <div class="panel-section">現在のタスク</div>
+    <div class="panel-task">${a.task}</div>
+    <div class="panel-section">アクティビティログ</div>
+    <div>
+      ${a.logs.map(l=>`
+        <div class="log-row">
+          <span class="log-t">${l.t}</span>
+          <span>${l.tx}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function tick() {
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=
+    `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+setInterval(tick,1000); tick();
+</script>
 </body>
 </html>
