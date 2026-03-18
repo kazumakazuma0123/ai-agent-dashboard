@@ -11,7 +11,7 @@
 #   }]
 # }
 
-VPS_URL="http://YOUR_VPS_IP:3001"   # ← VPSのIPに変更
+VPS_URL="http://REDACTED_VPS_IP:3001"
 API_KEY="YOUR_API_KEY"               # ← server.js と同じキーを設定
 
 INPUT=$(cat)
