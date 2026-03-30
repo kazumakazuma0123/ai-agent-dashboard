@@ -3,459 +3,959 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Agent Monitor</title>
+<title>AI Agent Monitor — Cyber Room</title>
 <style>
 :root {
-  --bg:       #08081a;
-  --card:     #0e0e28;
-  --border:   #1e1e4a;
-  --text:     #dde0ff;
-  --dim:      #6668a0;
-  --c-blue:   #38bdf8;
-  --c-pink:   #f472b6;
-  --c-yellow: #facc15;
-  --c-green:  #4ade80;
+  --bg: #08061a;
+  --neon-blue: #38bdf8;
+  --neon-pink: #f472b6;
+  --neon-green: #4ade80;
+  --neon-yellow: #facc15;
+  --neon-purple: #a78bfa;
+  --neon-orange: #fb923c;
+  --text: #dde0ff;
+  --dim: #5a5c90;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-
 body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Segoe UI', system-ui, sans-serif;
   min-height: 100vh;
-  padding: 24px 20px 48px;
+  overflow-x: hidden;
 }
 
-/* ── header ── */
-.header {
-  max-width: 960px; margin: 0 auto 28px;
+/* ── top status bar ── */
+.status-bar {
+  position: fixed; top:0; left:0; right:0; z-index:200;
+  background: rgba(8,6,26,.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(167,139,250,.12);
+  padding: 0 20px;
+  height: 38px;
   display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
+  font-size: .68rem;
 }
-.header-left h1 {
-  font-size: 1.4rem; font-weight: 700;
-  background: linear-gradient(135deg,#38bdf8,#818cf8,#4ade80);
+.sb-left { display:flex; align-items:center; gap:16px; }
+.sb-title {
+  font-weight:700; font-size:.75rem;
+  background: linear-gradient(135deg,#38bdf8,#a78bfa,#f472b6);
   -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
 }
-.header-left p { color:var(--dim); font-size:.78rem; margin-top:3px; }
-
-.header-right { display:flex; align-items:center; gap:12px; }
-#update-info { font-size:.72rem; color:var(--dim); font-variant-numeric:tabular-nums; }
-
-.refresh-btn {
-  background:none; border:1px solid var(--border); color:var(--dim);
-  padding:5px 12px; border-radius:6px; cursor:pointer; font-size:.75rem;
-  transition:border-color .2s, color .2s;
+.sb-label { color:var(--dim); text-transform:uppercase; letter-spacing:.08em; font-size:.58rem; }
+.sb-metric {
+  display:flex; align-items:center; gap:5px;
 }
-.refresh-btn:hover { border-color:#38bdf8; color:#38bdf8; }
-
-/* refresh spinner */
+.sb-bar-wrap {
+  width:48px; height:5px; background:rgba(255,255,255,.06); border-radius:3px; overflow:hidden;
+}
+.sb-bar {
+  height:100%; border-radius:3px; transition: width .5s;
+}
+.sb-val { font-variant-numeric:tabular-nums; min-width:26px; text-align:right; }
+.sb-right { display:flex; align-items:center; gap:14px; }
+#update-info { color:var(--dim); font-variant-numeric:tabular-nums; }
+.refresh-btn {
+  background:none; border:1px solid rgba(167,139,250,.25); color:var(--dim);
+  padding:3px 10px; border-radius:5px; cursor:pointer; font-size:.65rem;
+  transition:all .2s;
+}
+.refresh-btn:hover { border-color:var(--neon-purple); color:var(--neon-purple); }
 .spinner {
-  width:14px; height:14px; border-radius:50%;
-  border:2px solid var(--border); border-top-color:#38bdf8;
+  width:11px; height:11px; border-radius:50%;
+  border:2px solid rgba(167,139,250,.15); border-top-color:var(--neon-purple);
   animation:spin .8s linear infinite; display:none;
 }
 .spinner.show { display:inline-block; }
 @keyframes spin { to{transform:rotate(360deg);} }
 
-/* ── config banner ── */
-.config-banner {
-  max-width:960px; margin:0 auto 20px;
-  background:rgba(250,204,21,.06); border:1px solid rgba(250,204,21,.2);
-  border-radius:10px; padding:12px 18px;
-  font-size:.8rem; color:#ca8a04;
-  display:none;
-}
-.config-banner.show { display:block; }
-.config-banner strong { color:#facc15; }
-
-/* ── grid ── */
-.grid {
-  max-width:960px; margin:0 auto;
-  display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  gap:18px;
+/* ── room viewport ── */
+.room-viewport {
+  margin-top: 38px;
+  width: 100%;
+  min-height: calc(100vh - 38px);
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 25% 15%, rgba(167,139,250,.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 85%, rgba(56,189,248,.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(244,114,182,.03) 0%, transparent 60%),
+    var(--bg);
 }
 
-/* ── empty state ── */
-.empty {
-  max-width:960px; margin:40px auto;
-  text-align:center; padding:60px 20px;
-  border:1px dashed var(--border); border-radius:16px;
-  display:none;
+/* ── isometric room SVG ── */
+.room-svg {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: block;
 }
-.empty.show { display:block; }
-.empty-emoji { font-size:3rem; margin-bottom:14px; }
-.empty h2 { font-size:1.1rem; margin-bottom:8px; color:var(--dim); font-weight:500; }
-.empty p  { font-size:.8rem; color:#3a3a68; line-height:1.7; }
 
-/* ── agent card ── */
-.card {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px; padding:18px;
-  position:relative; overflow:hidden;
-  transition:border-color .3s, box-shadow .3s, transform .2s;
-  animation:card-in .35s ease;
+/* ── neon sign ── */
+.neon-sign-top {
+  position: absolute; top: 50px; right: 40px; z-index:10;
+  font-size: .9rem; font-weight: 800;
+  color: var(--neon-pink);
+  text-shadow: 0 0 8px var(--neon-pink), 0 0 25px var(--neon-pink), 0 0 50px rgba(244,114,182,.25);
+  animation: neon-flicker 5s infinite;
+  font-family: monospace;
 }
-@keyframes card-in {
-  from { opacity:0; transform:translateY(8px); }
-  to   { opacity:1; transform:translateY(0); }
+@keyframes neon-flicker {
+  0%,18%,22%,25%,53%,57%,100% { opacity:1; }
+  20%,24%,55% { opacity:.5; }
 }
-.card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,.4); }
 
-.card::before {
-  content:''; position:absolute; top:0;left:0;right:0; height:2px;
-  background:var(--accent); border-radius:14px 14px 0 0;
+/* ── floating UI panels ── */
+.float-panel {
+  position: absolute;
+  background: rgba(14,12,35,.88);
+  border: 1px solid rgba(167,139,250,.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  backdrop-filter: blur(8px);
+  font-size: .68rem;
+  z-index: 20;
+  pointer-events: auto;
 }
-.card:hover { border-color:var(--accent); }
-
-/* top row */
-.card-top { display:flex; align-items:flex-start; gap:14px; margin-bottom:14px; }
-.avatar   { width:60px; height:76px; flex-shrink:0; }
-.avatar svg { filter:drop-shadow(0 3px 6px rgba(0,0,0,.4)); width:100%;height:100%; }
-
-.card-info { flex:1; min-width:0; }
-.project-name {
-  font-size:.95rem; font-weight:700;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  margin-bottom:5px;
+.float-panel::before {
+  content:'';
+  position:absolute; top:-1px; left:15%; right:15%; height:1px;
+  background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
 }
-.status-row { display:flex; align-items:center; gap:7px; margin-bottom:6px; }
-.sdot {
-  width:7px; height:7px; border-radius:50%; flex-shrink:0;
+.fp-title {
+  font-size:.56rem; text-transform:uppercase; letter-spacing:.12em;
+  color: var(--neon-purple); margin-bottom:6px; font-weight:600;
 }
-.sdot.active  { background:#4ade80; animation:pdot 2s infinite; }
-.sdot.idle    { background:#facc15; animation:pdot 2s infinite; }
-.sdot.stopped { background:#94a3b8; }
-@keyframes pdot { 0%,100%{opacity:1;}50%{opacity:.45;} }
 
-.status-text { font-size:.75rem; }
-.status-text.active  { color:#4ade80; }
-.status-text.idle    { color:#facc15; }
-.status-text.stopped { color:#94a3b8; }
-
-.time-ago { font-size:.68rem; color:var(--dim); }
-
-/* last action */
-.last-action {
-  background:rgba(255,255,255,.02);
-  border:1px solid var(--border);
-  border-radius:8px; padding:8px 11px;
-  margin-bottom:11px;
+/* tasks panel */
+.tasks-panel { top:15%; left: 2%; width:200px; }
+.task-item {
+  display:flex; align-items:center; gap:6px;
+  padding: 3px 0; color: var(--dim);
 }
-.last-action-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin-bottom:3px; }
-.last-action-text  { font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.task-dot { width:4px; height:4px; border-radius:50%; flex-shrink:0; }
+.task-dot.run { background:var(--neon-green); box-shadow:0 0 6px var(--neon-green); }
+.task-dot.idle { background:var(--neon-yellow); }
+.task-dot.off { background:#4a4a6a; }
+.task-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.task-text.active { color: var(--neon-green); }
 
-/* stats */
-.stats { display:flex; gap:16px; margin-bottom:12px; }
-.stat  { display:flex; flex-direction:column; }
-.stat-val   { font-size:.85rem; font-weight:700; }
-.stat-label { font-size:.62rem; color:var(--dim); }
-
-/* log */
-.log-section-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--dim); margin-bottom:6px; }
-.log-row {
-  display:flex; gap:9px; padding:3px 0;
-  font-size:.7rem; color:var(--dim);
-  border-bottom:1px solid rgba(255,255,255,.03);
+/* agents panel */
+.agents-panel { top:15%; right:2%; width:180px; }
+.ap-row {
+  display:flex; align-items:center; gap:7px; padding:3px 0;
 }
-.log-row:last-child { border-bottom:none; }
-.log-t { color:#252550; min-width:42px; font-variant-numeric:tabular-nums; flex-shrink:0; }
-.log-tool { color:#3a3a6a; min-width:46px; flex-shrink:0; }
+.ap-avatar { width:18px; height:18px; border-radius:50%; flex-shrink:0; }
+.ap-name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ap-status {
+  font-size:.55rem; padding:1px 6px; border-radius:8px;
+  font-weight:600; flex-shrink:0;
+}
+.ap-status.active { background:rgba(74,222,128,.12); color:var(--neon-green); }
+.ap-status.idle { background:rgba(250,204,21,.1); color:var(--neon-yellow); }
+.ap-status.stopped { background:rgba(100,100,140,.1); color:#6a6a8a; }
+
+/* ── agent status bubbles in SVG ── */
+.agent-bubble {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  pointer-events: none;
+}
+
+/* ── ambient ── */
+.particles {
+  position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;
+}
+.particle {
+  position:absolute; width:2px; height:2px;
+  border-radius:50%; opacity:0;
+  animation: float-up linear infinite;
+}
+@keyframes float-up {
+  0%{opacity:0;transform:translateY(0);}
+  10%{opacity:.3;}
+  90%{opacity:.3;}
+  100%{opacity:0;transform:translateY(-100vh);}
+}
 
 /* ── character animations ── */
 @keyframes blink { 0%,87%,100%{transform:scaleY(1);}91%{transform:scaleY(.08);} }
-@keyframes tap-l { 0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(-6deg) translateY(5px);} }
-@keyframes tap-r { 0%,100%{transform:rotate(6deg) translateY(5px);}50%{transform:rotate(6deg) translateY(0);} }
-@keyframes look-lr { 0%,15%,100%{transform:translateX(0);}40%,55%{transform:translateX(-4px);}75%{transform:translateX(4px);} }
-@keyframes scan  { 0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);} }
-@keyframes head-tilt { 0%,100%{transform:rotate(0);}30%{transform:rotate(-4deg);}70%{transform:rotate(3deg);} }
-@keyframes glass-sweep { 0%,100%{transform:rotate(0);}50%{transform:rotate(20deg);} }
-@keyframes pencil-tap  { 0%,55%,100%{transform:rotate(-20deg) translateY(0);}72%{transform:rotate(-20deg) translateY(4px);} }
-@keyframes cursor-blink{ 0%,49%{opacity:1;}50%,100%{opacity:0;} }
-@keyframes float-idle  { 0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);} }
+@keyframes tap-l { 0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(-6deg) translateY(4px);} }
+@keyframes tap-r { 0%,100%{transform:rotate(6deg) translateY(4px);}50%{transform:rotate(6deg) translateY(0);} }
+@keyframes look-lr { 0%,15%,100%{transform:translateX(0);}40%,55%{transform:translateX(-3px);}75%{transform:translateX(3px);} }
+@keyframes head-tilt { 0%,100%{transform:rotate(0);}30%{transform:rotate(-3deg);}70%{transform:rotate(2deg);} }
+@keyframes float-idle { 0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);} }
+@keyframes breathe { 0%,100%{transform:scale(1);}50%{transform:scale(1.02);} }
+@keyframes tail-wag { 0%,100%{transform:rotate(-15deg);}50%{transform:rotate(15deg);} }
+@keyframes cat-walk { 0%{transform:translateX(0);}50%{transform:translateX(12px);}100%{transform:translateX(0);} }
+@keyframes scan-line { 0%{transform:translateY(-100%);}100%{transform:translateY(100%);} }
+@keyframes glow-pulse { 0%,100%{opacity:.6;}50%{opacity:1;} }
+@keyframes typing-cursor { 0%,49%{opacity:1;}50%,100%{opacity:0;} }
+@keyframes hologram-flicker { 0%,100%{opacity:.85;}50%{opacity:.95;}25%,75%{opacity:.7;} }
+
+/* scrollbar */
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(167,139,250,.2); border-radius:3px; }
+
+/* responsive */
+@media (max-width:900px) {
+  .tasks-panel, .agents-panel { display:none; }
+  .neon-sign-top { font-size:.7rem; right:15px; top:48px; }
+}
+@media (max-width:600px) {
+  .sb-metric { display:none; }
+}
 </style>
 </head>
 <body>
 
-<!-- ── VPS URLの設定 ── -->
 <script>
-// ★ここにVPSのURLを設定してください★
-// 例: "http://123.456.78.90:3001" または "https://monitor.yourdomain.com"
-const VPS_URL = 'http://REDACTED_VPS_IP:3001'
-
-const POLL_INTERVAL = 10000 // 10秒ごとに更新
+const VPS_URL = location.hostname === 'localhost' ? 'http://REDACTED_VPS_IP:3001' : ''
+const POLL_INTERVAL = 10000
 </script>
 
-<div class="header">
-  <div class="header-left">
-    <h1>AI Agent Monitor</h1>
-    <p>Claude Code マルチセッション リアルタイム監視</p>
+<!-- particles -->
+<div class="particles" id="particles"></div>
+
+<!-- status bar -->
+<div class="status-bar">
+  <div class="sb-left">
+    <span class="sb-title">SYSTEM STATUS</span>
+    <div class="sb-metric">
+      <span class="sb-label">NET</span>
+      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-net" style="width:72%;background:var(--neon-green);"></div></div>
+      <span class="sb-val" style="color:var(--neon-green);">OK</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-label">CPU</span>
+      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-cpu" style="width:35%;background:var(--neon-blue);"></div></div>
+      <span class="sb-val" id="sb-cpu-val" style="color:var(--neon-blue);">35%</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-label">MEM</span>
+      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-mem" style="width:48%;background:var(--neon-purple);"></div></div>
+      <span class="sb-val" id="sb-mem-val" style="color:var(--neon-purple);">48%</span>
+    </div>
+    <div class="sb-metric">
+      <span class="sb-label">BAT</span>
+      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-bat" style="width:88%;background:var(--neon-yellow);"></div></div>
+      <span class="sb-val" style="color:var(--neon-yellow);">88%</span>
+    </div>
   </div>
-  <div class="header-right">
+  <div class="sb-right">
     <div class="spinner" id="spinner"></div>
     <div id="update-info">--</div>
-    <button class="refresh-btn" onclick="fetchAgents()">今すぐ更新</button>
+    <button class="refresh-btn" onclick="fetchAgents()">更新</button>
   </div>
 </div>
 
-<div class="config-banner" id="config-banner">
-  ⚠️ <strong>VPS_URL が未設定です。</strong>
-  index.html の先頭にある <strong>VPS_URL</strong> をVPSのIPアドレスに変更してください。
-</div>
+<!-- room -->
+<div class="room-viewport">
+  <div class="neon-sign-top">AGENTS_LAB</div>
 
-<div class="grid" id="grid"></div>
+  <!-- left: running tasks -->
+  <div class="float-panel tasks-panel" id="tasks-panel">
+    <div class="fp-title">Running Tasks</div>
+    <div id="tasks-list"></div>
+  </div>
 
-<div class="empty" id="empty">
-  <div class="empty-emoji">😴</div>
-  <h2>エージェント起動待ち...</h2>
-  <p>
-    Claude Code を起動してタスクを実行すると<br>
-    ここにリアルタイムで表示されます。<br><br>
-    フック設定済み？ → <code style="color:#4ade80;font-size:.78rem;">~/.claude/hooks/monitor_hook.sh</code>
-  </p>
+  <!-- right: agent list -->
+  <div class="float-panel agents-panel" id="agents-panel">
+    <div class="fp-title">Team Members</div>
+    <div id="agents-list"></div>
+  </div>
+
+  <!-- main SVG room -->
+  <svg class="room-svg" viewBox="0 0 1200 850" xmlns="http://www.w3.org/2000/svg" id="room-svg">
+    <defs>
+      <linearGradient id="floorGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#18143d"/>
+        <stop offset="100%" stop-color="#0c0a25"/>
+      </linearGradient>
+      <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1e1a55"/>
+        <stop offset="100%" stop-color="#141040"/>
+      </linearGradient>
+      <linearGradient id="windowGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0c1a30"/>
+        <stop offset="100%" stop-color="#061020"/>
+      </linearGradient>
+      <linearGradient id="deskTop" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2a2565"/>
+        <stop offset="100%" stop-color="#1e1a50"/>
+      </linearGradient>
+      <linearGradient id="deskFront" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1a1645"/>
+        <stop offset="100%" stop-color="#121035"/>
+      </linearGradient>
+      <linearGradient id="sofaBack" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4a2068"/>
+        <stop offset="100%" stop-color="#35184d"/>
+      </linearGradient>
+      <linearGradient id="sofaSeat" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3d1a58"/>
+        <stop offset="100%" stop-color="#2a1240"/>
+      </linearGradient>
+      <linearGradient id="chairSeat" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#252060"/>
+        <stop offset="100%" stop-color="#1a1648"/>
+      </linearGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-sm">
+        <feGaussianBlur stdDeviation="1.5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-lg">
+        <feGaussianBlur stdDeviation="5" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="shadow">
+        <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".4"/>
+      </filter>
+    </defs>
+
+    <!-- ═══ ROOM STRUCTURE ═══ -->
+    <!-- back wall -->
+    <rect x="50" y="30" width="1100" height="400" rx="3" fill="url(#wallGrad)"/>
+    <!-- wall panel lines -->
+    <line x1="50" y1="350" x2="1150" y2="350" stroke="rgba(167,139,250,.05)" stroke-width="1"/>
+    <line x1="370" y1="30" x2="370" y2="430" stroke="rgba(167,139,250,.03)" stroke-width="1"/>
+    <line x1="830" y1="30" x2="830" y2="430" stroke="rgba(167,139,250,.03)" stroke-width="1"/>
+
+    <!-- window frame + night city -->
+    <rect x="395" y="55" width="410" height="210" rx="3" fill="#0e1428" stroke="rgba(56,189,248,.25)" stroke-width="2"/>
+    <!-- window inner glow -->
+    <rect x="397" y="57" width="406" height="206" rx="2" fill="none" stroke="rgba(56,189,248,.08)" stroke-width="1"/>
+    <!-- stars -->
+    <circle cx="420" cy="75" r="1" fill="#fff" opacity=".3"/><circle cx="480" cy="68" r=".8" fill="#fff" opacity=".2"/>
+    <circle cx="550" cy="72" r="1.2" fill="#fff" opacity=".25"/><circle cx="700" cy="65" r="1" fill="#fff" opacity=".3"/>
+    <circle cx="750" cy="80" r=".8" fill="#fff" opacity=".2"/><circle cx="650" cy="70" r=".6" fill="#fff" opacity=".2"/>
+    <!-- moon -->
+    <circle cx="760" cy="90" r="18" fill="#dde0ff" opacity=".06"/>
+    <circle cx="762" cy="88" r="15" fill="#dde0ff" opacity=".04"/>
+    <!-- city -->
+    <g opacity=".45">
+      <rect x="405" y="155" width="22" height="110" rx="1" fill="#0d1a38"/>
+      <rect x="413" y="135" width="14" height="130" rx="1" fill="#101f42"/>
+      <rect x="435" y="168" width="18" height="97" rx="1" fill="#0d1a38"/>
+      <rect x="460" y="125" width="26" height="140" rx="1" fill="#112248"/>
+      <rect x="466" y="112" width="16" height="153" rx="1" fill="#142a52"/>
+      <rect x="495" y="150" width="20" height="115" rx="1" fill="#0d1a38"/>
+      <rect x="525" y="100" width="32" height="165" rx="1" fill="#112248"/>
+      <rect x="533" y="88" width="16" height="177" rx="1" fill="#142a52"/>
+      <rect x="565" y="138" width="22" height="127" rx="1" fill="#0d1a38"/>
+      <rect x="595" y="120" width="30" height="145" rx="1" fill="#112248"/>
+      <rect x="633" y="148" width="18" height="117" rx="1" fill="#0d1a38"/>
+      <rect x="658" y="98" width="26" height="167" rx="1" fill="#142a52"/>
+      <rect x="690" y="130" width="20" height="135" rx="1" fill="#101f42"/>
+      <rect x="718" y="155" width="22" height="110" rx="1" fill="#0d1a38"/>
+      <rect x="748" y="115" width="30" height="150" rx="1" fill="#112248"/>
+      <rect x="785" y="142" width="16" height="123" rx="1" fill="#0d1a38"/>
+    </g>
+    <!-- city window lights -->
+    <g opacity=".6">
+      <rect x="465" y="132" width="3" height="2" rx=".5" fill="#facc15"/><rect x="470" y="145" width="3" height="2" rx=".5" fill="#38bdf8"/>
+      <rect x="530" y="115" width="3" height="2" rx=".5" fill="#f472b6"/><rect x="540" y="135" width="3" height="2" rx=".5" fill="#facc15"/>
+      <rect x="535" y="155" width="3" height="2" rx=".5" fill="#38bdf8"/><rect x="600" y="132" width="3" height="2" rx=".5" fill="#38bdf8"/>
+      <rect x="605" y="150" width="3" height="2" rx=".5" fill="#facc15"/><rect x="660" y="112" width="3" height="2" rx=".5" fill="#f472b6"/>
+      <rect x="665" y="128" width="3" height="2" rx=".5" fill="#38bdf8"/><rect x="695" y="142" width="3" height="2" rx=".5" fill="#facc15"/>
+      <rect x="753" y="125" width="3" height="2" rx=".5" fill="#f472b6"/><rect x="758" y="148" width="3" height="2" rx=".5" fill="#38bdf8"/>
+      <rect x="468" y="158" width="2" height="2" rx=".5" fill="#4ade80"/><rect x="538" y="108" width="2" height="2" rx=".5" fill="#facc15"/>
+      <rect x="663" y="148" width="2" height="2" rx=".5" fill="#4ade80"/><rect x="750" y="138" width="2" height="2" rx=".5" fill="#f472b6"/>
+    </g>
+
+    <!-- floor -->
+    <rect x="50" y="430" width="1100" height="390" fill="url(#floorGrad)"/>
+    <!-- perspective floor grid -->
+    <g stroke="rgba(167,139,250,.06)" stroke-width=".5">
+      <line x1="50" y1="480" x2="1150" y2="480"/><line x1="50" y1="530" x2="1150" y2="530"/>
+      <line x1="50" y1="580" x2="1150" y2="580"/><line x1="50" y1="630" x2="1150" y2="630"/>
+      <line x1="50" y1="680" x2="1150" y2="680"/><line x1="50" y1="730" x2="1150" y2="730"/>
+      <line x1="200" y1="430" x2="200" y2="820"/><line x1="350" y1="430" x2="350" y2="820"/>
+      <line x1="500" y1="430" x2="500" y2="820"/><line x1="650" y1="430" x2="650" y2="820"/>
+      <line x1="800" y1="430" x2="800" y2="820"/><line x1="950" y1="430" x2="950" y2="820"/>
+      <line x1="1100" y1="430" x2="1100" y2="820"/>
+    </g>
+    <!-- floor-wall junction neon -->
+    <line x1="60" y1="432" x2="1140" y2="432" stroke="#a78bfa" stroke-width="2" filter="url(#glow)" opacity=".35"/>
+
+    <!-- ═══ NEON PIPES & LIGHTS ═══ -->
+    <line x1="80" y1="310" x2="360" y2="310" stroke="#38bdf8" stroke-width="2.5" filter="url(#glow)" opacity=".5"/>
+    <line x1="840" y1="310" x2="1120" y2="310" stroke="#a78bfa" stroke-width="2.5" filter="url(#glow)" opacity=".4"/>
+    <line x1="65" y1="50" x2="65" y2="420" stroke="#f472b6" stroke-width="2" filter="url(#glow-sm)" opacity=".25"/>
+    <line x1="1135" y1="50" x2="1135" y2="420" stroke="#38bdf8" stroke-width="2" filter="url(#glow-sm)" opacity=".25"/>
+    <!-- ceiling neon strip -->
+    <line x1="200" y1="35" x2="1000" y2="35" stroke="#a78bfa" stroke-width="1.5" filter="url(#glow-sm)" opacity=".2"/>
+
+    <!-- ═══ WALL DECORATIONS ═══ -->
+    <!-- poster left -->
+    <g filter="url(#shadow)">
+      <rect x="100" y="70" width="85" height="120" rx="4" fill="#1a1548" stroke="rgba(244,114,182,.25)" stroke-width="1.5"/>
+      <rect x="108" y="78" width="69" height="55" rx="2" fill="#120e30"/>
+      <text x="142" y="150" text-anchor="middle" font-size="8" fill="#f472b6" opacity=".7" font-family="monospace" font-weight="700">CYBER</text>
+      <text x="142" y="164" text-anchor="middle" font-size="8" fill="#f472b6" opacity=".7" font-family="monospace" font-weight="700">PUNK</text>
+      <text x="142" y="178" text-anchor="middle" font-size="5" fill="#6668a0" font-family="monospace">2077</text>
+      <!-- poster art (abstract) -->
+      <circle cx="142" cy="105" r="15" fill="none" stroke="#f472b6" stroke-width="1" opacity=".3"/>
+      <polygon points="135,95 142,82 149,95" fill="#f472b6" opacity=".15"/>
+    </g>
+
+    <!-- bookshelf right -->
+    <g filter="url(#shadow)">
+      <rect x="990" y="70" width="115" height="155" rx="4" fill="#1a1548" stroke="rgba(56,189,248,.15)" stroke-width="1"/>
+      <!-- shelves -->
+      <line x1="998" y1="115" x2="1097" y2="115" stroke="#252060" stroke-width="2"/>
+      <line x1="998" y1="152" x2="1097" y2="152" stroke="#252060" stroke-width="2"/>
+      <line x1="998" y1="189" x2="1097" y2="189" stroke="#252060" stroke-width="2"/>
+      <g opacity=".6">
+        <rect x="1002" y="84" width="14" height="28" rx="2" fill="#3a2060"/><rect x="1019" y="84" width="11" height="28" rx="2" fill="#2a3060"/>
+        <rect x="1033" y="84" width="16" height="28" rx="2" fill="#402058"/><rect x="1052" y="84" width="12" height="28" rx="2" fill="#2a3560"/>
+        <rect x="1067" y="84" width="14" height="28" rx="2" fill="#352060"/>
+        <rect x="1002" y="120" width="16" height="28" rx="2" fill="#282060"/><rect x="1021" y="120" width="12" height="28" rx="2" fill="#3a2858"/>
+        <rect x="1036" y="120" width="15" height="28" rx="2" fill="#2a3060"/><rect x="1054" y="120" width="14" height="28" rx="2" fill="#402058"/>
+        <rect x="1071" y="120" width="11" height="28" rx="2" fill="#2a3560"/>
+        <rect x="1002" y="157" width="13" height="28" rx="2" fill="#352060"/><rect x="1018" y="157" width="17" height="28" rx="2" fill="#282060"/>
+        <rect x="1038" y="157" width="11" height="28" rx="2" fill="#3a2858"/><rect x="1052" y="157" width="15" height="28" rx="2" fill="#2a3060"/>
+        <rect x="1070" y="157" width="13" height="28" rx="2" fill="#402058"/>
+      </g>
+    </g>
+
+    <!-- pipes -->
+    <g stroke="#2a2560" stroke-width="4" fill="none" opacity=".6" stroke-linecap="round">
+      <path d="M 210,30 L 210,70"/>
+      <path d="M 960,30 L 960,100 L 988,100"/>
+      <path d="M 85,310 L 85,380 L 160,380"/>
+    </g>
+
+    <!-- ═══ HOLOGRAM WHITEBOARD ═══ -->
+    <g id="whiteboard-area" transform="translate(910,280)">
+      <rect x="-5" y="-5" width="200" height="140" rx="6" fill="rgba(167,139,250,.02)" stroke="rgba(167,139,250,.25)" stroke-width="1.5"/>
+      <rect x="0" y="0" width="190" height="130" rx="4" fill="rgba(167,139,250,.04)">
+        <animate attributeName="opacity" values=".8;1;.8" dur="3s" repeatCount="indefinite"/>
+      </rect>
+      <g opacity=".65" style="animation:hologram-flicker 4s infinite;">
+        <rect x="14" y="14" width="65" height="5" rx="2" fill="#a78bfa" opacity=".5"/>
+        <rect x="14" y="25" width="48" height="5" rx="2" fill="#38bdf8" opacity=".4"/>
+        <rect x="14" y="36" width="58" height="5" rx="2" fill="#a78bfa" opacity=".3"/>
+        <polyline points="14,75 35,58 55,68 78,50 100,60 120,44 140,52 162,38" fill="none" stroke="#4ade80" stroke-width="2" opacity=".5"/>
+        <rect x="14" y="92" width="45" height="4" rx="2" fill="#f472b6" opacity=".4"/>
+        <rect x="14" y="102" width="60" height="4" rx="2" fill="#a78bfa" opacity=".3"/>
+        <rect x="14" y="112" width="38" height="4" rx="2" fill="#38bdf8" opacity=".3"/>
+      </g>
+      <text x="95" y="-12" text-anchor="middle" font-size="8" fill="#a78bfa" opacity=".7" font-family="monospace" font-weight="600" letter-spacing="3">WHITEBOARD</text>
+    </g>
+
+    <!-- ═══ BIG DESK (center, 3D) ═══ -->
+    <g id="desk-group" filter="url(#shadow)">
+      <!-- desk surface top -->
+      <rect x="180" y="480" width="640" height="30" rx="4" fill="url(#deskTop)" stroke="rgba(167,139,250,.2)" stroke-width="1"/>
+      <!-- desk surface neon edge -->
+      <line x1="190" y1="480" x2="810" y2="480" stroke="#a78bfa" stroke-width="1.5" filter="url(#glow-sm)" opacity=".5"/>
+      <!-- LED strip under desk edge -->
+      <line x1="185" y1="510" x2="815" y2="510" stroke="#38bdf8" stroke-width="1" filter="url(#glow-sm)" opacity=".25"/>
+      <!-- desk front panel -->
+      <rect x="180" y="510" width="640" height="120" rx="3" fill="url(#deskFront)" stroke="rgba(167,139,250,.1)" stroke-width="1"/>
+      <!-- desk panel detail lines -->
+      <line x1="390" y1="515" x2="390" y2="625" stroke="rgba(167,139,250,.06)" stroke-width="1"/>
+      <line x1="610" y1="515" x2="610" y2="625" stroke="rgba(167,139,250,.06)" stroke-width="1"/>
+      <!-- desk legs -->
+      <rect x="195" y="630" width="12" height="50" rx="3" fill="#161240"/>
+      <rect x="793" y="630" width="12" height="50" rx="3" fill="#161240"/>
+      <rect x="490" y="630" width="12" height="50" rx="3" fill="#141038"/>
+      <!-- cable management -->
+      <path d="M 340,495 Q 370,502 400,496 Q 440,488 470,498" fill="none" stroke="#2a2565" stroke-width="2.5" opacity=".5"/>
+      <path d="M 560,490 Q 590,500 620,492 Q 650,485 680,495" fill="none" stroke="#221e50" stroke-width="2" opacity=".4"/>
+      <!-- hanging cables from desk -->
+      <path d="M 350,510 Q 345,550 360,570" fill="none" stroke="#1e1a48" stroke-width="2" opacity=".4"/>
+      <path d="M 650,510 Q 655,545 640,560" fill="none" stroke="#1e1a48" stroke-width="2" opacity=".4"/>
+      <!-- gadgets on desk -->
+      <rect x="440" y="485" width="22" height="14" rx="3" fill="#1a1a42" stroke="rgba(56,189,248,.25)" stroke-width="1"/>
+      <circle cx="451" cy="492" r="2.5" fill="#38bdf8" opacity=".6"><animate attributeName="opacity" values=".6;.3;.6" dur="2s" repeatCount="indefinite"/></circle>
+      <rect x="530" y="488" width="16" height="10" rx="2" fill="#1a1a42" stroke="rgba(244,114,182,.2)" stroke-width="1"/>
+      <rect x="635" y="484" width="20" height="12" rx="3" fill="#1a1a42" stroke="rgba(74,222,128,.2)" stroke-width="1"/>
+      <!-- mug -->
+      <g transform="translate(475,486)">
+        <rect x="0" y="0" width="14" height="16" rx="3" fill="#2e1a55" stroke="rgba(250,204,21,.2)" stroke-width="1"/>
+        <path d="M 14,3 Q 22,7 14,13" fill="none" stroke="#2e1a55" stroke-width="2"/>
+        <!-- steam -->
+        <path d="M 4,-5 Q 2,-10 5,-15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1">
+          <animate attributeName="d" values="M 4,-5 Q 2,-10 5,-15;M 4,-5 Q 7,-10 3,-15;M 4,-5 Q 2,-10 5,-15" dur="3s" repeatCount="indefinite"/>
+        </path>
+        <path d="M 9,-4 Q 11,-9 8,-14" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1">
+          <animate attributeName="d" values="M 9,-4 Q 11,-9 8,-14;M 9,-4 Q 6,-9 10,-14;M 9,-4 Q 11,-9 8,-14" dur="3.5s" repeatCount="indefinite"/>
+        </path>
+      </g>
+    </g>
+
+    <!-- ═══ CHAIRS ═══ -->
+    <!-- chair 1 (left) -->
+    <g transform="translate(255,610)">
+      <rect x="0" y="0" width="55" height="45" rx="8" fill="url(#chairSeat)" stroke="rgba(167,139,250,.12)" stroke-width="1"/>
+      <rect x="5" y="-35" width="45" height="38" rx="6" fill="#201a55" stroke="rgba(167,139,250,.08)" stroke-width="1"/>
+      <rect x="18" y="45" width="8" height="20" rx="2" fill="#161240"/>
+      <rect x="30" y="45" width="8" height="20" rx="2" fill="#161240"/>
+      <rect x="5" y="62" width="45" height="5" rx="2" fill="#1a1648"/>
+      <circle cx="10" cy="70" r="4" fill="#121035"/><circle cx="46" cy="70" r="4" fill="#121035"/>
+    </g>
+    <!-- chair 2 (center) -->
+    <g transform="translate(468,605)">
+      <rect x="0" y="0" width="60" height="48" rx="8" fill="url(#chairSeat)" stroke="rgba(167,139,250,.12)" stroke-width="1"/>
+      <rect x="5" y="-38" width="50" height="42" rx="6" fill="#201a55" stroke="rgba(167,139,250,.08)" stroke-width="1"/>
+      <rect x="20" y="48" width="8" height="22" rx="2" fill="#161240"/>
+      <rect x="33" y="48" width="8" height="22" rx="2" fill="#161240"/>
+      <rect x="5" y="67" width="50" height="5" rx="2" fill="#1a1648"/>
+      <circle cx="10" cy="75" r="4" fill="#121035"/><circle cx="50" cy="75" r="4" fill="#121035"/>
+    </g>
+    <!-- chair 3 (right) -->
+    <g transform="translate(680,612)">
+      <rect x="0" y="0" width="55" height="45" rx="8" fill="url(#chairSeat)" stroke="rgba(167,139,250,.12)" stroke-width="1"/>
+      <rect x="5" y="-35" width="45" height="38" rx="6" fill="#201a55" stroke="rgba(167,139,250,.08)" stroke-width="1"/>
+      <rect x="18" y="45" width="8" height="20" rx="2" fill="#161240"/>
+      <rect x="30" y="45" width="8" height="20" rx="2" fill="#161240"/>
+      <rect x="5" y="62" width="45" height="5" rx="2" fill="#1a1648"/>
+      <circle cx="10" cy="70" r="4" fill="#121035"/><circle cx="46" cy="70" r="4" fill="#121035"/>
+    </g>
+
+    <!-- ═══ MONITORS ON DESK ═══ -->
+    <!-- monitor 1 (left) — CODE -->
+    <g transform="translate(230,410)">
+      <rect x="0" y="68" width="110" height="8" rx="2" fill="#161240"/><!-- base -->
+      <rect x="45" y="60" width="20" height="12" rx="1" fill="#1a1648"/><!-- neck -->
+      <rect x="0" y="0" width="110" height="65" rx="5" fill="#0c0c28" stroke="rgba(56,189,248,.3)" stroke-width="1.5"/>
+      <rect x="4" y="4" width="102" height="55" rx="3" fill="#080e22"/>
+      <!-- screen glow -->
+      <rect x="4" y="4" width="102" height="55" rx="3" fill="rgba(56,189,248,.03)"/>
+      <g id="monitor1-content">
+        <text x="12" y="17" font-size="5" fill="#4ade80" opacity=".7" font-family="monospace">const agent =</text>
+        <text x="12" y="25" font-size="5" fill="#38bdf8" opacity=".5" font-family="monospace">  await init()</text>
+        <text x="12" y="33" font-size="5" fill="#4ade80" opacity=".7" font-family="monospace">agent.run({</text>
+        <text x="12" y="41" font-size="5" fill="#a78bfa" opacity=".5" font-family="monospace">  task: "build"</text>
+        <text x="12" y="49" font-size="5" fill="#4ade80" opacity=".7" font-family="monospace">})</text>
+        <rect x="28" y="48" width="4" height="5" rx="1" fill="#4ade80" opacity=".8" style="animation:typing-cursor 1s infinite;"/>
+      </g>
+      <rect x="4" y="4" width="102" height="2" fill="rgba(255,255,255,.02)" rx="1">
+        <animateTransform attributeName="transform" type="translate" from="0 0" to="0 55" dur="3s" repeatCount="indefinite"/>
+      </rect>
+    </g>
+
+    <!-- monitor 2 (center, bigger) — 3D -->
+    <g transform="translate(445,398)">
+      <rect x="0" y="78" width="120" height="8" rx="2" fill="#161240"/>
+      <rect x="50" y="68" width="20" height="14" rx="1" fill="#1a1648"/>
+      <rect x="0" y="0" width="120" height="74" rx="5" fill="#0c0c28" stroke="rgba(244,114,182,.3)" stroke-width="1.5"/>
+      <rect x="4" y="4" width="112" height="64" rx="3" fill="#080e22"/>
+      <rect x="4" y="4" width="112" height="64" rx="3" fill="rgba(244,114,182,.02)"/>
+      <g id="monitor2-content">
+        <g stroke="#f472b6" stroke-width=".6" opacity=".4">
+          <line x1="15" y1="55" x2="38" y2="15"/><line x1="38" y1="55" x2="60" y2="15"/>
+          <line x1="60" y1="55" x2="82" y2="15"/><line x1="82" y1="55" x2="104" y2="15"/>
+          <line x1="15" y1="55" x2="104" y2="55"/><line x1="22" y1="42" x2="97" y2="42"/>
+          <line x1="30" y1="28" x2="90" y2="28"/>
+        </g>
+        <circle cx="60" cy="34" r="14" fill="none" stroke="#f472b6" stroke-width="1.2" opacity=".5">
+          <animateTransform attributeName="transform" type="rotate" from="0 60 34" to="360 60 34" dur="8s" repeatCount="indefinite"/>
+        </circle>
+        <rect cx="60" cy="34" x="53" y="27" width="14" height="14" fill="none" stroke="#a78bfa" stroke-width=".8" opacity=".3" transform="rotate(45 60 34)"/>
+      </g>
+    </g>
+
+    <!-- monitor 3 (right) — DATA -->
+    <g transform="translate(680,412)">
+      <rect x="0" y="66" width="100" height="8" rx="2" fill="#161240"/>
+      <rect x="40" y="58" width="20" height="12" rx="1" fill="#1a1648"/>
+      <rect x="0" y="0" width="100" height="62" rx="5" fill="#0c0c28" stroke="rgba(74,222,128,.3)" stroke-width="1.5"/>
+      <rect x="4" y="4" width="92" height="52" rx="3" fill="#080e22"/>
+      <rect x="4" y="4" width="92" height="52" rx="3" fill="rgba(74,222,128,.02)"/>
+      <g id="monitor3-content">
+        <rect x="12" y="38" width="10" height="14" rx="2" fill="#4ade80" opacity=".35"/>
+        <rect x="26" y="28" width="10" height="24" rx="2" fill="#4ade80" opacity=".45"/>
+        <rect x="40" y="33" width="10" height="19" rx="2" fill="#4ade80" opacity=".35"/>
+        <rect x="54" y="20" width="10" height="32" rx="2" fill="#4ade80" opacity=".55"/>
+        <rect x="68" y="30" width="10" height="22" rx="2" fill="#4ade80" opacity=".45"/>
+        <rect x="82" y="24" width="10" height="28" rx="2" fill="#4ade80" opacity=".4"/>
+        <text x="52" y="14" text-anchor="middle" font-size="5.5" fill="#4ade80" opacity=".6" font-family="monospace" font-weight="600">DATA</text>
+      </g>
+    </g>
+
+    <!-- ═══ SOFA (back-left, 3D) ═══ -->
+    <g id="sofa-group" transform="translate(60,330)" filter="url(#shadow)">
+      <!-- sofa shadow on floor -->
+      <ellipse cx="135" cy="115" rx="140" ry="12" fill="rgba(0,0,0,.2)"/>
+      <!-- sofa back -->
+      <rect x="0" y="0" width="270" height="55" rx="14" fill="url(#sofaBack)" stroke="rgba(244,114,182,.15)" stroke-width="1.5"/>
+      <!-- sofa back highlight -->
+      <rect x="8" y="5" width="254" height="8" rx="4" fill="rgba(255,255,255,.03)"/>
+      <!-- sofa seat -->
+      <rect x="8" y="48" width="254" height="55" rx="12" fill="url(#sofaSeat)" stroke="rgba(244,114,182,.12)" stroke-width="1"/>
+      <!-- cushion divider -->
+      <line x1="135" y1="52" x2="135" y2="98" stroke="rgba(244,114,182,.08)" stroke-width="1"/>
+      <!-- cushion highlight -->
+      <ellipse cx="70" cy="70" rx="55" ry="8" fill="rgba(255,255,255,.02)"/>
+      <ellipse cx="200" cy="70" rx="55" ry="8" fill="rgba(255,255,255,.02)"/>
+      <!-- sofa arm left -->
+      <rect x="-14" y="15" width="30" height="88" rx="10" fill="#3d1858" stroke="rgba(244,114,182,.1)" stroke-width="1"/>
+      <!-- sofa arm right -->
+      <rect x="254" y="15" width="30" height="88" rx="10" fill="#3d1858" stroke="rgba(244,114,182,.1)" stroke-width="1"/>
+      <!-- sofa legs -->
+      <rect x="10" y="102" width="8" height="12" rx="2" fill="#251040"/>
+      <rect x="252" y="102" width="8" height="12" rx="2" fill="#251040"/>
+      <!-- pillow -->
+      <ellipse cx="50" cy="45" rx="22" ry="14" fill="#4a2570" opacity=".5" transform="rotate(-10 50 45)"/>
+      <ellipse cx="225" cy="47" rx="20" ry="12" fill="#3a2060" opacity=".4" transform="rotate(8 225 47)"/>
+    </g>
+
+    <!-- ═══ CATS ═══ -->
+    <!-- cat 1: walking on desk -->
+    <g transform="translate(400,462)" style="animation:cat-walk 6s ease-in-out infinite;">
+      <ellipse cx="15" cy="8" rx="13" ry="9" fill="#4a4080"/>
+      <circle cx="4" cy="1" r="7" fill="#4a4080"/>
+      <polygon points="0,-8 2,1 -3,1" fill="#4a4080"/><polygon points="8,-8 6,1 11,1" fill="#4a4080"/>
+      <circle cx="2" cy="0" r="1.8" fill="#facc15"/><circle cx="7" cy="0" r="1.8" fill="#facc15"/>
+      <line x1="28" y1="4" x2="38" y2="-2" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round" style="transform-origin:28px 4px;animation:tail-wag 1.5s ease-in-out infinite;"/>
+      <ellipse cx="12" cy="6" rx="8" ry="3.5" fill="none" stroke="#38bdf8" stroke-width="1.2" filter="url(#glow-sm)" opacity=".7"/>
+      <line x1="4" y1="17" x2="4" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="12" y1="17" x2="12" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="19" y1="17" x2="19" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="26" y1="17" x2="26" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- cat 2: sitting on desk right -->
+    <g transform="translate(720,458)">
+      <ellipse cx="12" cy="14" rx="11" ry="10" fill="#5a4070"/>
+      <circle cx="5" cy="3" r="8" fill="#5a4070"/>
+      <polygon points="-1,-7 2,2 -4,2" fill="#5a4070"/><polygon points="11,-7 8,2 14,2" fill="#5a4070"/>
+      <g style="transform-origin:5px 2px;animation:blink 4s infinite;">
+        <circle cx="2" cy="1" r="2" fill="#4ade80"/><circle cx="8" cy="1" r="2" fill="#4ade80"/>
+      </g>
+      <ellipse cx="12" cy="8" rx="7" ry="3.5" fill="none" stroke="#f472b6" stroke-width="1.2" filter="url(#glow-sm)" opacity=".7"/>
+      <line x1="23" y1="8" x2="33" y2="1" stroke="#5a4070" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+
+    <!-- cat 3: curled up near sofa -->
+    <g transform="translate(220,425)" style="animation:breathe 4s ease-in-out infinite;">
+      <ellipse cx="14" cy="10" rx="16" ry="11" fill="#4a3860"/>
+      <circle cx="2" cy="4" r="7" fill="#4a3860"/>
+      <polygon points="-3,-5 0,2 -5,2" fill="#4a3860"/><polygon points="7,-5 4,2 9,2" fill="#4a3860"/>
+      <line x1="-1" y1="4" x2="-2" y2="4" stroke="#6668a0" stroke-width="1"/>
+      <line x1="5" y1="4" x2="6" y2="4" stroke="#6668a0" stroke-width="1"/>
+      <ellipse cx="9" cy="6" rx="6" ry="3" fill="none" stroke="#4ade80" stroke-width="1" filter="url(#glow-sm)" opacity=".5"/>
+      <text x="26" y="-3" font-size="7" fill="#6668a0" opacity=".5" font-family="monospace">z</text>
+      <text x="33" y="-9" font-size="6" fill="#6668a0" opacity=".4" font-family="monospace">z</text>
+      <text x="39" y="-14" font-size="5" fill="#6668a0" opacity=".3" font-family="monospace">z</text>
+    </g>
+
+    <!-- ═══ SMALL HOLO SCREENS ON WALLS ═══ -->
+    <g transform="translate(130,240)" opacity=".55">
+      <rect x="0" y="0" width="60" height="40" rx="3" fill="rgba(56,189,248,.05)" stroke="rgba(56,189,248,.2)" stroke-width="1"/>
+      <rect x="5" y="5" width="22" height="3" rx="1" fill="#38bdf8" opacity=".4"/>
+      <rect x="5" y="11" width="32" height="3" rx="1" fill="#38bdf8" opacity=".3"/>
+      <rect x="5" y="17" width="18" height="3" rx="1" fill="#38bdf8" opacity=".4"/>
+      <circle cx="46" cy="26" r="10" fill="none" stroke="#38bdf8" stroke-width=".7" stroke-dasharray="2 2">
+        <animateTransform attributeName="transform" type="rotate" from="0 46 26" to="360 46 26" dur="10s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    <g transform="translate(870,110)" opacity=".45">
+      <rect x="0" y="0" width="65" height="45" rx="3" fill="rgba(74,222,128,.05)" stroke="rgba(74,222,128,.15)" stroke-width="1"/>
+      <polyline points="6,35 18,20 30,26 42,14 54,22 62,10" fill="none" stroke="#4ade80" stroke-width="1.2" opacity=".5"/>
+      <text x="33" y="42" text-anchor="middle" font-size="4" fill="#4ade80" opacity=".4" font-family="monospace">METRICS</text>
+    </g>
+
+    <!-- ═══ AGENT SLOTS ═══ -->
+    <g id="desk-slot-0" transform="translate(258,450)"></g>
+    <g id="desk-slot-1" transform="translate(478,438)"></g>
+    <g id="desk-slot-2" transform="translate(700,448)"></g>
+    <g id="wb-slot" transform="translate(960,415)"></g>
+    <g id="sofa-slot-0" transform="translate(110,335)"></g>
+    <g id="sofa-slot-1" transform="translate(220,335)"></g>
+
+  </svg>
 </div>
 
 <script>
-// ── アバターSVG (4種類のCSSアニメーション付き猫) ──
-const AVATARS = {
-  blue: `<svg viewBox="0 0 100 130">
-    <polygon points="18,26 28,6 40,26"  fill="#0369a1"/>
-    <polygon points="22,26 28,12 36,26" fill="#bae6fd"/>
-    <polygon points="60,26 72,6 82,26"  fill="#0369a1"/>
-    <polygon points="64,26 72,12 78,26" fill="#bae6fd"/>
-    <circle cx="50" cy="44" r="28" fill="#38bdf8"/>
-    <g style="transform-origin:50px 42px;animation:blink 5s infinite;">
-      <ellipse cx="38" cy="42" rx="5" ry="6" fill="#082f49"/>
-      <ellipse cx="62" cy="42" rx="5" ry="6" fill="#082f49"/>
-      <circle cx="40" cy="40" r="2" fill="white"/>
-      <circle cx="64" cy="40" r="2" fill="white"/>
-    </g>
-    <polygon points="47,52 53,52 50,56" fill="#93c5fd"/>
-    <line x1="44" y1="60" x2="56" y2="60" stroke="#5baad8" stroke-width="1.5"/>
-    <line x1="12" y1="50" x2="36" y2="52" stroke="#7dd3fc" stroke-width="1"/>
-    <line x1="12" y1="54" x2="36" y2="55" stroke="#7dd3fc" stroke-width="1"/>
-    <line x1="64" y1="52" x2="88" y2="50" stroke="#7dd3fc" stroke-width="1"/>
-    <line x1="64" y1="55" x2="88" y2="54" stroke="#7dd3fc" stroke-width="1"/>
-    <rect x="26" y="72" width="48" height="30" rx="10" fill="#0369a1"/>
-    <g style="transform-origin:32px 78px;animation:tap-l .55s ease-in-out infinite;">
-      <line x1="32" y1="78" x2="22" y2="98" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
-    </g>
-    <g style="transform-origin:68px 78px;animation:tap-r .55s ease-in-out infinite;">
-      <line x1="68" y1="78" x2="78" y2="98" stroke="#0369a1" stroke-width="7" stroke-linecap="round"/>
-    </g>
-  </svg>`,
+// ── particles ──
+;(function(){
+  const c = document.getElementById('particles')
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div')
+    p.className = 'particle'
+    p.style.left = Math.random()*100+'%'
+    p.style.animationDuration = (10+Math.random()*15)+'s'
+    p.style.animationDelay = Math.random()*10+'s'
+    p.style.width = p.style.height = (1+Math.random()*2)+'px'
+    const cols = ['#a78bfa','#38bdf8','#f472b6','#4ade80']
+    p.style.background = cols[~~(Math.random()*4)]
+    c.appendChild(p)
+  }
+})()
 
-  pink: `<svg viewBox="0 0 100 130">
-    <polygon points="18,26 28,6 40,26"  fill="#9d174d"/>
-    <polygon points="22,26 28,12 36,26" fill="#fce7f3"/>
-    <polygon points="60,26 72,6 82,26"  fill="#9d174d"/>
-    <polygon points="64,26 72,12 78,26" fill="#fce7f3"/>
-    <g style="transform-origin:50px 44px;animation:head-tilt 3.5s ease-in-out infinite;">
-      <circle cx="50" cy="44" r="28" fill="#f472b6"/>
-      <circle cx="37" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
-      <circle cx="63" cy="42" r="8" fill="none" stroke="#5d3a1a" stroke-width="2"/>
-      <line x1="45" y1="42" x2="55" y2="42" stroke="#5d3a1a" stroke-width="1.8"/>
-      <line x1="12" y1="40" x2="29" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
-      <line x1="71" y1="40" x2="88" y2="40" stroke="#5d3a1a" stroke-width="1.8"/>
-      <ellipse cx="37" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
-      <ellipse cx="63" cy="42" rx="4" ry="5" fill="#1a0f2e"/>
-      <circle cx="39" cy="40" r="1.5" fill="white"/>
-      <circle cx="65" cy="40" r="1.5" fill="white"/>
-      <polygon points="47,52 53,52 50,56" fill="#9d174d"/>
-      <line x1="43" y1="60" x2="57" y2="60" stroke="#9d5a7a" stroke-width="1.5"/>
-      <line x1="12" y1="50" x2="36" y2="52" stroke="#fbcfe8" stroke-width="1"/>
-      <line x1="12" y1="54" x2="36" y2="55" stroke="#fbcfe8" stroke-width="1"/>
-      <line x1="64" y1="52" x2="88" y2="50" stroke="#fbcfe8" stroke-width="1"/>
-      <line x1="64" y1="55" x2="88" y2="54" stroke="#fbcfe8" stroke-width="1"/>
-    </g>
-    <rect x="26" y="72" width="48" height="30" rx="10" fill="#9d174d"/>
-    <line x1="32" y1="78" x2="18" y2="98" stroke="#9d174d" stroke-width="7" stroke-linecap="round"/>
-    <g style="transform-origin:70px 80px;animation:pencil-tap 2s ease-in-out infinite;">
-      <line x1="68" y1="78" x2="80" y2="96" stroke="#9d174d" stroke-width="7" stroke-linecap="round"/>
-      <rect x="77" y="91" width="4" height="15" rx="1" fill="#fbbf24"/>
-      <polygon points="77,106 81,106 79,112" fill="#f97316"/>
-    </g>
-  </svg>`,
-
-  yellow: `<svg viewBox="0 0 100 130">
-    <polygon points="18,26 28,6 40,26"  fill="#a16207"/>
-    <polygon points="22,26 28,12 36,26" fill="#fef9c3"/>
-    <polygon points="60,26 72,6 82,26"  fill="#a16207"/>
-    <polygon points="64,26 72,12 78,26" fill="#fef9c3"/>
-    <g style="animation:look-lr 3.8s ease-in-out infinite;">
-      <circle cx="50" cy="44" r="28" fill="#eab308"/>
-      <g style="transform-origin:50px 42px;animation:blink 4.5s infinite;">
-        <ellipse cx="38" cy="42" rx="5" ry="6" fill="#1c1004"/>
-        <ellipse cx="62" cy="42" rx="5" ry="6" fill="#1c1004"/>
-        <circle cx="41" cy="40" r="2" fill="white"/>
-        <circle cx="65" cy="40" r="2" fill="white"/>
-      </g>
-      <polygon points="47,52 53,52 50,56" fill="#b45309"/>
-      <path d="M43,60 Q50,67 57,60" fill="none" stroke="#8899bb" stroke-width="1.5"/>
-      <line x1="12" y1="50" x2="36" y2="52" stroke="#fef08a" stroke-width="1"/>
-      <line x1="12" y1="54" x2="36" y2="55" stroke="#fef08a" stroke-width="1"/>
-      <line x1="64" y1="52" x2="88" y2="50" stroke="#fef08a" stroke-width="1"/>
-      <line x1="64" y1="55" x2="88" y2="54" stroke="#fef08a" stroke-width="1"/>
-      <rect x="26" y="72" width="48" height="30" rx="10" fill="#a16207"/>
-      <line x1="32" y1="78" x2="18" y2="98" stroke="#a16207" stroke-width="7" stroke-linecap="round"/>
-    </g>
-    <g style="transform-origin:68px 78px;animation:glass-sweep 2.5s ease-in-out infinite;">
-      <line x1="68" y1="78" x2="74" y2="63" stroke="#a16207" stroke-width="7" stroke-linecap="round"/>
-      <circle cx="78" cy="55" r="11" fill="rgba(234,179,8,.1)" stroke="#b45309" stroke-width="2.5"/>
-      <line x1="86" y1="63" x2="93" y2="72" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
-    </g>
-  </svg>`,
-
-  green: `<svg viewBox="0 0 100 130">
-    <polygon points="14,26 26,4 40,26"  fill="#16a34a"/>
-    <polygon points="19,26 26,11 37,26" fill="#bbf7d0"/>
-    <polygon points="60,26 74,4 86,26"  fill="#16a34a"/>
-    <polygon points="63,26 74,11 81,26" fill="#bbf7d0"/>
-    <circle cx="50" cy="43" r="31" fill="#22c55e"/>
-    <line x1="28" y1="30" x2="44" y2="35" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="56" y1="35" x2="72" y2="30" stroke="#166534" stroke-width="2.5" stroke-linecap="round"/>
-    <g style="animation:scan 2.2s ease-in-out infinite;">
-      <ellipse cx="37" cy="41" rx="7" ry="8" fill="#052e16"/>
-      <ellipse cx="63" cy="41" rx="7" ry="8" fill="#052e16"/>
-      <circle cx="40" cy="38" r="2.5" fill="white"/>
-      <circle cx="66" cy="38" r="2.5" fill="white"/>
-    </g>
-    <polygon points="47,52 53,52 50,57" fill="#15803d"/>
-    <path d="M42,62 Q50,68 58,62" fill="none" stroke="#166534" stroke-width="2"/>
-    <line x1="8"  y1="50" x2="34" y2="53" stroke="#86efac" stroke-width="1"/>
-    <line x1="8"  y1="55" x2="34" y2="56" stroke="#86efac" stroke-width="1"/>
-    <line x1="66" y1="53" x2="92" y2="50" stroke="#86efac" stroke-width="1"/>
-    <line x1="66" y1="56" x2="92" y2="55" stroke="#86efac" stroke-width="1"/>
-    <rect x="22" y="74" width="56" height="32" rx="12" fill="#16a34a"/>
-    <line x1="30" y1="84" x2="16" y2="104" stroke="#16a34a" stroke-width="8" stroke-linecap="round"/>
-    <line x1="70" y1="84" x2="84" y2="104" stroke="#16a34a" stroke-width="8" stroke-linecap="round"/>
-  </svg>`
+// ── Agent character SVG generators (smaller for room view) ──
+const COLORS = {
+  blue:   { body:'#38bdf8', dark:'#0369a1', light:'#bae6fd', eye:'#082f49' },
+  pink:   { body:'#f472b6', dark:'#9d174d', light:'#fce7f3', eye:'#1a0f2e' },
+  yellow: { body:'#eab308', dark:'#a16207', light:'#fef9c3', eye:'#1c1004' },
+  green:  { body:'#22c55e', dark:'#16a34a', light:'#bbf7d0', eye:'#052e16' },
+  purple: { body:'#a78bfa', dark:'#6d28d9', light:'#ede9fe', eye:'#1e1040' },
+  orange: { body:'#fb923c', dark:'#c2410c', light:'#ffedd5', eye:'#1a0800' },
 }
+const COLOR_KEYS = Object.keys(COLORS)
 
-const ACCENT_COLORS = { blue:'#38bdf8', pink:'#f472b6', yellow:'#facc15', green:'#4ade80' }
-const AVATAR_TYPES  = ['blue','pink','yellow','green']
-
-// セッションIDから一貫したアバタータイプを決定
-function avatarType(sessionId) {
+function charColor(sessionId) {
   let h = 0
-  for (const c of sessionId) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff
-  return AVATAR_TYPES[Math.abs(h) % 4]
+  for (const c of sessionId) h = (h*31 + c.charCodeAt(0)) & 0xffffffff
+  return COLOR_KEYS[Math.abs(h) % COLOR_KEYS.length]
 }
 
-// 経過時間を人間が読みやすい形式に
-function timeAgo(isoStr) {
-  const sec = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000)
-  if (sec < 60)   return `${sec}秒前`
-  if (sec < 3600) return `${Math.floor(sec/60)}分前`
-  return `${Math.floor(sec/3600)}時間前`
-}
-
-// 経過時間 (起動から)
-function elapsed(isoStr) {
-  const sec = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000)
-  const m = Math.floor(sec/60), h = Math.floor(m/60)
-  if (h > 0) return `${h}h ${m%60}m`
-  if (m > 0) return `${m}m ${sec%60}s`
-  return `${sec}s`
-}
-
-function statusLabel(s) {
-  return s === 'active' ? '稼働中' : s === 'idle' ? 'アイドル' : '停止'
-}
-
-// カードのHTML生成
-function renderCard(agent) {
-  const type   = avatarType(agent.session_id)
-  const accent = ACCENT_COLORS[type]
-  const logs   = (agent.history || []).slice(0, 4)
-
+// working character (at desk, typing)
+function svgWorking(ck) {
+  const c = COLORS[ck]
   return `
-    <div class="card" style="--accent:${accent}">
-      <div class="card-top">
-        <div class="avatar">${AVATARS[type]}</div>
-        <div class="card-info">
-          <div class="project-name">${agent.project}</div>
-          <div class="status-row">
-            <div class="sdot ${agent.status}"></div>
-            <span class="status-text ${agent.status}">${statusLabel(agent.status)}</span>
-          </div>
-          <div class="time-ago">最終活動: ${timeAgo(agent.last_seen)}</div>
-        </div>
-      </div>
-
-      <div class="last-action">
-        <div class="last-action-label">最後のアクション</div>
-        <div class="last-action-text" style="color:${accent}">
-          ${agent.last_desc || agent.last_tool || '—'}
-        </div>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <span class="stat-val" style="color:${accent}">${agent.tool_count}</span>
-          <span class="stat-label">ツール実行数</span>
-        </div>
-        <div class="stat">
-          <span class="stat-val">${elapsed(agent.started_at)}</span>
-          <span class="stat-label">経過時間</span>
-        </div>
-        <div class="stat">
-          <span class="stat-val" style="font-size:.68rem;color:var(--dim);">${agent.session_id.slice(0,8)}</span>
-          <span class="stat-label">セッションID</span>
-        </div>
-      </div>
-
-      ${logs.length ? `
-        <div class="log-section-label">最近のアクティビティ</div>
-        <div>
-          ${logs.map(l => `
-            <div class="log-row">
-              <span class="log-t">${new Date(l.time).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
-              <span class="log-tool">${l.tool}</span>
-              <span>${l.desc}</span>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-    </div>
-  `
+    <g transform="scale(.55)">
+      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
+      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
+      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
+      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
+      <circle cx="50" cy="44" r="28" fill="${c.body}"/>
+      <g style="transform-origin:50px 42px;animation:blink 5s infinite;">
+        <ellipse cx="38" cy="42" rx="5" ry="6" fill="${c.eye}"/>
+        <ellipse cx="62" cy="42" rx="5" ry="6" fill="${c.eye}"/>
+        <circle cx="40" cy="40" r="2" fill="white"/>
+        <circle cx="64" cy="40" r="2" fill="white"/>
+      </g>
+      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
+      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
+      <g style="transform-origin:32px 78px;animation:tap-l .55s ease-in-out infinite;">
+        <line x1="32" y1="78" x2="22" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+      </g>
+      <g style="transform-origin:68px 78px;animation:tap-r .55s ease-in-out infinite;">
+        <line x1="68" y1="78" x2="78" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+      </g>
+    </g>`
 }
 
-// ── ポーリング ──
+// idle character (on sofa, relaxed)
+function svgIdle(ck) {
+  const c = COLORS[ck]
+  return `
+    <g transform="scale(.5)" style="animation:float-idle 4s ease-in-out infinite;">
+      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
+      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
+      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
+      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
+      <circle cx="50" cy="44" r="28" fill="${c.body}" opacity=".8"/>
+      <g style="transform-origin:50px 42px;animation:blink 6s infinite;">
+        <ellipse cx="38" cy="42" rx="5" ry="6" fill="${c.eye}"/>
+        <ellipse cx="62" cy="42" rx="5" ry="6" fill="${c.eye}"/>
+        <circle cx="40" cy="40" r="2" fill="white"/>
+        <circle cx="64" cy="40" r="2" fill="white"/>
+      </g>
+      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
+      <path d="M43,60 Q50,67 57,60" fill="none" stroke="${c.dark}" stroke-width="1.5"/>
+      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
+      <line x1="32" y1="78" x2="18" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+      <line x1="68" y1="78" x2="82" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+    </g>`
+}
+
+// sleeping character (on sofa, eyes closed)
+function svgSleeping(ck) {
+  const c = COLORS[ck]
+  return `
+    <g transform="scale(.5) rotate(-15,50,60)" style="animation:breathe 4s ease-in-out infinite;">
+      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
+      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
+      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
+      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
+      <circle cx="50" cy="44" r="28" fill="${c.body}" opacity=".7"/>
+      <line x1="33" y1="42" x2="43" y2="42" stroke="${c.eye}" stroke-width="2" stroke-linecap="round"/>
+      <line x1="57" y1="42" x2="67" y2="42" stroke="${c.eye}" stroke-width="2" stroke-linecap="round"/>
+      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
+      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
+      <line x1="32" y1="78" x2="20" y2="95" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+      <line x1="68" y1="78" x2="80" y2="95" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+    </g>
+    <text x="55" y="-5" font-size="10" fill="var(--dim)" opacity=".6" font-family="monospace">zzZ</text>`
+}
+
+// whiteboard presenter character
+function svgPresenter(ck) {
+  const c = COLORS[ck]
+  return `
+    <g transform="scale(.5)">
+      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
+      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
+      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
+      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
+      <circle cx="50" cy="44" r="28" fill="${c.body}"/>
+      <g style="transform-origin:50px 42px;animation:blink 5.5s infinite;">
+        <ellipse cx="38" cy="42" rx="5" ry="6" fill="${c.eye}"/>
+        <ellipse cx="62" cy="42" rx="5" ry="6" fill="${c.eye}"/>
+        <circle cx="40" cy="40" r="2" fill="white"/>
+        <circle cx="64" cy="40" r="2" fill="white"/>
+      </g>
+      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
+      <path d="M43,60 Q50,56 57,60" fill="none" stroke="${c.dark}" stroke-width="1.5"/>
+      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
+      <line x1="32" y1="78" x2="12" y2="65" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+      <line x1="68" y1="78" x2="82" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+    </g>`
+}
+
+// status bubble
+function svgBubble(text, color, x, y) {
+  const w = text.length * 5.5 + 16
+  return `
+    <g class="agent-bubble" transform="translate(${x},${y})">
+      <rect x="${-w/2}" y="-14" width="${w}" height="16" rx="8" fill="rgba(14,12,35,.85)" stroke="${color}" stroke-width=".8"/>
+      <circle cx="${-w/2+8}" cy="-6" r="2.5" fill="${color}" style="animation:glow-pulse 2s infinite;"/>
+      <text x="2" y="-3" text-anchor="middle" font-size="6.5" fill="${color}" font-family="monospace" font-weight="600">${text}</text>
+      <polygon points="-3,2 3,2 0,7" fill="rgba(14,12,35,.85)"/>
+    </g>`
+}
+
+// ── task label from tool ──
+function taskLabel(agent) {
+  const t = (agent.last_tool || '').toLowerCase()
+  if (t.includes('edit') || t.includes('write')) return 'CODING'
+  if (t.includes('read') || t.includes('grep') || t.includes('glob')) return 'ANALYZING'
+  if (t.includes('bash')) return 'BUILDING'
+  if (agent.status === 'active') return 'BUSY'
+  if (agent.status === 'idle') return 'RELAXING'
+  return 'SLEEPING'
+}
+
+function accentForType(ck) {
+  return COLORS[ck]?.body || '#a78bfa'
+}
+
+// ── time helpers ──
+function timeAgo(iso) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return s+'秒前'
+  if (s < 3600) return Math.floor(s/60)+'分前'
+  return Math.floor(s/3600)+'時間前'
+}
+function elapsed(iso) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  const m = Math.floor(s/60), h = Math.floor(m/60)
+  if (h>0) return h+'h '+m%60+'m'
+  if (m>0) return m+'m '+s%60+'s'
+  return s+'s'
+}
+
+// ── default agents (when API returns empty) ──
+const DEFAULTS = [
+  { session_id:'default-blue',   project:'Agent-A', status:'idle',    last_tool:'', last_desc:'タスク待ち...', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+  { session_id:'default-pink',   project:'Agent-B', status:'stopped', last_tool:'', last_desc:'うたた寝中', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+  { session_id:'default-yellow', project:'Agent-C', status:'idle',    last_tool:'', last_desc:'スタンバイOK', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+  { session_id:'default-green',  project:'Agent-D', status:'idle',    last_tool:'', last_desc:'いつでも行ける', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+  { session_id:'default-purple', project:'Agent-E', status:'stopped', last_tool:'', last_desc:'充電中...', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+  { session_id:'default-orange', project:'Agent-F', status:'idle',    last_tool:'', last_desc:'準備万端', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+]
+
+// ── render agents into SVG slots ──
+function renderRoom(agents) {
+  const data = agents.length > 0 ? agents : DEFAULTS
+
+  const active = data.filter(a => a.status === 'active')
+  const idle = data.filter(a => a.status !== 'active')
+
+  // desk slots (up to 3 active)
+  for (let i = 0; i < 3; i++) {
+    const slot = document.getElementById('desk-slot-'+i)
+    if (active[i]) {
+      const a = active[i], ck = charColor(a.session_id)
+      const label = taskLabel(a)
+      slot.innerHTML = svgWorking(ck) + svgBubble(label, accentForType(ck), 28, -15)
+    } else {
+      slot.innerHTML = ''
+    }
+  }
+
+  // whiteboard slot (4th active or first idle with highest tool_count)
+  const wbSlot = document.getElementById('wb-slot')
+  if (active[3]) {
+    const a = active[3], ck = charColor(a.session_id)
+    wbSlot.innerHTML = svgPresenter(ck) + svgBubble('PRESENTING', accentForType(ck), 28, -15)
+  } else if (active.length > 0) {
+    // no one at whiteboard when less than 4 active
+    wbSlot.innerHTML = ''
+  } else {
+    wbSlot.innerHTML = ''
+  }
+
+  // sofa slots (idle agents — up to 2 shown, rest go to extra active or are implied)
+  for (let i = 0; i < 2; i++) {
+    const slot = document.getElementById('sofa-slot-'+i)
+    if (idle[i]) {
+      const a = idle[i], ck = charColor(a.session_id)
+      const isSleeping = a.status === 'stopped' || (a._default && a.last_desc.includes('寝'))
+      const label = isSleeping ? 'SLEEPING' : 'RELAXING'
+      const svgFn = isSleeping ? svgSleeping : svgIdle
+      slot.innerHTML = svgFn(ck) + svgBubble(label, accentForType(ck), 28, -15)
+    } else {
+      slot.innerHTML = ''
+    }
+  }
+
+  // update tasks panel
+  const tasksList = document.getElementById('tasks-list')
+  const taskItems = data.map(a => {
+    const isActive = a.status === 'active'
+    const dotClass = isActive ? 'run' : a.status === 'idle' ? 'idle' : 'off'
+    const desc = a.last_desc || a.last_tool || (isActive ? 'Processing...' : 'Idle')
+    return `<div class="task-item">
+      <div class="task-dot ${dotClass}"></div>
+      <span class="task-text ${isActive?'active':''}">${desc}</span>
+    </div>`
+  })
+  tasksList.innerHTML = taskItems.join('')
+
+  // update agents panel
+  const agentsList = document.getElementById('agents-list')
+  const apItems = data.map(a => {
+    const ck = charColor(a.session_id)
+    const col = accentForType(ck)
+    const stLabel = a.status === 'active' ? 'BUSY' : a.status === 'idle' ? 'IDLE' : 'OFF'
+    return `<div class="ap-row">
+      <div class="ap-avatar" style="background:${col};"></div>
+      <span class="ap-name">${a.project}</span>
+      <span class="ap-status ${a.status}">${stLabel}</span>
+    </div>`
+  })
+  agentsList.innerHTML = apItems.join('')
+
+  // update status bar metrics
+  const activeCount = active.length
+  const cpuPct = Math.min(95, 15 + activeCount * 20 + Math.floor(Math.random()*5))
+  const memPct = Math.min(90, 30 + activeCount * 12 + Math.floor(Math.random()*5))
+  document.getElementById('sb-cpu').style.width = cpuPct+'%'
+  document.getElementById('sb-cpu-val').textContent = cpuPct+'%'
+  document.getElementById('sb-mem').style.width = memPct+'%'
+  document.getElementById('sb-mem-val').textContent = memPct+'%'
+  document.getElementById('sb-net').style.width = agents.length > 0 ? '85%' : '40%'
+}
+
+// ── polling ──
 let lastFetch = null
-let pollTimer = null
 
 async function fetchAgents() {
-  if (VPS_URL.includes('YOUR_VPS_IP')) {
-    document.getElementById('config-banner').classList.add('show')
-    document.getElementById('empty').classList.add('show')
-    document.getElementById('update-info').textContent = '⚠ VPS_URL未設定'
-    return
-  }
+  if (VPS_URL.includes('YOUR_VPS_IP')) return
 
   const spinner = document.getElementById('spinner')
   spinner.classList.add('show')
 
   try {
-    const res  = await fetch(`${VPS_URL}/api/agents`)
+    const res = await fetch(`${VPS_URL}/api/agents`)
     const data = await res.json()
-
-    const grid  = document.getElementById('grid')
-    const empty = document.getElementById('empty')
-
-    if (data.length === 0) {
-      grid.innerHTML = ''
-      empty.classList.add('show')
-    } else {
-      empty.classList.remove('show')
-      grid.innerHTML = data.map(renderCard).join('')
-    }
-
+    renderRoom(data)
     lastFetch = new Date()
     updateInfo()
   } catch (e) {
     document.getElementById('update-info').textContent = '⚠ VPSに接続できません'
+    renderRoom([]) // show defaults
   } finally {
     spinner.classList.remove('show')
   }
@@ -464,13 +964,13 @@ async function fetchAgents() {
 function updateInfo() {
   if (!lastFetch) return
   const sec = Math.floor((Date.now() - lastFetch) / 1000)
-  document.getElementById('update-info').textContent =
-    `最終更新: ${sec}秒前 | ${POLL_INTERVAL/1000}秒ごとに自動更新`
+  document.getElementById('update-info').textContent = `${sec}秒前 | ${POLL_INTERVAL/1000}s間隔`
 }
 
-// 起動
+// init
+renderRoom([])
 fetchAgents()
-pollTimer = setInterval(fetchAgents, POLL_INTERVAL)
+setInterval(fetchAgents, POLL_INTERVAL)
 setInterval(updateInfo, 1000)
 </script>
 

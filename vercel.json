@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "http://REDACTED_VPS_IP:3001/api/:path*"
+    }
+  ]
+}
