@@ -201,17 +201,32 @@ body {
   100% { opacity:0; transform:translateY(-20px) scale(.5); }
 }
 
-/* ── Responsive ── */
+/* ── Responsive (Tablet) ── */
+@media (max-width:768px) {
+  .agent-grid { grid-template-columns: repeat(2, 1fr); }
+  .agent-task { max-width:160px; }
+}
+
+/* ── Responsive (SP) ── */
 @media (max-width:600px) {
-  .status-bar { font-size:6px; height:36px; padding:0 6px; }
+  .status-bar { font-size:7px; height:36px; padding:0 8px; }
   .sb-title { font-size:7px; }
-  .main-wrap { margin-top:36px; }
-  .info-panel { font-size:6px; padding:6px 8px; }
-  .agent-grid { grid-template-columns:1fr; }
-  .agent-card { font-size:6px; }
-  .panel-title { font-size:7px; }
-  .sb-hp-bar { width:32px; }
+  .sb-hp-bar { display:none; }
   .sb-metric .sb-label { display:none; }
+  .sb-left { gap:8px; }
+  #update-info { display:none; }
+  .main-wrap { margin-top:36px; padding-bottom:16px; }
+  .scene-wrap { width:100%; }
+  .info-panel { font-size:7px; padding:8px; margin:4px 4px 0; border-width:3px; }
+  .info-panel::before { top:3px; left:3px; right:3px; bottom:3px; }
+  .panel-title { font-size:8px; margin-bottom:6px; }
+  .agent-grid { grid-template-columns:1fr 1fr; gap:6px; }
+  .agent-card { font-size:7px; padding:6px 8px; gap:6px; line-height:1.5; }
+  .agent-card .status-dot { width:6px; height:6px; }
+  .agent-name { font-size:8px; }
+  .agent-name span { display:none; }
+  .agent-status { font-size:6px; }
+  .agent-task { font-size:7px; max-width:120px; }
 }
 </style>
 </head>
