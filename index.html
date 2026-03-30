@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>エージェントオフィス — ドット絵モニター</title>
+<title>Claude Agent Monitor</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -220,7 +220,7 @@ body {
 <!-- RPG Status Bar -->
 <div class="status-bar">
   <div class="sb-left">
-    <span class="sb-title">▶ エージェントオフィス</span>
+    <span class="sb-title">▶ Claude Agent Monitor</span>
     <div class="sb-metric">
       <span class="sb-label">稼働:</span>
       <span class="sb-val" id="sb-active-count">0</span>
@@ -264,379 +264,441 @@ body {
         </style>
       </defs>
 
-      <!-- ====== WALL ====== -->
-      <rect x="0" y="0" width="960" height="320" fill="#e8dcc8"/>
+      <!-- ====== WALL STRIP (top-down: thin back wall, y=0 to y=80) ====== -->
+      <rect x="0" y="0" width="960" height="80" fill="#e8dcc8"/>
       <!-- wall texture lines -->
-      <line x1="0" y1="80" x2="960" y2="80" stroke="#ddd0b8" stroke-width="1"/>
-      <line x1="0" y1="160" x2="960" y2="160" stroke="#ddd0b8" stroke-width="1"/>
-      <line x1="0" y1="240" x2="960" y2="240" stroke="#ddd0b8" stroke-width="1"/>
-      <!-- baseboard -->
-      <rect x="0" y="310" width="960" height="10" fill="#a08060"/>
-      <rect x="0" y="318" width="960" height="2" fill="#8a6e50"/>
+      <line x1="0" y1="20" x2="960" y2="20" stroke="#ddd0b8" stroke-width="1"/>
+      <line x1="0" y1="40" x2="960" y2="40" stroke="#ddd0b8" stroke-width="1"/>
+      <line x1="0" y1="60" x2="960" y2="60" stroke="#ddd0b8" stroke-width="1"/>
+      <!-- baseboard at bottom of wall -->
+      <rect x="0" y="72" width="960" height="8" fill="#a08060"/>
+      <rect x="0" y="78" width="960" height="2" fill="#8a6e50"/>
 
-      <!-- ====== WINDOW (centered) ====== -->
-      <rect x="380" y="40" width="200" height="140" fill="#6ab4d6" rx="0"/>
-      <rect x="384" y="44" width="192" height="132" fill="#87ceeb"/>
+      <!-- ====== WINDOW on wall (small, centered) ====== -->
+      <rect x="400" y="8" width="160" height="56" fill="#6ab4d6"/>
+      <rect x="404" y="12" width="152" height="48" fill="#87ceeb"/>
       <!-- sky pixel clouds -->
       <g class="cloud-anim">
-        <rect x="400" y="60" width="16" height="4" fill="white" opacity=".7"/>
-        <rect x="396" y="64" width="24" height="4" fill="white" opacity=".7"/>
-        <rect x="400" y="68" width="16" height="4" fill="white" opacity=".5"/>
+        <rect x="420" y="20" width="16" height="4" fill="white" opacity=".7"/>
+        <rect x="416" y="24" width="24" height="4" fill="white" opacity=".7"/>
+        <rect x="420" y="28" width="16" height="4" fill="white" opacity=".5"/>
       </g>
       <g class="cloud-anim" style="animation-delay:-8s;">
-        <rect x="500" y="80" width="20" height="4" fill="white" opacity=".6"/>
-        <rect x="496" y="84" width="28" height="4" fill="white" opacity=".6"/>
-        <rect x="500" y="88" width="20" height="4" fill="white" opacity=".4"/>
-      </g>
-      <g class="cloud-anim" style="animation-delay:-14s;">
-        <rect x="440" y="100" width="12" height="4" fill="white" opacity=".5"/>
-        <rect x="436" y="104" width="20" height="4" fill="white" opacity=".5"/>
+        <rect x="500" y="30" width="20" height="4" fill="white" opacity=".6"/>
+        <rect x="496" y="34" width="28" height="4" fill="white" opacity=".6"/>
       </g>
       <!-- sun -->
-      <rect x="540" y="52" width="8" height="8" fill="#fde68a"/>
-      <rect x="536" y="56" width="4" height="4" fill="#fde68a" opacity=".5"/>
-      <rect x="548" y="56" width="4" height="4" fill="#fde68a" opacity=".5"/>
-      <rect x="540" y="48" width="8" height="4" fill="#fde68a" opacity=".4"/>
-      <rect x="540" y="60" width="8" height="4" fill="#fde68a" opacity=".4"/>
+      <rect x="530" y="16" width="8" height="8" fill="#fde68a"/>
+      <rect x="526" y="20" width="4" height="4" fill="#fde68a" opacity=".5"/>
+      <rect x="538" y="20" width="4" height="4" fill="#fde68a" opacity=".5"/>
       <!-- window frame cross -->
-      <rect x="478" y="40" width="4" height="140" fill="#a08060"/>
-      <rect x="380" y="108" width="200" height="4" fill="#a08060"/>
+      <rect x="478" y="8" width="4" height="56" fill="#a08060"/>
+      <rect x="400" y="34" width="160" height="4" fill="#a08060"/>
       <!-- window outer frame -->
-      <rect x="376" y="36" width="208" height="4" fill="#a08060"/>
-      <rect x="376" y="180" width="208" height="4" fill="#a08060"/>
-      <rect x="376" y="36" width="4" height="148" fill="#a08060"/>
-      <rect x="580" y="36" width="4" height="148" fill="#a08060"/>
+      <rect x="396" y="4" width="168" height="4" fill="#a08060"/>
+      <rect x="396" y="64" width="168" height="4" fill="#a08060"/>
+      <rect x="396" y="4" width="4" height="64" fill="#a08060"/>
+      <rect x="560" y="4" width="4" height="64" fill="#a08060"/>
 
-      <!-- ====== CLOCK ON WALL ====== -->
+      <!-- ====== CLOCK ON WALL (left of window) ====== -->
       <g id="wall-clock">
-        <rect x="290" y="60" width="40" height="40" fill="#f5f0e0" stroke="#a08060" stroke-width="3"/>
-        <rect x="294" y="64" width="32" height="32" fill="#fffef8"/>
-        <text id="clock-text" x="310" y="86" text-anchor="middle" font-size="10" fill="#4a4040" class="pixel-font">00:00</text>
-        <text x="310" y="92" text-anchor="middle" font-size="5" fill="#8a7a6a" class="pixel-font" id="clock-colon-dot" class="clock-colon">●</text>
+        <rect x="310" y="14" width="40" height="40" fill="#f5f0e0" stroke="#a08060" stroke-width="3"/>
+        <rect x="314" y="18" width="32" height="32" fill="#fffef8"/>
+        <text id="clock-text" x="330" y="40" text-anchor="middle" font-size="10" fill="#4a4040" class="pixel-font">00:00</text>
+        <text x="330" y="46" text-anchor="middle" font-size="5" fill="#8a7a6a" class="pixel-font" id="clock-colon-dot" class="clock-colon">●</text>
       </g>
 
-      <!-- ====== WHITEBOARD ====== -->
-      <rect x="640" y="50" width="140" height="90" fill="white" stroke="#a08060" stroke-width="3"/>
-      <rect x="648" y="58" width="124" height="74" fill="#f8f8f0"/>
-      <!-- whiteboard content -->
-      <rect x="656" y="66" width="40" height="3" fill="#e74c3c" opacity=".6"/>
-      <rect x="656" y="74" width="60" height="3" fill="#3498db" opacity=".5"/>
-      <rect x="656" y="82" width="50" height="3" fill="#2ecc71" opacity=".5"/>
-      <rect x="656" y="90" width="35" height="3" fill="#e74c3c" opacity=".4"/>
-      <rect x="700" y="90" width="20" height="3" fill="#3498db" opacity=".4"/>
-      <rect x="656" y="98" width="45" height="3" fill="#8e44ad" opacity=".4"/>
-      <rect x="656" y="106" width="30" height="3" fill="#2ecc71" opacity=".3"/>
-      <!-- whiteboard tray -->
-      <rect x="660" y="140" width="100" height="6" fill="#a08060"/>
-      <!-- markers -->
-      <rect x="670" y="136" width="4" height="10" fill="#e74c3c"/>
-      <rect x="680" y="136" width="4" height="10" fill="#3498db"/>
-      <rect x="690" y="136" width="4" height="10" fill="#2ecc71"/>
-
-      <!-- ====== BOOKSHELF ====== -->
-      <g transform="translate(820,80)">
-        <rect x="0" y="0" width="80" height="200" fill="#7a5a3a"/>
-        <rect x="4" y="4" width="72" height="44" fill="#6a4a2a"/>
-        <rect x="4" y="52" width="72" height="44" fill="#6a4a2a"/>
-        <rect x="4" y="100" width="72" height="44" fill="#6a4a2a"/>
-        <rect x="4" y="148" width="72" height="44" fill="#6a4a2a"/>
-        <!-- books row 1 -->
-        <rect x="8" y="24" width="8" height="24" fill="#c0392b"/>
-        <rect x="18" y="20" width="8" height="28" fill="#2980b9"/>
-        <rect x="28" y="22" width="6" height="26" fill="#27ae60"/>
-        <rect x="36" y="18" width="8" height="30" fill="#8e44ad"/>
-        <rect x="46" y="24" width="8" height="24" fill="#d35400"/>
-        <rect x="56" y="20" width="6" height="28" fill="#16a085"/>
-        <rect x="64" y="22" width="8" height="26" fill="#c0392b"/>
-        <!-- books row 2 -->
-        <rect x="8" y="72" width="10" height="24" fill="#e74c3c"/>
-        <rect x="20" y="68" width="8" height="28" fill="#3498db"/>
-        <rect x="30" y="70" width="8" height="26" fill="#2ecc71"/>
-        <rect x="40" y="72" width="6" height="24" fill="#f39c12"/>
-        <rect x="48" y="68" width="10" height="28" fill="#9b59b6"/>
-        <rect x="60" y="70" width="8" height="26" fill="#1abc9c"/>
-        <!-- books row 3 -->
-        <rect x="8" y="118" width="8" height="26" fill="#e67e22"/>
-        <rect x="18" y="120" width="10" height="24" fill="#2c3e50"/>
-        <rect x="30" y="116" width="8" height="28" fill="#e74c3c"/>
-        <rect x="40" y="118" width="6" height="26" fill="#3498db"/>
-        <rect x="48" y="120" width="8" height="24" fill="#27ae60"/>
-        <!-- trophy/item row 4 -->
-        <rect x="12" y="176" width="12" height="16" fill="#f1c40f"/>
-        <rect x="16" y="172" width="4" height="4" fill="#f1c40f"/>
-        <rect x="40" y="180" width="16" height="12" fill="#bdc3c7"/>
-        <rect x="44" y="176" width="8" height="4" fill="#95a5a6"/>
+      <!-- ====== WHITEBOARD on wall (right of window) ====== -->
+      <g id="whiteboard">
+        <rect x="620" y="10" width="120" height="52" fill="white" stroke="#a08060" stroke-width="3"/>
+        <rect x="626" y="16" width="108" height="40" fill="#f8f8f0"/>
+        <!-- whiteboard content -->
+        <rect x="632" y="22" width="40" height="3" fill="#e74c3c" opacity=".6"/>
+        <rect x="632" y="28" width="60" height="3" fill="#3498db" opacity=".5"/>
+        <rect x="632" y="34" width="50" height="3" fill="#2ecc71" opacity=".5"/>
+        <rect x="632" y="40" width="35" height="3" fill="#e74c3c" opacity=".4"/>
+        <rect x="672" y="40" width="20" height="3" fill="#3498db" opacity=".4"/>
+        <rect x="632" y="46" width="45" height="3" fill="#8e44ad" opacity=".4"/>
       </g>
 
-      <!-- ====== FLOOR (wooden tile) ====== -->
+      <!-- ====== FLOOR (top-down checkerboard, y=80 to y=540) ====== -->
       <g id="floor">
-        <!-- alternating wood tiles -->
-        <rect x="0" y="320" width="960" height="220" fill="#c49a6c"/>
-        <!-- tile pattern -->
-        <g opacity=".3">
-          <rect x="0" y="320" width="80" height="44" fill="#b8895c"/>
-          <rect x="160" y="320" width="80" height="44" fill="#b8895c"/>
-          <rect x="320" y="320" width="80" height="44" fill="#b8895c"/>
-          <rect x="480" y="320" width="80" height="44" fill="#b8895c"/>
-          <rect x="640" y="320" width="80" height="44" fill="#b8895c"/>
-          <rect x="800" y="320" width="80" height="44" fill="#b8895c"/>
-          <rect x="80" y="364" width="80" height="44" fill="#b8895c"/>
-          <rect x="240" y="364" width="80" height="44" fill="#b8895c"/>
-          <rect x="400" y="364" width="80" height="44" fill="#b8895c"/>
-          <rect x="560" y="364" width="80" height="44" fill="#b8895c"/>
-          <rect x="720" y="364" width="80" height="44" fill="#b8895c"/>
-          <rect x="880" y="364" width="80" height="44" fill="#b8895c"/>
-          <rect x="0" y="408" width="80" height="44" fill="#b8895c"/>
-          <rect x="160" y="408" width="80" height="44" fill="#b8895c"/>
-          <rect x="320" y="408" width="80" height="44" fill="#b8895c"/>
-          <rect x="480" y="408" width="80" height="44" fill="#b8895c"/>
-          <rect x="640" y="408" width="80" height="44" fill="#b8895c"/>
-          <rect x="800" y="408" width="80" height="44" fill="#b8895c"/>
-          <rect x="80" y="452" width="80" height="44" fill="#b8895c"/>
-          <rect x="240" y="452" width="80" height="44" fill="#b8895c"/>
-          <rect x="400" y="452" width="80" height="44" fill="#b8895c"/>
-          <rect x="560" y="452" width="80" height="44" fill="#b8895c"/>
-          <rect x="720" y="452" width="80" height="44" fill="#b8895c"/>
-          <rect x="880" y="452" width="80" height="44" fill="#b8895c"/>
-          <rect x="0" y="496" width="80" height="44" fill="#b8895c"/>
-          <rect x="160" y="496" width="80" height="44" fill="#b8895c"/>
-          <rect x="320" y="496" width="80" height="44" fill="#b8895c"/>
-          <rect x="480" y="496" width="80" height="44" fill="#b8895c"/>
-          <rect x="640" y="496" width="80" height="44" fill="#b8895c"/>
-          <rect x="800" y="496" width="80" height="44" fill="#b8895c"/>
+        <rect x="0" y="80" width="960" height="460" fill="#c49a6c"/>
+        <!-- checkerboard tile pattern -->
+        <g opacity=".25">
+          <!-- Row 0: y=80 -->
+          <rect x="0" y="80" width="80" height="46" fill="#b8895c"/>
+          <rect x="160" y="80" width="80" height="46" fill="#b8895c"/>
+          <rect x="320" y="80" width="80" height="46" fill="#b8895c"/>
+          <rect x="480" y="80" width="80" height="46" fill="#b8895c"/>
+          <rect x="640" y="80" width="80" height="46" fill="#b8895c"/>
+          <rect x="800" y="80" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 1: y=126 -->
+          <rect x="80" y="126" width="80" height="46" fill="#b8895c"/>
+          <rect x="240" y="126" width="80" height="46" fill="#b8895c"/>
+          <rect x="400" y="126" width="80" height="46" fill="#b8895c"/>
+          <rect x="560" y="126" width="80" height="46" fill="#b8895c"/>
+          <rect x="720" y="126" width="80" height="46" fill="#b8895c"/>
+          <rect x="880" y="126" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 2: y=172 -->
+          <rect x="0" y="172" width="80" height="46" fill="#b8895c"/>
+          <rect x="160" y="172" width="80" height="46" fill="#b8895c"/>
+          <rect x="320" y="172" width="80" height="46" fill="#b8895c"/>
+          <rect x="480" y="172" width="80" height="46" fill="#b8895c"/>
+          <rect x="640" y="172" width="80" height="46" fill="#b8895c"/>
+          <rect x="800" y="172" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 3: y=218 -->
+          <rect x="80" y="218" width="80" height="46" fill="#b8895c"/>
+          <rect x="240" y="218" width="80" height="46" fill="#b8895c"/>
+          <rect x="400" y="218" width="80" height="46" fill="#b8895c"/>
+          <rect x="560" y="218" width="80" height="46" fill="#b8895c"/>
+          <rect x="720" y="218" width="80" height="46" fill="#b8895c"/>
+          <rect x="880" y="218" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 4: y=264 -->
+          <rect x="0" y="264" width="80" height="46" fill="#b8895c"/>
+          <rect x="160" y="264" width="80" height="46" fill="#b8895c"/>
+          <rect x="320" y="264" width="80" height="46" fill="#b8895c"/>
+          <rect x="480" y="264" width="80" height="46" fill="#b8895c"/>
+          <rect x="640" y="264" width="80" height="46" fill="#b8895c"/>
+          <rect x="800" y="264" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 5: y=310 -->
+          <rect x="80" y="310" width="80" height="46" fill="#b8895c"/>
+          <rect x="240" y="310" width="80" height="46" fill="#b8895c"/>
+          <rect x="400" y="310" width="80" height="46" fill="#b8895c"/>
+          <rect x="560" y="310" width="80" height="46" fill="#b8895c"/>
+          <rect x="720" y="310" width="80" height="46" fill="#b8895c"/>
+          <rect x="880" y="310" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 6: y=356 -->
+          <rect x="0" y="356" width="80" height="46" fill="#b8895c"/>
+          <rect x="160" y="356" width="80" height="46" fill="#b8895c"/>
+          <rect x="320" y="356" width="80" height="46" fill="#b8895c"/>
+          <rect x="480" y="356" width="80" height="46" fill="#b8895c"/>
+          <rect x="640" y="356" width="80" height="46" fill="#b8895c"/>
+          <rect x="800" y="356" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 7: y=402 -->
+          <rect x="80" y="402" width="80" height="46" fill="#b8895c"/>
+          <rect x="240" y="402" width="80" height="46" fill="#b8895c"/>
+          <rect x="400" y="402" width="80" height="46" fill="#b8895c"/>
+          <rect x="560" y="402" width="80" height="46" fill="#b8895c"/>
+          <rect x="720" y="402" width="80" height="46" fill="#b8895c"/>
+          <rect x="880" y="402" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 8: y=448 -->
+          <rect x="0" y="448" width="80" height="46" fill="#b8895c"/>
+          <rect x="160" y="448" width="80" height="46" fill="#b8895c"/>
+          <rect x="320" y="448" width="80" height="46" fill="#b8895c"/>
+          <rect x="480" y="448" width="80" height="46" fill="#b8895c"/>
+          <rect x="640" y="448" width="80" height="46" fill="#b8895c"/>
+          <rect x="800" y="448" width="80" height="46" fill="#b8895c"/>
+          <!-- Row 9: y=494 -->
+          <rect x="80" y="494" width="80" height="46" fill="#b8895c"/>
+          <rect x="240" y="494" width="80" height="46" fill="#b8895c"/>
+          <rect x="400" y="494" width="80" height="46" fill="#b8895c"/>
+          <rect x="560" y="494" width="80" height="46" fill="#b8895c"/>
+          <rect x="720" y="494" width="80" height="46" fill="#b8895c"/>
+          <rect x="880" y="494" width="80" height="46" fill="#b8895c"/>
         </g>
-        <!-- floor line details -->
-        <line x1="0" y1="364" x2="960" y2="364" stroke="#a87e58" stroke-width="1" opacity=".3"/>
-        <line x1="0" y1="408" x2="960" y2="408" stroke="#a87e58" stroke-width="1" opacity=".3"/>
-        <line x1="0" y1="452" x2="960" y2="452" stroke="#a87e58" stroke-width="1" opacity=".3"/>
-        <line x1="0" y1="496" x2="960" y2="496" stroke="#a87e58" stroke-width="1" opacity=".3"/>
+        <!-- floor grid lines -->
+        <g stroke="#a87e58" stroke-width="1" opacity=".2">
+          <line x1="0" y1="126" x2="960" y2="126"/>
+          <line x1="0" y1="172" x2="960" y2="172"/>
+          <line x1="0" y1="218" x2="960" y2="218"/>
+          <line x1="0" y1="264" x2="960" y2="264"/>
+          <line x1="0" y1="310" x2="960" y2="310"/>
+          <line x1="0" y1="356" x2="960" y2="356"/>
+          <line x1="0" y1="402" x2="960" y2="402"/>
+          <line x1="0" y1="448" x2="960" y2="448"/>
+          <line x1="0" y1="494" x2="960" y2="494"/>
+          <line x1="80" y1="80" x2="80" y2="540"/>
+          <line x1="160" y1="80" x2="160" y2="540"/>
+          <line x1="240" y1="80" x2="240" y2="540"/>
+          <line x1="320" y1="80" x2="320" y2="540"/>
+          <line x1="400" y1="80" x2="400" y2="540"/>
+          <line x1="480" y1="80" x2="480" y2="540"/>
+          <line x1="560" y1="80" x2="560" y2="540"/>
+          <line x1="640" y1="80" x2="640" y2="540"/>
+          <line x1="720" y1="80" x2="720" y2="540"/>
+          <line x1="800" y1="80" x2="800" y2="540"/>
+          <line x1="880" y1="80" x2="880" y2="540"/>
+        </g>
       </g>
 
-      <!-- ====== POTTED PLANT (left) ====== -->
-      <g transform="translate(40,260)">
-        <!-- pot -->
-        <rect x="0" y="40" width="28" height="20" fill="#c0392b"/>
-        <rect x="-2" y="38" width="32" height="4" fill="#a83228"/>
-        <rect x="2" y="58" width="24" height="4" fill="#a83228"/>
+      <!-- ====== BOOKSHELF (top-down, right side against wall, y=82-140) ====== -->
+      <g transform="translate(780,82)">
+        <!-- bookshelf body (top-down rectangle) -->
+        <rect x="0" y="0" width="140" height="56" fill="#7a5a3a"/>
+        <!-- depth shadow (3/4 perspective) -->
+        <rect x="0" y="56" width="140" height="4" fill="#5a3a1a"/>
+        <!-- shelf interior -->
+        <rect x="4" y="4" width="132" height="48" fill="#6a4a2a"/>
+        <!-- books as colored strips seen from above -->
+        <rect x="8" y="8" width="8" height="40" fill="#c0392b"/>
+        <rect x="18" y="8" width="8" height="40" fill="#2980b9"/>
+        <rect x="28" y="8" width="6" height="40" fill="#27ae60"/>
+        <rect x="36" y="8" width="8" height="40" fill="#8e44ad"/>
+        <rect x="46" y="8" width="8" height="40" fill="#d35400"/>
+        <rect x="56" y="8" width="6" height="40" fill="#16a085"/>
+        <rect x="64" y="8" width="8" height="40" fill="#e74c3c"/>
+        <rect x="74" y="8" width="10" height="40" fill="#3498db"/>
+        <rect x="86" y="8" width="8" height="40" fill="#2ecc71"/>
+        <rect x="96" y="8" width="6" height="40" fill="#f39c12"/>
+        <rect x="104" y="8" width="10" height="40" fill="#9b59b6"/>
+        <rect x="116" y="8" width="8" height="40" fill="#1abc9c"/>
+        <rect x="126" y="8" width="8" height="40" fill="#e67e22"/>
+        <!-- shelf divider lines -->
+        <line x1="4" y1="28" x2="136" y2="28" stroke="#5a3a1a" stroke-width="2"/>
+      </g>
+
+      <!-- ====== BREAK AREA (left portion) ====== -->
+
+      <!-- ====== SOFA (top-down view, x=40-190, y=160-260) ====== -->
+      <g id="sofa-area" transform="translate(40,160)">
+        <!-- sofa body top-down -->
+        <rect x="0" y="0" width="150" height="90" fill="#6b5b7b"/>
+        <!-- depth shadow -->
+        <rect x="0" y="90" width="150" height="4" fill="#4a3a5a"/>
+        <!-- back rest (top edge, thicker) -->
+        <rect x="0" y="0" width="150" height="20" fill="#5b4b6b"/>
+        <!-- left arm -->
+        <rect x="0" y="0" width="16" height="90" fill="#5b4b6b"/>
+        <rect x="0" y="90" width="16" height="4" fill="#3a2a4a"/>
+        <!-- right arm -->
+        <rect x="134" y="0" width="16" height="90" fill="#5b4b6b"/>
+        <rect x="134" y="90" width="16" height="4" fill="#3a2a4a"/>
+        <!-- seat cushions -->
+        <rect x="20" y="24" width="52" height="62" fill="#7b6b8b"/>
+        <rect x="78" y="24" width="52" height="62" fill="#7b6b8b"/>
+        <!-- cushion detail pixels -->
+        <rect x="30" y="34" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
+        <rect x="54" y="40" width="8" height="6" fill="#8b7b9b" opacity=".4"/>
+        <rect x="88" y="34" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
+        <rect x="112" y="40" width="8" height="6" fill="#8b7b9b" opacity=".4"/>
+      </g>
+
+      <!-- ====== WATER COOLER (top-down, near sofa) ====== -->
+      <g transform="translate(60,290)">
+        <!-- body (top-down square) -->
+        <rect x="0" y="0" width="28" height="28" fill="#bdc3c7"/>
+        <!-- depth shadow -->
+        <rect x="0" y="28" width="28" height="3" fill="#8a9a9a"/>
+        <!-- water bottle circle (top view) -->
+        <rect x="6" y="6" width="16" height="16" fill="#85c1e9" opacity=".7"/>
+        <rect x="10" y="10" width="8" height="8" fill="#aed6f1" opacity=".6"/>
+        <!-- bottle cap center -->
+        <rect x="12" y="12" width="4" height="4" fill="#5dade2" opacity=".8"/>
+        <!-- tap indicators -->
+        <rect x="2" y="22" width="4" height="4" fill="#e74c3c"/>
+        <rect x="22" y="22" width="4" height="4" fill="#3498db"/>
+      </g>
+
+      <!-- ====== POTTED PLANT large (top-down, break area) ====== -->
+      <g transform="translate(130,290)">
+        <!-- pot (seen from above: circle-ish square) -->
+        <rect x="4" y="4" width="28" height="28" fill="#c0392b"/>
+        <rect x="2" y="2" width="32" height="32" fill="none" stroke="#a83228" stroke-width="2"/>
+        <!-- depth shadow -->
+        <rect x="4" y="34" width="28" height="3" fill="#7a1a10"/>
         <!-- soil -->
-        <rect x="4" y="36" width="20" height="6" fill="#5a3a2a"/>
-        <!-- leaves (pixel style) -->
-        <rect x="10" y="8" width="4" height="28" fill="#2a6a2a"/>
-        <rect x="6" y="12" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="2" y="8" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="18" y="12" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="22" y="8" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="6" y="4" width="4" height="4" fill="#4a9a4a"/>
-        <rect x="14" y="0" width="4" height="4" fill="#4a9a4a"/>
-        <rect x="18" y="4" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="-2" y="16" width="4" height="4" fill="#2a6a2a"/>
-        <rect x="26" y="16" width="4" height="4" fill="#2a6a2a"/>
-        <rect x="10" y="-4" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="8" y="8" width="20" height="20" fill="#5a3a2a"/>
+        <!-- leaves from above (radial pixel pattern) -->
+        <rect x="10" y="0" width="8" height="8" fill="#3a8a3a"/>
+        <rect x="0" y="10" width="8" height="8" fill="#3a8a3a"/>
+        <rect x="20" y="2" width="8" height="8" fill="#4a9a4a"/>
+        <rect x="26" y="12" width="8" height="8" fill="#3a8a3a"/>
+        <rect x="12" y="24" width="8" height="8" fill="#4a9a4a"/>
+        <rect x="0" y="20" width="8" height="8" fill="#2a6a2a"/>
+        <rect x="24" y="22" width="8" height="8" fill="#2a6a2a"/>
+        <rect x="8" y="-4" width="8" height="8" fill="#4a9a4a"/>
+        <rect x="22" y="-2" width="6" height="6" fill="#3a8a3a"/>
+        <rect x="-2" y="16" width="6" height="6" fill="#2a6a2a"/>
+        <rect x="32" y="18" width="6" height="6" fill="#2a6a2a"/>
       </g>
 
-      <!-- ====== WATER COOLER (left area) ====== -->
-      <g transform="translate(100,272)">
-        <!-- body -->
-        <rect x="0" y="16" width="24" height="36" fill="#bdc3c7"/>
-        <rect x="2" y="14" width="20" height="4" fill="#95a5a6"/>
-        <!-- water bottle -->
-        <rect x="4" y="-8" width="16" height="22" fill="#85c1e9" opacity=".7"/>
-        <rect x="6" y="-12" width="12" height="6" fill="#5dade2" opacity=".6"/>
-        <rect x="8" y="-16" width="8" height="6" fill="#aed6f1" opacity=".5"/>
-        <!-- tap -->
-        <rect x="8" y="28" width="4" height="4" fill="#e74c3c"/>
-        <rect x="16" y="28" width="4" height="4" fill="#3498db"/>
-        <!-- legs -->
-        <rect x="2" y="52" width="4" height="12" fill="#7f8c8d"/>
-        <rect x="18" y="52" width="4" height="12" fill="#7f8c8d"/>
-        <!-- drip tray -->
-        <rect x="0" y="36" width="24" height="3" fill="#7f8c8d"/>
-      </g>
-
-      <!-- ====== SOFA (break area, left side) ====== -->
-      <g id="sofa-area" transform="translate(30,380)">
-        <!-- sofa back -->
-        <rect x="0" y="0" width="140" height="40" fill="#6b5b7b" rx="0"/>
-        <rect x="4" y="4" width="132" height="32" fill="#7b6b8b"/>
-        <!-- sofa seat -->
-        <rect x="0" y="36" width="140" height="28" fill="#5b4b6b"/>
-        <rect x="4" y="38" width="64" height="24" fill="#6b5b7b"/>
-        <rect x="72" y="38" width="64" height="24" fill="#6b5b7b"/>
-        <!-- sofa arms -->
-        <rect x="-8" y="8" width="12" height="56" fill="#5b4b6b"/>
-        <rect x="136" y="8" width="12" height="56" fill="#5b4b6b"/>
-        <!-- sofa legs -->
-        <rect x="4" y="64" width="8" height="8" fill="#4a3a4a"/>
-        <rect x="128" y="64" width="8" height="8" fill="#4a3a4a"/>
-        <!-- cushions pixel detail -->
-        <rect x="12" y="10" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
-        <rect x="52" y="12" width="8" height="6" fill="#8b7b9b" opacity=".4"/>
-        <rect x="100" y="10" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
-      </g>
-
-      <!-- sofa character slots (sleeping on sofa) -->
-      <g id="sofa-slot-0" transform="translate(55,368)"></g>
-      <g id="sofa-slot-1" transform="translate(115,368)"></g>
-      <!-- standing slots (break area between sofa and desks) -->
-      <g id="stand-slot-0" transform="translate(105,420)"></g>
-      <g id="stand-slot-1" transform="translate(140,426)"></g>
-      <g id="stand-slot-2" transform="translate(175,422)"></g>
-
-      <!-- ====== DESK STATION 1 ====== -->
-      <g id="desk-area-0" transform="translate(220,320)">
-        <!-- desk surface -->
-        <rect x="0" y="40" width="120" height="12" fill="#8b6847"/>
-        <rect x="2" y="42" width="116" height="8" fill="#9a7857"/>
-        <!-- desk legs -->
-        <rect x="8" y="52" width="8" height="40" fill="#7a5a3a"/>
-        <rect x="104" y="52" width="8" height="40" fill="#7a5a3a"/>
-        <!-- desk drawer -->
-        <rect x="24" y="52" width="72" height="24" fill="#7a5a3a"/>
-        <rect x="26" y="54" width="30" height="20" fill="#6a4a2a"/>
-        <rect x="62" y="54" width="30" height="20" fill="#6a4a2a"/>
-        <rect x="38" y="62" width="6" height="4" fill="#a08060"/>
-        <rect x="74" y="62" width="6" height="4" fill="#a08060"/>
-        <!-- monitor -->
-        <rect x="32" y="8" width="56" height="36" fill="#2a2a3a"/>
-        <rect x="34" y="10" width="52" height="28" fill="#1a2a1a" id="screen-0"/>
-        <rect x="54" y="44" width="12" height="4" fill="#3a4a5a"/>
-        <rect x="44" y="46" width="32" height="3" fill="#3a4a5a"/>
+      <!-- ====== DESK STATION 1 (top-down, center-left) ====== -->
+      <g id="desk-area-0" transform="translate(260,150)">
+        <!-- desk surface (top-down rectangle) -->
+        <rect x="0" y="0" width="140" height="70" fill="#8b6847"/>
+        <rect x="2" y="2" width="136" height="66" fill="#9a7857"/>
+        <!-- depth shadow -->
+        <rect x="0" y="70" width="140" height="3" fill="#6a4a2a"/>
+        <!-- monitor (top-down: angled screen visible) -->
+        <rect x="42" y="6" width="56" height="16" fill="#2a2a3a"/>
+        <rect x="44" y="8" width="52" height="12" fill="#1a2a1a" id="screen-0"/>
+        <!-- monitor stand -->
+        <rect x="64" y="22" width="12" height="6" fill="#3a4a5a"/>
         <!-- screen content -->
-        <g clip-path="url(#screen-clip-0)">
-          <rect x="36" y="14" width="20" height="2" fill="#4ade80" opacity=".6"/>
-          <rect x="36" y="18" width="32" height="2" fill="#60a5fa" opacity=".5"/>
-          <rect x="36" y="22" width="16" height="2" fill="#facc15" opacity=".4"/>
-          <rect x="36" y="26" width="28" height="2" fill="#4ade80" opacity=".5"/>
-          <rect x="36" y="30" width="24" height="2" fill="#f472b6" opacity=".4"/>
-          <rect x="80" y="30" width="4" height="2" fill="#4ade80" class="cursor-anim"/>
-        </g>
-        <!-- chair -->
-        <rect x="40" y="76" width="40" height="8" fill="#4a4a5a"/>
-        <rect x="42" y="68" width="36" height="10" fill="#4a4a5a"/>
-        <rect x="56" y="84" width="8" height="12" fill="#3a3a4a"/>
-        <!-- chair wheels (pixel) -->
-        <rect x="44" y="94" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="70" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="46" y="10" width="20" height="2" fill="#4ade80" opacity=".6"/>
+        <rect x="46" y="13" width="32" height="2" fill="#60a5fa" opacity=".5"/>
+        <rect x="46" y="16" width="16" height="2" fill="#facc15" opacity=".4"/>
+        <rect x="90" y="16" width="4" height="2" fill="#4ade80" class="cursor-anim"/>
         <!-- keyboard -->
-        <rect x="40" y="36" width="28" height="6" fill="#3a3a4a"/>
-        <rect x="42" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="48" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="54" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="60" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <!-- coffee mug -->
-        <rect x="76" y="32" width="8" height="8" fill="#e8e0d0"/>
-        <rect x="84" y="34" width="4" height="4" fill="#e8e0d0"/>
-        <rect x="78" y="30" width="4" height="2" fill="#d4c4a8" opacity=".4"/>
+        <rect x="48" y="32" width="32" height="12" fill="#3a3a4a"/>
+        <rect x="50" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="56" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="62" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="68" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="50" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="56" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="62" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="68" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <!-- mouse -->
+        <rect x="88" y="36" width="8" height="12" fill="#4a4a5a"/>
+        <rect x="90" y="38" width="4" height="4" fill="#5a5a6a"/>
+        <!-- coffee mug (top-down circle) -->
+        <rect x="10" y="10" width="12" height="12" fill="#e8e0d0"/>
+        <rect x="12" y="12" width="8" height="8" fill="#6b4226"/>
+        <!-- chair (south of desk, rounded rect) -->
+        <rect x="44" y="78" width="44" height="36" fill="#4a4a5a"/>
+        <rect x="46" y="80" width="40" height="32" fill="#555566"/>
+        <!-- depth shadow on chair -->
+        <rect x="44" y="114" width="44" height="3" fill="#2a2a3a"/>
+        <!-- chair wheels -->
+        <rect x="46" y="116" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="80" y="116" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="62" y="118" width="6" height="4" fill="#2a2a3a"/>
       </g>
-      <g id="desk-slot-0" transform="translate(268,340)"></g>
+      <g id="desk-slot-0" transform="translate(326,254)"></g>
 
-      <!-- ====== DESK STATION 2 ====== -->
-      <g id="desk-area-1" transform="translate(420,320)">
-        <rect x="0" y="40" width="120" height="12" fill="#8b6847"/>
-        <rect x="2" y="42" width="116" height="8" fill="#9a7857"/>
-        <rect x="8" y="52" width="8" height="40" fill="#7a5a3a"/>
-        <rect x="104" y="52" width="8" height="40" fill="#7a5a3a"/>
-        <rect x="24" y="52" width="72" height="24" fill="#7a5a3a"/>
-        <rect x="26" y="54" width="30" height="20" fill="#6a4a2a"/>
-        <rect x="62" y="54" width="30" height="20" fill="#6a4a2a"/>
-        <rect x="38" y="62" width="6" height="4" fill="#a08060"/>
-        <rect x="74" y="62" width="6" height="4" fill="#a08060"/>
+      <!-- ====== DESK STATION 2 (top-down, center) ====== -->
+      <g id="desk-area-1" transform="translate(470,150)">
+        <!-- desk surface -->
+        <rect x="0" y="0" width="140" height="70" fill="#8b6847"/>
+        <rect x="2" y="2" width="136" height="66" fill="#9a7857"/>
+        <!-- depth shadow -->
+        <rect x="0" y="70" width="140" height="3" fill="#6a4a2a"/>
         <!-- monitor -->
-        <rect x="32" y="8" width="56" height="36" fill="#2a2a3a"/>
-        <rect x="34" y="10" width="52" height="28" fill="#1a2a1a" id="screen-1"/>
-        <rect x="54" y="44" width="12" height="4" fill="#3a4a5a"/>
-        <rect x="44" y="46" width="32" height="3" fill="#3a4a5a"/>
-        <g clip-path="url(#screen-clip-1)">
-          <rect x="36" y="14" width="24" height="2" fill="#f472b6" opacity=".5"/>
-          <rect x="36" y="18" width="36" height="2" fill="#4ade80" opacity=".5"/>
-          <rect x="36" y="22" width="20" height="2" fill="#60a5fa" opacity=".4"/>
-          <rect x="36" y="26" width="30" height="2" fill="#facc15" opacity=".5"/>
-          <rect x="36" y="30" width="18" height="2" fill="#4ade80" opacity=".4"/>
-          <rect x="78" y="26" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.3s"/>
-        </g>
-        <!-- chair -->
-        <rect x="40" y="76" width="40" height="8" fill="#4a4a5a"/>
-        <rect x="42" y="68" width="36" height="10" fill="#4a4a5a"/>
-        <rect x="56" y="84" width="8" height="12" fill="#3a3a4a"/>
-        <rect x="44" y="94" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="70" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="42" y="6" width="56" height="16" fill="#2a2a3a"/>
+        <rect x="44" y="8" width="52" height="12" fill="#1a2a1a" id="screen-1"/>
+        <rect x="64" y="22" width="12" height="6" fill="#3a4a5a"/>
+        <!-- screen content -->
+        <rect x="46" y="10" width="24" height="2" fill="#f472b6" opacity=".5"/>
+        <rect x="46" y="13" width="36" height="2" fill="#4ade80" opacity=".5"/>
+        <rect x="46" y="16" width="20" height="2" fill="#60a5fa" opacity=".4"/>
+        <rect x="88" y="13" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.3s"/>
         <!-- keyboard -->
-        <rect x="40" y="36" width="28" height="6" fill="#3a3a4a"/>
-        <rect x="42" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="48" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="54" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="60" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <!-- notes -->
-        <rect x="74" y="32" width="12" height="12" fill="#fde68a"/>
-        <rect x="76" y="35" width="8" height="1" fill="#a08060" opacity=".4"/>
-        <rect x="76" y="38" width="6" height="1" fill="#a08060" opacity=".4"/>
+        <rect x="48" y="32" width="32" height="12" fill="#3a3a4a"/>
+        <rect x="50" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="56" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="62" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="68" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="50" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="56" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="62" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="68" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <!-- mouse -->
+        <rect x="88" y="36" width="8" height="12" fill="#4a4a5a"/>
+        <rect x="90" y="38" width="4" height="4" fill="#5a5a6a"/>
+        <!-- notes (sticky note top-down) -->
+        <rect x="10" y="8" width="16" height="16" fill="#fde68a"/>
+        <rect x="12" y="11" width="10" height="1" fill="#a08060" opacity=".4"/>
+        <rect x="12" y="14" width="8" height="1" fill="#a08060" opacity=".4"/>
+        <rect x="12" y="17" width="6" height="1" fill="#a08060" opacity=".4"/>
+        <!-- chair -->
+        <rect x="44" y="78" width="44" height="36" fill="#4a4a5a"/>
+        <rect x="46" y="80" width="40" height="32" fill="#555566"/>
+        <rect x="44" y="114" width="44" height="3" fill="#2a2a3a"/>
+        <rect x="46" y="116" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="80" y="116" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="62" y="118" width="6" height="4" fill="#2a2a3a"/>
       </g>
-      <g id="desk-slot-1" transform="translate(468,340)"></g>
+      <g id="desk-slot-1" transform="translate(536,254)"></g>
 
-      <!-- ====== DESK STATION 3 ====== -->
-      <g id="desk-area-2" transform="translate(620,320)">
-        <rect x="0" y="40" width="120" height="12" fill="#8b6847"/>
-        <rect x="2" y="42" width="116" height="8" fill="#9a7857"/>
-        <rect x="8" y="52" width="8" height="40" fill="#7a5a3a"/>
-        <rect x="104" y="52" width="8" height="40" fill="#7a5a3a"/>
-        <rect x="24" y="52" width="72" height="24" fill="#7a5a3a"/>
-        <rect x="26" y="54" width="30" height="20" fill="#6a4a2a"/>
-        <rect x="62" y="54" width="30" height="20" fill="#6a4a2a"/>
-        <rect x="38" y="62" width="6" height="4" fill="#a08060"/>
-        <rect x="74" y="62" width="6" height="4" fill="#a08060"/>
+      <!-- ====== DESK STATION 3 (top-down, center-right) ====== -->
+      <g id="desk-area-2" transform="translate(680,150)">
+        <!-- desk surface -->
+        <rect x="0" y="0" width="140" height="70" fill="#8b6847"/>
+        <rect x="2" y="2" width="136" height="66" fill="#9a7857"/>
+        <!-- depth shadow -->
+        <rect x="0" y="70" width="140" height="3" fill="#6a4a2a"/>
         <!-- monitor -->
-        <rect x="32" y="8" width="56" height="36" fill="#2a2a3a"/>
-        <rect x="34" y="10" width="52" height="28" fill="#1a2a1a" id="screen-2"/>
-        <rect x="54" y="44" width="12" height="4" fill="#3a4a5a"/>
-        <rect x="44" y="46" width="32" height="3" fill="#3a4a5a"/>
-        <g clip-path="url(#screen-clip-2)">
-          <rect x="36" y="14" width="28" height="2" fill="#60a5fa" opacity=".5"/>
-          <rect x="36" y="18" width="18" height="2" fill="#4ade80" opacity=".5"/>
-          <rect x="36" y="22" width="36" height="2" fill="#f472b6" opacity=".4"/>
-          <rect x="36" y="26" width="22" height="2" fill="#facc15" opacity=".5"/>
-          <rect x="36" y="30" width="30" height="2" fill="#60a5fa" opacity=".4"/>
-          <rect x="72" y="22" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.6s"/>
-        </g>
-        <!-- chair -->
-        <rect x="40" y="76" width="40" height="8" fill="#4a4a5a"/>
-        <rect x="42" y="68" width="36" height="10" fill="#4a4a5a"/>
-        <rect x="56" y="84" width="8" height="12" fill="#3a3a4a"/>
-        <rect x="44" y="94" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="70" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="42" y="6" width="56" height="16" fill="#2a2a3a"/>
+        <rect x="44" y="8" width="52" height="12" fill="#1a2a1a" id="screen-2"/>
+        <rect x="64" y="22" width="12" height="6" fill="#3a4a5a"/>
+        <!-- screen content -->
+        <rect x="46" y="10" width="28" height="2" fill="#60a5fa" opacity=".5"/>
+        <rect x="46" y="13" width="18" height="2" fill="#4ade80" opacity=".5"/>
+        <rect x="46" y="16" width="36" height="2" fill="#f472b6" opacity=".4"/>
+        <rect x="86" y="13" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.6s"/>
         <!-- keyboard -->
-        <rect x="40" y="36" width="28" height="6" fill="#3a3a4a"/>
-        <rect x="42" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="48" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="54" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="60" y="37" width="4" height="2" fill="#5a5a6a"/>
-        <!-- plant on desk -->
-        <rect x="78" y="30" width="8" height="10" fill="#c0392b" opacity=".8"/>
-        <rect x="80" y="24" width="4" height="8" fill="#3a8a3a"/>
-        <rect x="76" y="22" width="4" height="4" fill="#4a9a4a"/>
-        <rect x="84" y="22" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="48" y="32" width="32" height="12" fill="#3a3a4a"/>
+        <rect x="50" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="56" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="62" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="68" y="34" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="50" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="56" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="62" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="68" y="38" width="4" height="2" fill="#5a5a6a"/>
+        <!-- mouse -->
+        <rect x="88" y="36" width="8" height="12" fill="#4a4a5a"/>
+        <rect x="90" y="38" width="4" height="4" fill="#5a5a6a"/>
+        <!-- small plant on desk (top-down) -->
+        <rect x="10" y="10" width="12" height="12" fill="#c0392b" opacity=".8"/>
+        <rect x="12" y="12" width="8" height="8" fill="#5a3a2a"/>
+        <rect x="8" y="6" width="8" height="8" fill="#3a8a3a"/>
+        <rect x="16" y="8" width="8" height="8" fill="#4a9a4a"/>
+        <rect x="10" y="14" width="6" height="6" fill="#2a6a2a"/>
+        <!-- chair -->
+        <rect x="44" y="78" width="44" height="36" fill="#4a4a5a"/>
+        <rect x="46" y="80" width="40" height="32" fill="#555566"/>
+        <rect x="44" y="114" width="44" height="3" fill="#2a2a3a"/>
+        <rect x="46" y="116" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="80" y="116" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="62" y="118" width="6" height="4" fill="#2a2a3a"/>
       </g>
-      <g id="desk-slot-2" transform="translate(668,340)"></g>
+      <g id="desk-slot-2" transform="translate(746,254)"></g>
 
-      <!-- ====== POTTED PLANT (right) ====== -->
-      <g transform="translate(790,276)">
-        <rect x="0" y="32" width="24" height="16" fill="#c0392b"/>
-        <rect x="-2" y="30" width="28" height="4" fill="#a83228"/>
-        <rect x="2" y="46" width="20" height="4" fill="#a83228"/>
-        <rect x="4" y="28" width="16" height="6" fill="#5a3a2a"/>
-        <rect x="8" y="4" width="4" height="26" fill="#2a6a2a"/>
-        <rect x="4" y="8" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="16" y="6" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="0" y="4" width="4" height="4" fill="#4a9a4a"/>
-        <rect x="20" y="2" width="4" height="4" fill="#4a9a4a"/>
-        <rect x="8" y="0" width="4" height="4" fill="#3a8a3a"/>
-        <rect x="12" y="-4" width="4" height="4" fill="#4a9a4a"/>
+      <!-- ====== POTTED PLANT small #1 (floor, near desk area) ====== -->
+      <g transform="translate(240,310)">
+        <rect x="2" y="2" width="16" height="16" fill="#c0392b"/>
+        <rect x="0" y="0" width="20" height="20" fill="none" stroke="#a83228" stroke-width="2"/>
+        <rect x="2" y="18" width="16" height="2" fill="#7a1a10"/>
+        <rect x="4" y="4" width="12" height="12" fill="#5a3a2a"/>
+        <rect x="4" y="0" width="8" height="6" fill="#3a8a3a"/>
+        <rect x="10" y="2" width="8" height="6" fill="#4a9a4a"/>
+        <rect x="0" y="6" width="6" height="6" fill="#2a6a2a"/>
+        <rect x="14" y="6" width="6" height="6" fill="#2a6a2a"/>
+        <rect x="6" y="12" width="6" height="6" fill="#4a9a4a"/>
       </g>
+
+      <!-- ====== POTTED PLANT small #2 (floor, right side) ====== -->
+      <g transform="translate(860,310)">
+        <rect x="2" y="2" width="16" height="16" fill="#c0392b"/>
+        <rect x="0" y="0" width="20" height="20" fill="none" stroke="#a83228" stroke-width="2"/>
+        <rect x="2" y="18" width="16" height="2" fill="#7a1a10"/>
+        <rect x="4" y="4" width="12" height="12" fill="#5a3a2a"/>
+        <rect x="2" y="0" width="8" height="6" fill="#4a9a4a"/>
+        <rect x="12" y="2" width="6" height="6" fill="#3a8a3a"/>
+        <rect x="0" y="8" width="6" height="6" fill="#3a8a3a"/>
+        <rect x="14" y="8" width="6" height="6" fill="#2a6a2a"/>
+        <rect x="6" y="14" width="8" height="6" fill="#4a9a4a"/>
+      </g>
+
+      <!-- ====== POTTED PLANT small #3 (floor, bottom left) ====== -->
+      <g transform="translate(40,440)">
+        <rect x="2" y="2" width="16" height="16" fill="#c0392b"/>
+        <rect x="0" y="0" width="20" height="20" fill="none" stroke="#a83228" stroke-width="2"/>
+        <rect x="2" y="18" width="16" height="2" fill="#7a1a10"/>
+        <rect x="4" y="4" width="12" height="12" fill="#5a3a2a"/>
+        <rect x="6" y="0" width="6" height="6" fill="#3a8a3a"/>
+        <rect x="0" y="4" width="6" height="6" fill="#4a9a4a"/>
+        <rect x="14" y="4" width="6" height="6" fill="#2a6a2a"/>
+        <rect x="4" y="12" width="6" height="6" fill="#3a8a3a"/>
+        <rect x="12" y="10" width="6" height="6" fill="#4a9a4a"/>
+      </g>
+
+      <!-- sofa character slots (sleeping on sofa, top-down) -->
+      <g id="sofa-slot-0" transform="translate(80,190)"></g>
+      <g id="sofa-slot-1" transform="translate(140,190)"></g>
+      <!-- standing slots (break area near water cooler / sofa vicinity) -->
+      <g id="stand-slot-0" transform="translate(80,350)"></g>
+      <g id="stand-slot-1" transform="translate(120,370)"></g>
+      <g id="stand-slot-2" transform="translate(160,350)"></g>
 
       <!-- ====== PIXEL PARTICLE SPOTS ====== -->
       <g id="particles"></g>
 
-      <!-- ====== LABEL on wall ====== -->
-      <text x="480" y="216" text-anchor="middle" font-size="8" fill="#a09080" class="pixel-font" opacity=".6">- エージェント オフィス -</text>
+      <!-- ====== LABEL (center of floor) ====== -->
+      <text x="480" y="490" text-anchor="middle" font-size="8" fill="#a09080" class="pixel-font" opacity=".6">- Claude Agent Monitor -</text>
 
     </svg>
   </div>
