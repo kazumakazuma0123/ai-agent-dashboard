@@ -474,9 +474,13 @@ body {
         <rect x="100" y="10" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
       </g>
 
-      <!-- sofa character slots -->
-      <g id="sofa-slot-0" transform="translate(60,368)"></g>
-      <g id="sofa-slot-1" transform="translate(120,368)"></g>
+      <!-- sofa character slots (sleeping on sofa) -->
+      <g id="sofa-slot-0" transform="translate(55,368)"></g>
+      <g id="sofa-slot-1" transform="translate(115,368)"></g>
+      <!-- standing slots (break area between sofa and desks) -->
+      <g id="stand-slot-0" transform="translate(105,420)"></g>
+      <g id="stand-slot-1" transform="translate(140,426)"></g>
+      <g id="stand-slot-2" transform="translate(175,422)"></g>
 
       <!-- ====== DESK STATION 1 ====== -->
       <g id="desk-area-0" transform="translate(220,320)">
@@ -892,46 +896,68 @@ setInterval(spawnParticle, 3000)
 function renderRoom(agents) {
   const data = agents.length > 0 ? agents : DEFAULTS
   const active = data.filter(a => a.status === 'active')
-  const idle = data.filter(a => a.status === 'idle')
-  const stopped = data.filter(a => a.status === 'stopped')
   const nonActive = data.filter(a => a.status !== 'active')
 
-  // Desk slots (up to 3 active agents)
+  // Clear all slots
+  const allSlotIds = ['desk-slot-0','desk-slot-1','desk-slot-2','sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2']
+  allSlotIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '' })
   for (let i = 0; i < 3; i++) {
-    const slot = document.getElementById('desk-slot-' + i)
     const screen = document.getElementById('screen-' + i)
-    if (active[i]) {
-      const a = active[i], ck = charColor(a.session_id)
-      const label = taskLabel(a)
-      const charSvg = svgWorking(ck, i)
-      const bubble = svgBubble(label, accentForType(ck), 18, -8)
-      slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
-      if (screen) screen.setAttribute('fill', '#0a1a0a')
-    } else {
-      slot.innerHTML = ''
-      if (screen) screen.setAttribute('fill', '#1a2a1a')
-    }
+    if (screen) screen.setAttribute('fill', '#1a2a1a')
   }
 
-  // Sofa slots (idle/stopped agents)
-  const sofaAgents = [...stopped, ...idle]
-  for (let i = 0; i < 2; i++) {
+  // Desk slots (up to 3 active agents)
+  for (let i = 0; i < 3 && i < active.length; i++) {
+    const slot = document.getElementById('desk-slot-' + i)
+    const screen = document.getElementById('screen-' + i)
+    const a = active[i], ck = charColor(a.session_id)
+    const label = taskLabel(a)
+    const charSvg = svgWorking(ck, i)
+    const bubble = svgBubble(label, accentForType(ck), 18, -8)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+    if (screen) screen.setAttribute('fill', '#0a1a0a')
+  }
+
+  // Non-active agents: distribute across sofa (sleeping) + stand (idle) + remaining desk
+  const sleeping = nonActive.filter(a => a.status === 'stopped' || (a._default && a.last_desc.includes('寝')))
+  const idleAgents = nonActive.filter(a => !(a.status === 'stopped' || (a._default && a.last_desc.includes('寝'))))
+
+  // Sofa slots for sleeping agents (up to 2)
+  for (let i = 0; i < 2 && i < sleeping.length; i++) {
     const slot = document.getElementById('sofa-slot-' + i)
-    if (sofaAgents[i]) {
-      const a = sofaAgents[i], ck = charColor(a.session_id)
-      const isSleeping = a.status === 'stopped' || (a._default && a.last_desc.includes('寝'))
-      if (isSleeping) {
-        const charSvg = svgSleeping(ck)
-        const bubble = svgBubble('スリープ', '#6b7280', 32, -12)
-        slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${bubble}`
-      } else {
-        const charSvg = svgIdle(ck)
-        const bubble = svgBubble('スタンバイ', accentForType(ck), 18, -8)
-        slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
-      }
-    } else {
-      slot.innerHTML = ''
-    }
+    const a = sleeping[i], ck = charColor(a.session_id)
+    const charSvg = svgSleeping(ck)
+    const bubble = svgBubble('スリープ', '#6b7280', 32, -12)
+    slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${bubble}`
+  }
+
+  // Remaining sleeping agents overflow to standing
+  const overflowSleeping = sleeping.slice(2)
+
+  // Idle agents: fill standing slots, then empty desk slots
+  const standAgents = [...idleAgents, ...overflowSleeping]
+  let standIdx = 0
+
+  // Fill standing slots (up to 3)
+  for (let i = 0; i < 3 && standIdx < standAgents.length; i++, standIdx++) {
+    const slot = document.getElementById('stand-slot-' + i)
+    const a = standAgents[standIdx], ck = charColor(a.session_id)
+    const label = a.status === 'stopped' ? 'スリープ' : 'スタンバイ'
+    const color = a.status === 'stopped' ? '#6b7280' : accentForType(ck)
+    const charSvg = svgIdle(ck)
+    const bubble = svgBubble(label, color, 18, -8)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+  }
+
+  // Remaining idle agents sit at empty desks
+  for (let i = 0; i < 3 && standIdx < standAgents.length; i++) {
+    const slot = document.getElementById('desk-slot-' + i)
+    if (slot.innerHTML !== '') continue
+    const a = standAgents[standIdx], ck = charColor(a.session_id)
+    const charSvg = svgIdle(ck)
+    const bubble = svgBubble('スタンバイ', accentForType(ck), 18, -8)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+    standIdx++
   }
 
   // Info panel
