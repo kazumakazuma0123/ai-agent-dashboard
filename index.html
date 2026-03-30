@@ -728,10 +728,14 @@ const COLORS = {
 }
 const COLOR_KEYS = Object.keys(COLORS)
 
-function charColor(sessionId) {
-  let h = 0
-  for (const c of sessionId) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff
-  return COLOR_KEYS[Math.abs(h) % COLOR_KEYS.length]
+// ── 社員マスタ（カラー固定） ──
+const MEMBER_COLORS = {
+  sato: 'blue', tanaka: 'green', yamada: 'yellow', suzuki: 'pink',
+  nakamura: 'purple', watanabe: 'teal', kato: 'orange', matsumoto: 'red',
+}
+
+function charColor(id) {
+  return MEMBER_COLORS[id] || COLOR_KEYS[Math.abs([...id].reduce((h,c) => (h*31+c.charCodeAt(0))&0xffffffff, 0)) % COLOR_KEYS.length]
 }
 
 // ── Pixel Sprite Renderer ──
@@ -911,14 +915,16 @@ function elapsed(iso) {
   return s + 's'
 }
 
-// ── Default agents ──
-const DEFAULTS = [
-  { session_id:'default-blue',   project:'Agent-A', status:'idle',    last_tool:'', last_desc:'タスク待ち...', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
-  { session_id:'default-pink',   project:'Agent-B', status:'stopped', last_tool:'', last_desc:'うたた寝中', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
-  { session_id:'default-yellow', project:'Agent-C', status:'idle',    last_tool:'', last_desc:'スタンバイOK', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
-  { session_id:'default-green',  project:'Agent-D', status:'idle',    last_tool:'', last_desc:'いつでも行ける', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
-  { session_id:'default-purple', project:'Agent-E', status:'stopped', last_tool:'', last_desc:'充電中...', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
-  { session_id:'default-orange', project:'Agent-F', status:'idle',    last_tool:'', last_desc:'準備万端', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
+// ── 社員マスタ（デフォルト表示） ──
+const MEMBERS_DEFAULT = [
+  { member_id:'sato',     name:'佐藤', role:'コンテンツ制作部長', commands:['/article'],           status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'tanaka',   name:'田中', role:'リサーチャー',       commands:['/research'],          status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'yamada',   name:'山田', role:'ライター',           commands:['/write'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'suzuki',   name:'鈴木', role:'エディター',         commands:['/direct'],            status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'nakamura', name:'中村', role:'ホテル運営部長',     commands:['/hotel'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'watanabe', name:'渡辺', role:'開発部長',           commands:['/dev'],               status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'kato',     name:'加藤', role:'インフラ部長',       commands:['/infra'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'matsumoto',name:'松本', role:'経営企画',           commands:['/ceo','/standup'],    status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
 ]
 
 // ── Update wall clock ──
@@ -956,7 +962,8 @@ setInterval(spawnParticle, 3000)
 
 // ── Render agents into SVG + info panel ──
 function renderRoom(agents) {
-  const data = agents.length > 0 ? agents : DEFAULTS
+  // Use API data if available, else defaults
+  const data = (agents.length > 0 && agents[0].member_id) ? agents : MEMBERS_DEFAULT
   const active = data.filter(a => a.status === 'active')
   const nonActive = data.filter(a => a.status !== 'active')
 
@@ -968,76 +975,74 @@ function renderRoom(agents) {
     if (screen) screen.setAttribute('fill', '#1a2a1a')
   }
 
-  // Desk slots (up to 3 active agents)
+  // Desk slots (active agents, up to 3)
   for (let i = 0; i < 3 && i < active.length; i++) {
     const slot = document.getElementById('desk-slot-' + i)
     const screen = document.getElementById('screen-' + i)
-    const a = active[i], ck = charColor(a.session_id)
-    const label = taskLabel(a)
+    const a = active[i], ck = charColor(a.member_id)
+    const label = a.command || taskLabel(a)
     const charSvg = svgWorking(ck, i)
-    const bubble = svgBubble(label, accentForType(ck), 18, -8)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+    const nameBubble = svgBubble(a.name, accentForType(ck), 18, -20)
+    const taskBubble = svgBubble(label, '#facc15', 18, -8)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameBubble}${taskBubble}`
     if (screen) screen.setAttribute('fill', '#0a1a0a')
   }
 
-  // Non-active agents: distribute across sofa (sleeping) + stand (idle) + remaining desk
-  const sleeping = nonActive.filter(a => a.status === 'stopped' || (a._default && a.last_desc.includes('寝')))
-  const idleAgents = nonActive.filter(a => !(a.status === 'stopped' || (a._default && a.last_desc.includes('寝'))))
+  // Non-active: idle on sofa/stand/desk
+  let idleIdx = 0
 
-  // Sofa slots for sleeping agents (up to 2)
-  for (let i = 0; i < 2 && i < sleeping.length; i++) {
+  // Sofa (up to 2 sleeping-style)
+  for (let i = 0; i < 2 && idleIdx < nonActive.length; i++, idleIdx++) {
     const slot = document.getElementById('sofa-slot-' + i)
-    const a = sleeping[i], ck = charColor(a.session_id)
+    const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgSleeping(ck)
-    const bubble = svgBubble('スリープ', '#6b7280', 32, -12)
+    const bubble = svgBubble(a.name, '#6b7280', 32, -12)
     slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${bubble}`
   }
 
-  // Remaining sleeping agents overflow to standing
-  const overflowSleeping = sleeping.slice(2)
-
-  // Idle agents: fill standing slots, then empty desk slots
-  const standAgents = [...idleAgents, ...overflowSleeping]
-  let standIdx = 0
-
-  // Fill standing slots (up to 3)
-  for (let i = 0; i < 3 && standIdx < standAgents.length; i++, standIdx++) {
+  // Standing (up to 3)
+  for (let i = 0; i < 3 && idleIdx < nonActive.length; i++, idleIdx++) {
     const slot = document.getElementById('stand-slot-' + i)
-    const a = standAgents[standIdx], ck = charColor(a.session_id)
-    const label = a.status === 'stopped' ? 'スリープ' : 'スタンバイ'
-    const color = a.status === 'stopped' ? '#6b7280' : accentForType(ck)
+    const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck)
-    const bubble = svgBubble(label, color, 18, -8)
+    const bubble = svgBubble(a.name, accentForType(ck), 18, -8)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
   }
 
-  // Remaining idle agents sit at empty desks
-  for (let i = 0; i < 3 && standIdx < standAgents.length; i++) {
+  // Remaining idle at empty desks
+  for (let i = 0; i < 3 && idleIdx < nonActive.length; i++) {
     const slot = document.getElementById('desk-slot-' + i)
     if (slot.innerHTML !== '') continue
-    const a = standAgents[standIdx], ck = charColor(a.session_id)
+    const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck)
-    const bubble = svgBubble('スタンバイ', accentForType(ck), 18, -8)
+    const bubble = svgBubble(a.name, accentForType(ck), 18, -8)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
-    standIdx++
+    idleIdx++
   }
 
-  // Info panel
+  // Info panel — show all 8 members with name, role, status, task
   const panel = document.getElementById('agent-panel')
   const cards = data.map(a => {
-    const ck = charColor(a.session_id)
+    const ck = charColor(a.member_id)
     const col = accentForType(ck)
     const stClass = a.status === 'active' ? 'active' : a.status === 'idle' ? 'idle' : 'stopped'
-    const stText = a.status === 'active' ? '稼働中' : a.status === 'idle' ? '待機中' : '停止'
-    const desc = a.last_desc || a.last_tool || (a.status === 'active' ? '処理中...' : '待機中')
-    const uptime = elapsed(a.started_at)
+    const stText = a.status === 'active' ? '稼働中' : '待機中'
+    const cmdText = a.commands ? a.commands.join(' ') : ''
+    const desc = a.status === 'active'
+      ? (a.last_desc || a.task || a.command || '処理中...')
+      : (cmdText + ' 待機')
+    const toolInfo = a.status === 'active' && a.tool_count > 0
+      ? ` | ツール: ${a.tool_count}回`
+      : ''
+    const timeInfo = a.status === 'active' && a.started_at
+      ? ` | ${elapsed(a.started_at)}`
+      : ''
     return `<div class="agent-card">
       <div class="status-dot ${stClass}"></div>
       <div class="agent-info">
-        <div class="agent-name" style="color:${col};">${a.project}</div>
-        <div class="agent-status">[${stText}] ツール: ${a.tool_count}回</div>
+        <div class="agent-name" style="color:${col};">${a.name} <span style="color:var(--text-dim);font-size:6px;">${a.role}</span></div>
+        <div class="agent-status">[${stText}]${toolInfo}${timeInfo}</div>
         <div class="agent-task">${desc}</div>
-        <div class="agent-meta">稼働時間: ${uptime} | 最終: ${timeAgo(a.last_seen)}</div>
       </div>
     </div>`
   })
@@ -1045,11 +1050,10 @@ function renderRoom(agents) {
 
   // Update status bar
   const activeCount = active.length
-  const totalCount = data.length
-  document.getElementById('sb-active-count').textContent = activeCount + '/' + totalCount
+  document.getElementById('sb-active-count').textContent = activeCount + '/' + data.length
 
   const hpPct = Math.min(100, 20 + activeCount * 25 + Math.floor(Math.random() * 5))
-  const mpPct = Math.min(100, 30 + totalCount * 10 + Math.floor(Math.random() * 5))
+  const mpPct = Math.min(100, 30 + data.length * 10 + Math.floor(Math.random() * 5))
   const hpEl = document.getElementById('sb-hp')
   const mpEl = document.getElementById('sb-mp')
   hpEl.style.width = hpPct + '%'
