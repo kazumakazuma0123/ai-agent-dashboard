@@ -3,849 +3,849 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Agent Monitor — Cyber Room</title>
+<title>エージェントオフィス — ドット絵モニター</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #08061a;
-  --neon-blue: #38bdf8;
-  --neon-pink: #f472b6;
-  --neon-green: #4ade80;
-  --neon-yellow: #facc15;
-  --neon-purple: #a78bfa;
-  --neon-orange: #fb923c;
-  --text: #dde0ff;
-  --dim: #5a5c90;
+  --wall: #e8dcc8;
+  --floor-a: #c49a6c;
+  --floor-b: #b8895c;
+  --desk: #8b6847;
+  --desk-dark: #7a5a3a;
+  --monitor-body: #2a2a3a;
+  --monitor-border: #3a4a5a;
+  --chair: #4a4a5a;
+  --plant-a: #3a8a3a;
+  --plant-b: #2a6a2a;
+  --sky: #87ceeb;
+  --bg: #1a1a2e;
+  --panel-bg: #1e1e32;
+  --panel-border: #c49a6c;
+  --text: #f0e6d0;
+  --text-dim: #8a7e6a;
+  --active-green: #4ade80;
+  --idle-yellow: #facc15;
+  --stopped-gray: #6b7280;
+  --pixel: 4px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Press Start 2P', monospace;
   min-height: 100vh;
   overflow-x: hidden;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
-/* ── top status bar ── */
+/* ── RPG Status Bar ── */
 .status-bar {
   position: fixed; top:0; left:0; right:0; z-index:200;
-  background: rgba(8,6,26,.92);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(167,139,250,.12);
-  padding: 0 20px;
-  height: 38px;
+  background: var(--panel-bg);
+  border-bottom: 4px solid var(--panel-border);
+  padding: 0 12px;
+  height: 44px;
   display: flex; align-items: center; justify-content: space-between;
-  font-size: .68rem;
+  font-size: 8px;
+  image-rendering: pixelated;
 }
-.sb-left { display:flex; align-items:center; gap:16px; }
+.sb-left { display:flex; align-items:center; gap:12px; }
 .sb-title {
-  font-weight:700; font-size:.75rem;
-  background: linear-gradient(135deg,#38bdf8,#a78bfa,#f472b6);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  font-size:9px; color:#facc15;
+  text-shadow: 2px 2px 0 #7a5a3a;
+  letter-spacing: 1px;
 }
-.sb-label { color:var(--dim); text-transform:uppercase; letter-spacing:.08em; font-size:.58rem; }
-.sb-metric {
-  display:flex; align-items:center; gap:5px;
+.sb-metric { display:flex; align-items:center; gap:6px; color:var(--text-dim); }
+.sb-label { font-size:7px; }
+.sb-val {
+  color:var(--text); font-variant-numeric:tabular-nums;
+  min-width:20px; text-align:right;
 }
-.sb-bar-wrap {
-  width:48px; height:5px; background:rgba(255,255,255,.06); border-radius:3px; overflow:hidden;
+.sb-hp-bar {
+  width:48px; height:8px; background:#333;
+  border: 2px solid #555; position:relative;
 }
-.sb-bar {
-  height:100%; border-radius:3px; transition: width .5s;
+.sb-hp-fill {
+  height:100%; transition: width .5s;
 }
-.sb-val { font-variant-numeric:tabular-nums; min-width:26px; text-align:right; }
-.sb-right { display:flex; align-items:center; gap:14px; }
-#update-info { color:var(--dim); font-variant-numeric:tabular-nums; }
+.sb-right { display:flex; align-items:center; gap:10px; }
+#update-info { color:var(--text-dim); font-size:7px; }
 .refresh-btn {
-  background:none; border:1px solid rgba(167,139,250,.25); color:var(--dim);
-  padding:3px 10px; border-radius:5px; cursor:pointer; font-size:.65rem;
-  transition:all .2s;
+  background: var(--panel-bg); border:2px solid var(--panel-border);
+  color:var(--text); padding:4px 8px; cursor:pointer;
+  font-family:'Press Start 2P', monospace; font-size:7px;
+  transition:all .15s;
 }
-.refresh-btn:hover { border-color:var(--neon-purple); color:var(--neon-purple); }
+.refresh-btn:hover { background:var(--panel-border); color:#1a1a2e; }
+.refresh-btn:active { transform:scale(.95); }
 .spinner {
-  width:11px; height:11px; border-radius:50%;
-  border:2px solid rgba(167,139,250,.15); border-top-color:var(--neon-purple);
-  animation:spin .8s linear infinite; display:none;
+  width:10px; height:10px; border-radius:50%;
+  border:2px solid #333; border-top-color:var(--idle-yellow);
+  animation:spin .6s linear infinite; display:none;
 }
 .spinner.show { display:inline-block; }
 @keyframes spin { to{transform:rotate(360deg);} }
 
-/* ── room viewport ── */
-.room-viewport {
-  margin-top: 38px;
+/* ── Main Layout ── */
+.main-wrap {
+  margin-top: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: calc(100vh - 44px);
+  background: radial-gradient(ellipse at 50% 30%, rgba(200,180,140,.08), transparent 70%), var(--bg);
+  padding-bottom: 10px;
+}
+
+/* ── SVG Scene ── */
+.scene-wrap {
   width: 100%;
-  min-height: calc(100vh - 38px);
+  max-width: 960px;
   position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse at 25% 15%, rgba(167,139,250,.07) 0%, transparent 50%),
-    radial-gradient(ellipse at 75% 85%, rgba(56,189,248,.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(244,114,182,.03) 0%, transparent 60%),
-    var(--bg);
 }
-
-/* ── isometric room SVG ── */
-.room-svg {
+.scene-svg {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
   display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
 }
 
-/* ── neon sign ── */
-.neon-sign-top {
-  position: absolute; top: 50px; right: 40px; z-index:10;
-  font-size: .9rem; font-weight: 800;
-  color: var(--neon-pink);
-  text-shadow: 0 0 8px var(--neon-pink), 0 0 25px var(--neon-pink), 0 0 50px rgba(244,114,182,.25);
-  animation: neon-flicker 5s infinite;
-  font-family: monospace;
-}
-@keyframes neon-flicker {
-  0%,18%,22%,25%,53%,57%,100% { opacity:1; }
-  20%,24%,55% { opacity:.5; }
-}
-
-/* ── floating UI panels ── */
-.float-panel {
-  position: absolute;
-  background: rgba(14,12,35,.88);
-  border: 1px solid rgba(167,139,250,.15);
-  border-radius: 10px;
+/* ── Info Panel (RPG Dialogue Box) ── */
+.info-panel {
+  width: 100%;
+  max-width: 940px;
+  margin: 8px auto 0;
+  background: var(--panel-bg);
+  border: 4px solid var(--panel-border);
+  border-radius: 0;
   padding: 10px 14px;
-  backdrop-filter: blur(8px);
-  font-size: .68rem;
-  z-index: 20;
-  pointer-events: auto;
+  position: relative;
 }
-.float-panel::before {
+.info-panel::before {
   content:'';
-  position:absolute; top:-1px; left:15%; right:15%; height:1px;
-  background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
+  position:absolute; top:4px; left:4px; right:4px; bottom:4px;
+  border:2px solid rgba(196,154,108,.3);
+  pointer-events:none;
 }
-.fp-title {
-  font-size:.56rem; text-transform:uppercase; letter-spacing:.12em;
-  color: var(--neon-purple); margin-bottom:6px; font-weight:600;
+.panel-title {
+  font-size:8px; color:#facc15;
+  text-shadow:1px 1px 0 #7a5a3a;
+  margin-bottom:8px;
+  letter-spacing:1px;
+}
+.agent-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap:8px;
+}
+.agent-card {
+  background:rgba(255,255,255,.03);
+  border:2px solid rgba(196,154,108,.25);
+  padding:8px 10px;
+  display:flex; align-items:flex-start; gap:10px;
+  font-size:7px; line-height:1.6;
+}
+.agent-card .status-dot {
+  width:8px; height:8px; flex-shrink:0; margin-top:2px;
+  image-rendering: pixelated;
+}
+.agent-card .status-dot.active { background:var(--active-green); box-shadow:0 0 4px var(--active-green); }
+.agent-card .status-dot.idle { background:var(--idle-yellow); }
+.agent-card .status-dot.stopped { background:var(--stopped-gray); }
+.agent-info { flex:1; min-width:0; }
+.agent-name { color:#facc15; font-size:8px; }
+.agent-status { color:var(--text-dim); }
+.agent-task { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+.agent-meta { color:var(--text-dim); font-size:6px; }
+
+/* ── Animations ── */
+@keyframes typing-l {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes typing-r {
+  0%,100% { transform: translateY(-3px); }
+  50% { transform: translateY(0); }
+}
+@keyframes idle-bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes zzz-float {
+  0% { opacity:1; transform:translate(0,0); }
+  100% { opacity:0; transform:translate(4px,-12px); }
+}
+@keyframes cursor-blink {
+  0%,49% { opacity:1; }
+  50%,100% { opacity:0; }
+}
+@keyframes cloud-drift {
+  0% { transform:translateX(0); }
+  100% { transform:translateX(60px); }
+}
+@keyframes clock-tick {
+  0%,100% { opacity:1; }
+  50% { opacity:.5; }
+}
+@keyframes screen-scroll {
+  0% { transform:translateY(0); }
+  100% { transform:translateY(-8px); }
+}
+@keyframes breathe {
+  0%,100% { transform:scaleY(1); }
+  50% { transform:scaleY(1.02); }
+}
+@keyframes particle-float {
+  0% { opacity:.8; transform:translateY(0) scale(1); }
+  100% { opacity:0; transform:translateY(-20px) scale(.5); }
 }
 
-/* tasks panel */
-.tasks-panel { top:15%; left: 2%; width:200px; }
-.task-item {
-  display:flex; align-items:center; gap:6px;
-  padding: 3px 0; color: var(--dim);
-}
-.task-dot { width:4px; height:4px; border-radius:50%; flex-shrink:0; }
-.task-dot.run { background:var(--neon-green); box-shadow:0 0 6px var(--neon-green); }
-.task-dot.idle { background:var(--neon-yellow); }
-.task-dot.off { background:#4a4a6a; }
-.task-text { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.task-text.active { color: var(--neon-green); }
-
-/* agents panel */
-.agents-panel { top:15%; right:2%; width:180px; }
-.ap-row {
-  display:flex; align-items:center; gap:7px; padding:3px 0;
-}
-.ap-avatar { width:18px; height:18px; border-radius:50%; flex-shrink:0; }
-.ap-name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ap-status {
-  font-size:.55rem; padding:1px 6px; border-radius:8px;
-  font-weight:600; flex-shrink:0;
-}
-.ap-status.active { background:rgba(74,222,128,.12); color:var(--neon-green); }
-.ap-status.idle { background:rgba(250,204,21,.1); color:var(--neon-yellow); }
-.ap-status.stopped { background:rgba(100,100,140,.1); color:#6a6a8a; }
-
-/* ── agent status bubbles in SVG ── */
-.agent-bubble {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  pointer-events: none;
-}
-
-/* ── ambient ── */
-.particles {
-  position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;
-}
-.particle {
-  position:absolute; width:2px; height:2px;
-  border-radius:50%; opacity:0;
-  animation: float-up linear infinite;
-}
-@keyframes float-up {
-  0%{opacity:0;transform:translateY(0);}
-  10%{opacity:.3;}
-  90%{opacity:.3;}
-  100%{opacity:0;transform:translateY(-100vh);}
-}
-
-/* ── character animations ── */
-@keyframes blink { 0%,87%,100%{transform:scaleY(1);}91%{transform:scaleY(.08);} }
-@keyframes tap-l { 0%,100%{transform:rotate(-6deg) translateY(0);}50%{transform:rotate(-6deg) translateY(4px);} }
-@keyframes tap-r { 0%,100%{transform:rotate(6deg) translateY(4px);}50%{transform:rotate(6deg) translateY(0);} }
-@keyframes look-lr { 0%,15%,100%{transform:translateX(0);}40%,55%{transform:translateX(-3px);}75%{transform:translateX(3px);} }
-@keyframes head-tilt { 0%,100%{transform:rotate(0);}30%{transform:rotate(-3deg);}70%{transform:rotate(2deg);} }
-@keyframes float-idle { 0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);} }
-@keyframes breathe { 0%,100%{transform:scale(1);}50%{transform:scale(1.02);} }
-@keyframes tail-wag { 0%,100%{transform:rotate(-15deg);}50%{transform:rotate(15deg);} }
-@keyframes cat-walk { 0%{transform:translateX(0);}50%{transform:translateX(12px);}100%{transform:translateX(0);} }
-@keyframes scan-line { 0%{transform:translateY(-100%);}100%{transform:translateY(100%);} }
-@keyframes glow-pulse { 0%,100%{opacity:.6;}50%{opacity:1;} }
-@keyframes typing-cursor { 0%,49%{opacity:1;}50%,100%{opacity:0;} }
-@keyframes hologram-flicker { 0%,100%{opacity:.85;}50%{opacity:.95;}25%,75%{opacity:.7;} }
-
-/* scrollbar */
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:rgba(167,139,250,.2); border-radius:3px; }
-
-/* responsive */
-@media (max-width:900px) {
-  .tasks-panel, .agents-panel { display:none; }
-  .neon-sign-top { font-size:.7rem; right:15px; top:48px; }
-}
+/* ── Responsive ── */
 @media (max-width:600px) {
-  .sb-metric { display:none; }
+  .status-bar { font-size:6px; height:36px; padding:0 6px; }
+  .sb-title { font-size:7px; }
+  .main-wrap { margin-top:36px; }
+  .info-panel { font-size:6px; padding:6px 8px; }
+  .agent-grid { grid-template-columns:1fr; }
+  .agent-card { font-size:6px; }
+  .panel-title { font-size:7px; }
+  .sb-hp-bar { width:32px; }
+  .sb-metric .sb-label { display:none; }
 }
 </style>
 </head>
 <body>
 
-<script>
-const VPS_URL = location.hostname === 'localhost' ? 'http://162.43.29.31:3001' : ''
-const POLL_INTERVAL = 10000
-</script>
-
-<!-- particles -->
-<div class="particles" id="particles"></div>
-
-<!-- status bar -->
+<!-- RPG Status Bar -->
 <div class="status-bar">
   <div class="sb-left">
-    <span class="sb-title">SYSTEM STATUS</span>
+    <span class="sb-title">▶ エージェントオフィス</span>
     <div class="sb-metric">
-      <span class="sb-label">NET</span>
-      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-net" style="width:72%;background:var(--neon-green);"></div></div>
-      <span class="sb-val" style="color:var(--neon-green);">OK</span>
+      <span class="sb-label">稼働:</span>
+      <span class="sb-val" id="sb-active-count">0</span>
     </div>
     <div class="sb-metric">
-      <span class="sb-label">CPU</span>
-      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-cpu" style="width:35%;background:var(--neon-blue);"></div></div>
-      <span class="sb-val" id="sb-cpu-val" style="color:var(--neon-blue);">35%</span>
+      <span class="sb-label">HP:</span>
+      <div class="sb-hp-bar">
+        <div class="sb-hp-fill" id="sb-hp" style="width:40%;background:var(--active-green);"></div>
+      </div>
     </div>
     <div class="sb-metric">
-      <span class="sb-label">MEM</span>
-      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-mem" style="width:48%;background:var(--neon-purple);"></div></div>
-      <span class="sb-val" id="sb-mem-val" style="color:var(--neon-purple);">48%</span>
-    </div>
-    <div class="sb-metric">
-      <span class="sb-label">BAT</span>
-      <div class="sb-bar-wrap"><div class="sb-bar" id="sb-bat" style="width:88%;background:var(--neon-yellow);"></div></div>
-      <span class="sb-val" style="color:var(--neon-yellow);">88%</span>
+      <span class="sb-label">MP:</span>
+      <div class="sb-hp-bar">
+        <div class="sb-hp-fill" id="sb-mp" style="width:60%;background:#60a5fa;"></div>
+      </div>
     </div>
   </div>
   <div class="sb-right">
     <div class="spinner" id="spinner"></div>
-    <div id="update-info">--</div>
-    <button class="refresh-btn" onclick="fetchAgents()">更新</button>
+    <span id="update-info">接続中...</span>
+    <button class="refresh-btn" onclick="fetchAgents()">▶ 更新</button>
   </div>
 </div>
 
-<!-- room -->
-<div class="room-viewport">
-  <div class="neon-sign-top">AGENTS_LAB</div>
+<!-- Main Content -->
+<div class="main-wrap">
+  <div class="scene-wrap">
+    <svg class="scene-svg" viewBox="0 0 960 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .typing-arm-l { animation: typing-l .5s ease-in-out infinite; }
+          .typing-arm-r { animation: typing-r .5s ease-in-out infinite; }
+          .idle-anim { animation: idle-bounce 2s ease-in-out infinite; }
+          .zzz-anim { animation: zzz-float 2s ease-in-out infinite; }
+          .cursor-anim { animation: cursor-blink 1s step-end infinite; }
+          .cloud-anim { animation: cloud-drift 20s linear infinite; }
+          .clock-colon { animation: clock-tick 1s step-end infinite; }
+          .screen-lines { animation: screen-scroll 3s linear infinite; }
+          .breathe-anim { animation: breathe 3s ease-in-out infinite; }
+          .pixel-font { font-family: 'Press Start 2P', monospace; }
+        </style>
+      </defs>
 
-  <!-- left: running tasks -->
-  <div class="float-panel tasks-panel" id="tasks-panel">
-    <div class="fp-title">Running Tasks</div>
-    <div id="tasks-list"></div>
-  </div>
+      <!-- ====== WALL ====== -->
+      <rect x="0" y="0" width="960" height="320" fill="#e8dcc8"/>
+      <!-- wall texture lines -->
+      <line x1="0" y1="80" x2="960" y2="80" stroke="#ddd0b8" stroke-width="1"/>
+      <line x1="0" y1="160" x2="960" y2="160" stroke="#ddd0b8" stroke-width="1"/>
+      <line x1="0" y1="240" x2="960" y2="240" stroke="#ddd0b8" stroke-width="1"/>
+      <!-- baseboard -->
+      <rect x="0" y="310" width="960" height="10" fill="#a08060"/>
+      <rect x="0" y="318" width="960" height="2" fill="#8a6e50"/>
 
-  <!-- right: agent list -->
-  <div class="float-panel agents-panel" id="agents-panel">
-    <div class="fp-title">Team Members</div>
-    <div id="agents-list"></div>
-  </div>
-
-  <!-- main SVG room -->
-  <svg class="room-svg" viewBox="0 0 1200 850" xmlns="http://www.w3.org/2000/svg" id="room-svg">
-    <defs>
-      <linearGradient id="floorGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#18143d"/>
-        <stop offset="100%" stop-color="#0c0a25"/>
-      </linearGradient>
-      <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1e1a55"/>
-        <stop offset="100%" stop-color="#141040"/>
-      </linearGradient>
-      <linearGradient id="windowGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#0c1a30"/>
-        <stop offset="100%" stop-color="#061020"/>
-      </linearGradient>
-      <linearGradient id="deskTop" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#2a2565"/>
-        <stop offset="100%" stop-color="#1e1a50"/>
-      </linearGradient>
-      <linearGradient id="deskFront" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#1a1645"/>
-        <stop offset="100%" stop-color="#121035"/>
-      </linearGradient>
-      <linearGradient id="sofaBack" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#4a2068"/>
-        <stop offset="100%" stop-color="#35184d"/>
-      </linearGradient>
-      <linearGradient id="sofaSeat" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#3d1a58"/>
-        <stop offset="100%" stop-color="#2a1240"/>
-      </linearGradient>
-      <linearGradient id="chairSeat" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#252060"/>
-        <stop offset="100%" stop-color="#1a1648"/>
-      </linearGradient>
-      <filter id="glow">
-        <feGaussianBlur stdDeviation="3" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <filter id="glow-sm">
-        <feGaussianBlur stdDeviation="1.5" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <filter id="glow-lg">
-        <feGaussianBlur stdDeviation="5" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-      </filter>
-      <filter id="shadow">
-        <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity=".4"/>
-      </filter>
-    </defs>
-
-    <!-- ═══ ROOM STRUCTURE ═══ -->
-    <!-- back wall -->
-    <rect x="50" y="30" width="1100" height="400" rx="3" fill="url(#wallGrad)"/>
-    <!-- wall panel lines -->
-    <line x1="50" y1="350" x2="1150" y2="350" stroke="rgba(167,139,250,.05)" stroke-width="1"/>
-    <line x1="370" y1="30" x2="370" y2="430" stroke="rgba(167,139,250,.03)" stroke-width="1"/>
-    <line x1="830" y1="30" x2="830" y2="430" stroke="rgba(167,139,250,.03)" stroke-width="1"/>
-
-    <!-- window frame + night city -->
-    <rect x="395" y="55" width="410" height="210" rx="3" fill="#0e1428" stroke="rgba(56,189,248,.25)" stroke-width="2"/>
-    <!-- window inner glow -->
-    <rect x="397" y="57" width="406" height="206" rx="2" fill="none" stroke="rgba(56,189,248,.08)" stroke-width="1"/>
-    <!-- stars -->
-    <circle cx="420" cy="75" r="1" fill="#fff" opacity=".3"/><circle cx="480" cy="68" r=".8" fill="#fff" opacity=".2"/>
-    <circle cx="550" cy="72" r="1.2" fill="#fff" opacity=".25"/><circle cx="700" cy="65" r="1" fill="#fff" opacity=".3"/>
-    <circle cx="750" cy="80" r=".8" fill="#fff" opacity=".2"/><circle cx="650" cy="70" r=".6" fill="#fff" opacity=".2"/>
-    <!-- moon -->
-    <circle cx="760" cy="90" r="18" fill="#dde0ff" opacity=".06"/>
-    <circle cx="762" cy="88" r="15" fill="#dde0ff" opacity=".04"/>
-    <!-- city -->
-    <g opacity=".45">
-      <rect x="405" y="155" width="22" height="110" rx="1" fill="#0d1a38"/>
-      <rect x="413" y="135" width="14" height="130" rx="1" fill="#101f42"/>
-      <rect x="435" y="168" width="18" height="97" rx="1" fill="#0d1a38"/>
-      <rect x="460" y="125" width="26" height="140" rx="1" fill="#112248"/>
-      <rect x="466" y="112" width="16" height="153" rx="1" fill="#142a52"/>
-      <rect x="495" y="150" width="20" height="115" rx="1" fill="#0d1a38"/>
-      <rect x="525" y="100" width="32" height="165" rx="1" fill="#112248"/>
-      <rect x="533" y="88" width="16" height="177" rx="1" fill="#142a52"/>
-      <rect x="565" y="138" width="22" height="127" rx="1" fill="#0d1a38"/>
-      <rect x="595" y="120" width="30" height="145" rx="1" fill="#112248"/>
-      <rect x="633" y="148" width="18" height="117" rx="1" fill="#0d1a38"/>
-      <rect x="658" y="98" width="26" height="167" rx="1" fill="#142a52"/>
-      <rect x="690" y="130" width="20" height="135" rx="1" fill="#101f42"/>
-      <rect x="718" y="155" width="22" height="110" rx="1" fill="#0d1a38"/>
-      <rect x="748" y="115" width="30" height="150" rx="1" fill="#112248"/>
-      <rect x="785" y="142" width="16" height="123" rx="1" fill="#0d1a38"/>
-    </g>
-    <!-- city window lights -->
-    <g opacity=".6">
-      <rect x="465" y="132" width="3" height="2" rx=".5" fill="#facc15"/><rect x="470" y="145" width="3" height="2" rx=".5" fill="#38bdf8"/>
-      <rect x="530" y="115" width="3" height="2" rx=".5" fill="#f472b6"/><rect x="540" y="135" width="3" height="2" rx=".5" fill="#facc15"/>
-      <rect x="535" y="155" width="3" height="2" rx=".5" fill="#38bdf8"/><rect x="600" y="132" width="3" height="2" rx=".5" fill="#38bdf8"/>
-      <rect x="605" y="150" width="3" height="2" rx=".5" fill="#facc15"/><rect x="660" y="112" width="3" height="2" rx=".5" fill="#f472b6"/>
-      <rect x="665" y="128" width="3" height="2" rx=".5" fill="#38bdf8"/><rect x="695" y="142" width="3" height="2" rx=".5" fill="#facc15"/>
-      <rect x="753" y="125" width="3" height="2" rx=".5" fill="#f472b6"/><rect x="758" y="148" width="3" height="2" rx=".5" fill="#38bdf8"/>
-      <rect x="468" y="158" width="2" height="2" rx=".5" fill="#4ade80"/><rect x="538" y="108" width="2" height="2" rx=".5" fill="#facc15"/>
-      <rect x="663" y="148" width="2" height="2" rx=".5" fill="#4ade80"/><rect x="750" y="138" width="2" height="2" rx=".5" fill="#f472b6"/>
-    </g>
-
-    <!-- floor -->
-    <rect x="50" y="430" width="1100" height="390" fill="url(#floorGrad)"/>
-    <!-- perspective floor grid -->
-    <g stroke="rgba(167,139,250,.06)" stroke-width=".5">
-      <line x1="50" y1="480" x2="1150" y2="480"/><line x1="50" y1="530" x2="1150" y2="530"/>
-      <line x1="50" y1="580" x2="1150" y2="580"/><line x1="50" y1="630" x2="1150" y2="630"/>
-      <line x1="50" y1="680" x2="1150" y2="680"/><line x1="50" y1="730" x2="1150" y2="730"/>
-      <line x1="200" y1="430" x2="200" y2="820"/><line x1="350" y1="430" x2="350" y2="820"/>
-      <line x1="500" y1="430" x2="500" y2="820"/><line x1="650" y1="430" x2="650" y2="820"/>
-      <line x1="800" y1="430" x2="800" y2="820"/><line x1="950" y1="430" x2="950" y2="820"/>
-      <line x1="1100" y1="430" x2="1100" y2="820"/>
-    </g>
-    <!-- floor-wall junction neon -->
-    <line x1="60" y1="432" x2="1140" y2="432" stroke="#a78bfa" stroke-width="2" filter="url(#glow)" opacity=".35"/>
-
-    <!-- ═══ NEON PIPES & LIGHTS ═══ -->
-    <line x1="80" y1="310" x2="360" y2="310" stroke="#38bdf8" stroke-width="2.5" filter="url(#glow)" opacity=".5"/>
-    <line x1="840" y1="310" x2="1120" y2="310" stroke="#a78bfa" stroke-width="2.5" filter="url(#glow)" opacity=".4"/>
-    <line x1="65" y1="50" x2="65" y2="420" stroke="#f472b6" stroke-width="2" filter="url(#glow-sm)" opacity=".25"/>
-    <line x1="1135" y1="50" x2="1135" y2="420" stroke="#38bdf8" stroke-width="2" filter="url(#glow-sm)" opacity=".25"/>
-    <!-- ceiling neon strip -->
-    <line x1="200" y1="35" x2="1000" y2="35" stroke="#a78bfa" stroke-width="1.5" filter="url(#glow-sm)" opacity=".2"/>
-
-    <!-- ═══ WALL DECORATIONS ═══ -->
-    <!-- poster left -->
-    <g filter="url(#shadow)">
-      <rect x="100" y="70" width="85" height="120" rx="4" fill="#1a1548" stroke="rgba(244,114,182,.25)" stroke-width="1.5"/>
-      <rect x="108" y="78" width="69" height="55" rx="2" fill="#120e30"/>
-      <text x="142" y="150" text-anchor="middle" font-size="8" fill="#f472b6" opacity=".7" font-family="monospace" font-weight="700">CYBER</text>
-      <text x="142" y="164" text-anchor="middle" font-size="8" fill="#f472b6" opacity=".7" font-family="monospace" font-weight="700">PUNK</text>
-      <text x="142" y="178" text-anchor="middle" font-size="5" fill="#6668a0" font-family="monospace">2077</text>
-      <!-- poster art (abstract) -->
-      <circle cx="142" cy="105" r="15" fill="none" stroke="#f472b6" stroke-width="1" opacity=".3"/>
-      <polygon points="135,95 142,82 149,95" fill="#f472b6" opacity=".15"/>
-    </g>
-
-    <!-- bookshelf right -->
-    <g filter="url(#shadow)">
-      <rect x="990" y="70" width="115" height="155" rx="4" fill="#1a1548" stroke="rgba(56,189,248,.15)" stroke-width="1"/>
-      <!-- shelves -->
-      <line x1="998" y1="115" x2="1097" y2="115" stroke="#252060" stroke-width="2"/>
-      <line x1="998" y1="152" x2="1097" y2="152" stroke="#252060" stroke-width="2"/>
-      <line x1="998" y1="189" x2="1097" y2="189" stroke="#252060" stroke-width="2"/>
-      <g opacity=".6">
-        <rect x="1002" y="84" width="14" height="28" rx="2" fill="#3a2060"/><rect x="1019" y="84" width="11" height="28" rx="2" fill="#2a3060"/>
-        <rect x="1033" y="84" width="16" height="28" rx="2" fill="#402058"/><rect x="1052" y="84" width="12" height="28" rx="2" fill="#2a3560"/>
-        <rect x="1067" y="84" width="14" height="28" rx="2" fill="#352060"/>
-        <rect x="1002" y="120" width="16" height="28" rx="2" fill="#282060"/><rect x="1021" y="120" width="12" height="28" rx="2" fill="#3a2858"/>
-        <rect x="1036" y="120" width="15" height="28" rx="2" fill="#2a3060"/><rect x="1054" y="120" width="14" height="28" rx="2" fill="#402058"/>
-        <rect x="1071" y="120" width="11" height="28" rx="2" fill="#2a3560"/>
-        <rect x="1002" y="157" width="13" height="28" rx="2" fill="#352060"/><rect x="1018" y="157" width="17" height="28" rx="2" fill="#282060"/>
-        <rect x="1038" y="157" width="11" height="28" rx="2" fill="#3a2858"/><rect x="1052" y="157" width="15" height="28" rx="2" fill="#2a3060"/>
-        <rect x="1070" y="157" width="13" height="28" rx="2" fill="#402058"/>
+      <!-- ====== WINDOW (centered) ====== -->
+      <rect x="380" y="40" width="200" height="140" fill="#6ab4d6" rx="0"/>
+      <rect x="384" y="44" width="192" height="132" fill="#87ceeb"/>
+      <!-- sky pixel clouds -->
+      <g class="cloud-anim">
+        <rect x="400" y="60" width="16" height="4" fill="white" opacity=".7"/>
+        <rect x="396" y="64" width="24" height="4" fill="white" opacity=".7"/>
+        <rect x="400" y="68" width="16" height="4" fill="white" opacity=".5"/>
       </g>
-    </g>
-
-    <!-- pipes -->
-    <g stroke="#2a2560" stroke-width="4" fill="none" opacity=".6" stroke-linecap="round">
-      <path d="M 210,30 L 210,70"/>
-      <path d="M 960,30 L 960,100 L 988,100"/>
-      <path d="M 85,310 L 85,380 L 160,380"/>
-    </g>
-
-    <!-- ═══ HOLOGRAM WHITEBOARD ═══ -->
-    <g id="whiteboard-area" transform="translate(910,280)">
-      <rect x="-5" y="-5" width="200" height="140" rx="6" fill="rgba(167,139,250,.02)" stroke="rgba(167,139,250,.25)" stroke-width="1.5"/>
-      <rect x="0" y="0" width="190" height="130" rx="4" fill="rgba(167,139,250,.04)">
-        <animate attributeName="opacity" values=".8;1;.8" dur="3s" repeatCount="indefinite"/>
-      </rect>
-      <g opacity=".65" style="animation:hologram-flicker 4s infinite;">
-        <rect x="14" y="14" width="65" height="5" rx="2" fill="#a78bfa" opacity=".5"/>
-        <rect x="14" y="25" width="48" height="5" rx="2" fill="#38bdf8" opacity=".4"/>
-        <rect x="14" y="36" width="58" height="5" rx="2" fill="#a78bfa" opacity=".3"/>
-        <polyline points="14,75 35,58 55,68 78,50 100,60 120,44 140,52 162,38" fill="none" stroke="#4ade80" stroke-width="2" opacity=".5"/>
-        <rect x="14" y="92" width="45" height="4" rx="2" fill="#f472b6" opacity=".4"/>
-        <rect x="14" y="102" width="60" height="4" rx="2" fill="#a78bfa" opacity=".3"/>
-        <rect x="14" y="112" width="38" height="4" rx="2" fill="#38bdf8" opacity=".3"/>
+      <g class="cloud-anim" style="animation-delay:-8s;">
+        <rect x="500" y="80" width="20" height="4" fill="white" opacity=".6"/>
+        <rect x="496" y="84" width="28" height="4" fill="white" opacity=".6"/>
+        <rect x="500" y="88" width="20" height="4" fill="white" opacity=".4"/>
       </g>
-      <text x="95" y="-12" text-anchor="middle" font-size="8" fill="#a78bfa" opacity=".7" font-family="monospace" font-weight="600" letter-spacing="3">WHITEBOARD</text>
-    </g>
-
-    <!-- ═══ BIG DESK (center, 3D) ═══ -->
-    <g id="desk-group" filter="url(#shadow)">
-      <!-- desk surface top -->
-      <rect x="180" y="480" width="640" height="30" rx="4" fill="url(#deskTop)" stroke="rgba(167,139,250,.2)" stroke-width="1"/>
-      <!-- desk surface neon edge -->
-      <line x1="190" y1="480" x2="810" y2="480" stroke="#a78bfa" stroke-width="1.5" filter="url(#glow-sm)" opacity=".5"/>
-      <!-- LED strip under desk edge -->
-      <line x1="185" y1="510" x2="815" y2="510" stroke="#38bdf8" stroke-width="1" filter="url(#glow-sm)" opacity=".25"/>
-      <!-- desk front panel -->
-      <rect x="180" y="510" width="640" height="120" rx="3" fill="url(#deskFront)" stroke="rgba(167,139,250,.1)" stroke-width="1"/>
-      <!-- desk panel detail lines -->
-      <line x1="390" y1="515" x2="390" y2="625" stroke="rgba(167,139,250,.06)" stroke-width="1"/>
-      <line x1="610" y1="515" x2="610" y2="625" stroke="rgba(167,139,250,.06)" stroke-width="1"/>
-      <!-- desk legs -->
-      <rect x="195" y="630" width="12" height="50" rx="3" fill="#161240"/>
-      <rect x="793" y="630" width="12" height="50" rx="3" fill="#161240"/>
-      <rect x="490" y="630" width="12" height="50" rx="3" fill="#141038"/>
-      <!-- cable management -->
-      <path d="M 340,495 Q 370,502 400,496 Q 440,488 470,498" fill="none" stroke="#2a2565" stroke-width="2.5" opacity=".5"/>
-      <path d="M 560,490 Q 590,500 620,492 Q 650,485 680,495" fill="none" stroke="#221e50" stroke-width="2" opacity=".4"/>
-      <!-- hanging cables from desk -->
-      <path d="M 350,510 Q 345,550 360,570" fill="none" stroke="#1e1a48" stroke-width="2" opacity=".4"/>
-      <path d="M 650,510 Q 655,545 640,560" fill="none" stroke="#1e1a48" stroke-width="2" opacity=".4"/>
-      <!-- gadgets on desk -->
-      <rect x="440" y="485" width="22" height="14" rx="3" fill="#1a1a42" stroke="rgba(56,189,248,.25)" stroke-width="1"/>
-      <circle cx="451" cy="492" r="2.5" fill="#38bdf8" opacity=".6"><animate attributeName="opacity" values=".6;.3;.6" dur="2s" repeatCount="indefinite"/></circle>
-      <rect x="530" y="488" width="16" height="10" rx="2" fill="#1a1a42" stroke="rgba(244,114,182,.2)" stroke-width="1"/>
-      <rect x="635" y="484" width="20" height="12" rx="3" fill="#1a1a42" stroke="rgba(74,222,128,.2)" stroke-width="1"/>
-      <!-- mug -->
-      <g transform="translate(475,486)">
-        <rect x="0" y="0" width="14" height="16" rx="3" fill="#2e1a55" stroke="rgba(250,204,21,.2)" stroke-width="1"/>
-        <path d="M 14,3 Q 22,7 14,13" fill="none" stroke="#2e1a55" stroke-width="2"/>
-        <!-- steam -->
-        <path d="M 4,-5 Q 2,-10 5,-15" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1">
-          <animate attributeName="d" values="M 4,-5 Q 2,-10 5,-15;M 4,-5 Q 7,-10 3,-15;M 4,-5 Q 2,-10 5,-15" dur="3s" repeatCount="indefinite"/>
-        </path>
-        <path d="M 9,-4 Q 11,-9 8,-14" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1">
-          <animate attributeName="d" values="M 9,-4 Q 11,-9 8,-14;M 9,-4 Q 6,-9 10,-14;M 9,-4 Q 11,-9 8,-14" dur="3.5s" repeatCount="indefinite"/>
-        </path>
+      <g class="cloud-anim" style="animation-delay:-14s;">
+        <rect x="440" y="100" width="12" height="4" fill="white" opacity=".5"/>
+        <rect x="436" y="104" width="20" height="4" fill="white" opacity=".5"/>
       </g>
-    </g>
+      <!-- sun -->
+      <rect x="540" y="52" width="8" height="8" fill="#fde68a"/>
+      <rect x="536" y="56" width="4" height="4" fill="#fde68a" opacity=".5"/>
+      <rect x="548" y="56" width="4" height="4" fill="#fde68a" opacity=".5"/>
+      <rect x="540" y="48" width="8" height="4" fill="#fde68a" opacity=".4"/>
+      <rect x="540" y="60" width="8" height="4" fill="#fde68a" opacity=".4"/>
+      <!-- window frame cross -->
+      <rect x="478" y="40" width="4" height="140" fill="#a08060"/>
+      <rect x="380" y="108" width="200" height="4" fill="#a08060"/>
+      <!-- window outer frame -->
+      <rect x="376" y="36" width="208" height="4" fill="#a08060"/>
+      <rect x="376" y="180" width="208" height="4" fill="#a08060"/>
+      <rect x="376" y="36" width="4" height="148" fill="#a08060"/>
+      <rect x="580" y="36" width="4" height="148" fill="#a08060"/>
 
-    <!-- ═══ CHAIRS ═══ -->
-    <!-- chair 1 (left) -->
-    <g transform="translate(255,610)">
-      <rect x="0" y="0" width="55" height="45" rx="8" fill="url(#chairSeat)" stroke="rgba(167,139,250,.12)" stroke-width="1"/>
-      <rect x="5" y="-35" width="45" height="38" rx="6" fill="#201a55" stroke="rgba(167,139,250,.08)" stroke-width="1"/>
-      <rect x="18" y="45" width="8" height="20" rx="2" fill="#161240"/>
-      <rect x="30" y="45" width="8" height="20" rx="2" fill="#161240"/>
-      <rect x="5" y="62" width="45" height="5" rx="2" fill="#1a1648"/>
-      <circle cx="10" cy="70" r="4" fill="#121035"/><circle cx="46" cy="70" r="4" fill="#121035"/>
-    </g>
-    <!-- chair 2 (center) -->
-    <g transform="translate(468,605)">
-      <rect x="0" y="0" width="60" height="48" rx="8" fill="url(#chairSeat)" stroke="rgba(167,139,250,.12)" stroke-width="1"/>
-      <rect x="5" y="-38" width="50" height="42" rx="6" fill="#201a55" stroke="rgba(167,139,250,.08)" stroke-width="1"/>
-      <rect x="20" y="48" width="8" height="22" rx="2" fill="#161240"/>
-      <rect x="33" y="48" width="8" height="22" rx="2" fill="#161240"/>
-      <rect x="5" y="67" width="50" height="5" rx="2" fill="#1a1648"/>
-      <circle cx="10" cy="75" r="4" fill="#121035"/><circle cx="50" cy="75" r="4" fill="#121035"/>
-    </g>
-    <!-- chair 3 (right) -->
-    <g transform="translate(680,612)">
-      <rect x="0" y="0" width="55" height="45" rx="8" fill="url(#chairSeat)" stroke="rgba(167,139,250,.12)" stroke-width="1"/>
-      <rect x="5" y="-35" width="45" height="38" rx="6" fill="#201a55" stroke="rgba(167,139,250,.08)" stroke-width="1"/>
-      <rect x="18" y="45" width="8" height="20" rx="2" fill="#161240"/>
-      <rect x="30" y="45" width="8" height="20" rx="2" fill="#161240"/>
-      <rect x="5" y="62" width="45" height="5" rx="2" fill="#1a1648"/>
-      <circle cx="10" cy="70" r="4" fill="#121035"/><circle cx="46" cy="70" r="4" fill="#121035"/>
-    </g>
-
-    <!-- ═══ MONITORS ON DESK ═══ -->
-    <!-- monitor 1 (left) — CODE -->
-    <g transform="translate(230,410)">
-      <rect x="0" y="68" width="110" height="8" rx="2" fill="#161240"/><!-- base -->
-      <rect x="45" y="60" width="20" height="12" rx="1" fill="#1a1648"/><!-- neck -->
-      <rect x="0" y="0" width="110" height="65" rx="5" fill="#0c0c28" stroke="rgba(56,189,248,.3)" stroke-width="1.5"/>
-      <rect x="4" y="4" width="102" height="55" rx="3" fill="#080e22"/>
-      <!-- screen glow -->
-      <rect x="4" y="4" width="102" height="55" rx="3" fill="rgba(56,189,248,.03)"/>
-      <g id="monitor1-content">
-        <text x="12" y="17" font-size="5" fill="#4ade80" opacity=".7" font-family="monospace">const agent =</text>
-        <text x="12" y="25" font-size="5" fill="#38bdf8" opacity=".5" font-family="monospace">  await init()</text>
-        <text x="12" y="33" font-size="5" fill="#4ade80" opacity=".7" font-family="monospace">agent.run({</text>
-        <text x="12" y="41" font-size="5" fill="#a78bfa" opacity=".5" font-family="monospace">  task: "build"</text>
-        <text x="12" y="49" font-size="5" fill="#4ade80" opacity=".7" font-family="monospace">})</text>
-        <rect x="28" y="48" width="4" height="5" rx="1" fill="#4ade80" opacity=".8" style="animation:typing-cursor 1s infinite;"/>
+      <!-- ====== CLOCK ON WALL ====== -->
+      <g id="wall-clock">
+        <rect x="290" y="60" width="40" height="40" fill="#f5f0e0" stroke="#a08060" stroke-width="3"/>
+        <rect x="294" y="64" width="32" height="32" fill="#fffef8"/>
+        <text id="clock-text" x="310" y="86" text-anchor="middle" font-size="10" fill="#4a4040" class="pixel-font">00:00</text>
+        <text x="310" y="92" text-anchor="middle" font-size="5" fill="#8a7a6a" class="pixel-font" id="clock-colon-dot" class="clock-colon">●</text>
       </g>
-      <rect x="4" y="4" width="102" height="2" fill="rgba(255,255,255,.02)" rx="1">
-        <animateTransform attributeName="transform" type="translate" from="0 0" to="0 55" dur="3s" repeatCount="indefinite"/>
-      </rect>
-    </g>
 
-    <!-- monitor 2 (center, bigger) — 3D -->
-    <g transform="translate(445,398)">
-      <rect x="0" y="78" width="120" height="8" rx="2" fill="#161240"/>
-      <rect x="50" y="68" width="20" height="14" rx="1" fill="#1a1648"/>
-      <rect x="0" y="0" width="120" height="74" rx="5" fill="#0c0c28" stroke="rgba(244,114,182,.3)" stroke-width="1.5"/>
-      <rect x="4" y="4" width="112" height="64" rx="3" fill="#080e22"/>
-      <rect x="4" y="4" width="112" height="64" rx="3" fill="rgba(244,114,182,.02)"/>
-      <g id="monitor2-content">
-        <g stroke="#f472b6" stroke-width=".6" opacity=".4">
-          <line x1="15" y1="55" x2="38" y2="15"/><line x1="38" y1="55" x2="60" y2="15"/>
-          <line x1="60" y1="55" x2="82" y2="15"/><line x1="82" y1="55" x2="104" y2="15"/>
-          <line x1="15" y1="55" x2="104" y2="55"/><line x1="22" y1="42" x2="97" y2="42"/>
-          <line x1="30" y1="28" x2="90" y2="28"/>
+      <!-- ====== WHITEBOARD ====== -->
+      <rect x="640" y="50" width="140" height="90" fill="white" stroke="#a08060" stroke-width="3"/>
+      <rect x="648" y="58" width="124" height="74" fill="#f8f8f0"/>
+      <!-- whiteboard content -->
+      <rect x="656" y="66" width="40" height="3" fill="#e74c3c" opacity=".6"/>
+      <rect x="656" y="74" width="60" height="3" fill="#3498db" opacity=".5"/>
+      <rect x="656" y="82" width="50" height="3" fill="#2ecc71" opacity=".5"/>
+      <rect x="656" y="90" width="35" height="3" fill="#e74c3c" opacity=".4"/>
+      <rect x="700" y="90" width="20" height="3" fill="#3498db" opacity=".4"/>
+      <rect x="656" y="98" width="45" height="3" fill="#8e44ad" opacity=".4"/>
+      <rect x="656" y="106" width="30" height="3" fill="#2ecc71" opacity=".3"/>
+      <!-- whiteboard tray -->
+      <rect x="660" y="140" width="100" height="6" fill="#a08060"/>
+      <!-- markers -->
+      <rect x="670" y="136" width="4" height="10" fill="#e74c3c"/>
+      <rect x="680" y="136" width="4" height="10" fill="#3498db"/>
+      <rect x="690" y="136" width="4" height="10" fill="#2ecc71"/>
+
+      <!-- ====== BOOKSHELF ====== -->
+      <g transform="translate(820,80)">
+        <rect x="0" y="0" width="80" height="200" fill="#7a5a3a"/>
+        <rect x="4" y="4" width="72" height="44" fill="#6a4a2a"/>
+        <rect x="4" y="52" width="72" height="44" fill="#6a4a2a"/>
+        <rect x="4" y="100" width="72" height="44" fill="#6a4a2a"/>
+        <rect x="4" y="148" width="72" height="44" fill="#6a4a2a"/>
+        <!-- books row 1 -->
+        <rect x="8" y="24" width="8" height="24" fill="#c0392b"/>
+        <rect x="18" y="20" width="8" height="28" fill="#2980b9"/>
+        <rect x="28" y="22" width="6" height="26" fill="#27ae60"/>
+        <rect x="36" y="18" width="8" height="30" fill="#8e44ad"/>
+        <rect x="46" y="24" width="8" height="24" fill="#d35400"/>
+        <rect x="56" y="20" width="6" height="28" fill="#16a085"/>
+        <rect x="64" y="22" width="8" height="26" fill="#c0392b"/>
+        <!-- books row 2 -->
+        <rect x="8" y="72" width="10" height="24" fill="#e74c3c"/>
+        <rect x="20" y="68" width="8" height="28" fill="#3498db"/>
+        <rect x="30" y="70" width="8" height="26" fill="#2ecc71"/>
+        <rect x="40" y="72" width="6" height="24" fill="#f39c12"/>
+        <rect x="48" y="68" width="10" height="28" fill="#9b59b6"/>
+        <rect x="60" y="70" width="8" height="26" fill="#1abc9c"/>
+        <!-- books row 3 -->
+        <rect x="8" y="118" width="8" height="26" fill="#e67e22"/>
+        <rect x="18" y="120" width="10" height="24" fill="#2c3e50"/>
+        <rect x="30" y="116" width="8" height="28" fill="#e74c3c"/>
+        <rect x="40" y="118" width="6" height="26" fill="#3498db"/>
+        <rect x="48" y="120" width="8" height="24" fill="#27ae60"/>
+        <!-- trophy/item row 4 -->
+        <rect x="12" y="176" width="12" height="16" fill="#f1c40f"/>
+        <rect x="16" y="172" width="4" height="4" fill="#f1c40f"/>
+        <rect x="40" y="180" width="16" height="12" fill="#bdc3c7"/>
+        <rect x="44" y="176" width="8" height="4" fill="#95a5a6"/>
+      </g>
+
+      <!-- ====== FLOOR (wooden tile) ====== -->
+      <g id="floor">
+        <!-- alternating wood tiles -->
+        <rect x="0" y="320" width="960" height="220" fill="#c49a6c"/>
+        <!-- tile pattern -->
+        <g opacity=".3">
+          <rect x="0" y="320" width="80" height="44" fill="#b8895c"/>
+          <rect x="160" y="320" width="80" height="44" fill="#b8895c"/>
+          <rect x="320" y="320" width="80" height="44" fill="#b8895c"/>
+          <rect x="480" y="320" width="80" height="44" fill="#b8895c"/>
+          <rect x="640" y="320" width="80" height="44" fill="#b8895c"/>
+          <rect x="800" y="320" width="80" height="44" fill="#b8895c"/>
+          <rect x="80" y="364" width="80" height="44" fill="#b8895c"/>
+          <rect x="240" y="364" width="80" height="44" fill="#b8895c"/>
+          <rect x="400" y="364" width="80" height="44" fill="#b8895c"/>
+          <rect x="560" y="364" width="80" height="44" fill="#b8895c"/>
+          <rect x="720" y="364" width="80" height="44" fill="#b8895c"/>
+          <rect x="880" y="364" width="80" height="44" fill="#b8895c"/>
+          <rect x="0" y="408" width="80" height="44" fill="#b8895c"/>
+          <rect x="160" y="408" width="80" height="44" fill="#b8895c"/>
+          <rect x="320" y="408" width="80" height="44" fill="#b8895c"/>
+          <rect x="480" y="408" width="80" height="44" fill="#b8895c"/>
+          <rect x="640" y="408" width="80" height="44" fill="#b8895c"/>
+          <rect x="800" y="408" width="80" height="44" fill="#b8895c"/>
+          <rect x="80" y="452" width="80" height="44" fill="#b8895c"/>
+          <rect x="240" y="452" width="80" height="44" fill="#b8895c"/>
+          <rect x="400" y="452" width="80" height="44" fill="#b8895c"/>
+          <rect x="560" y="452" width="80" height="44" fill="#b8895c"/>
+          <rect x="720" y="452" width="80" height="44" fill="#b8895c"/>
+          <rect x="880" y="452" width="80" height="44" fill="#b8895c"/>
+          <rect x="0" y="496" width="80" height="44" fill="#b8895c"/>
+          <rect x="160" y="496" width="80" height="44" fill="#b8895c"/>
+          <rect x="320" y="496" width="80" height="44" fill="#b8895c"/>
+          <rect x="480" y="496" width="80" height="44" fill="#b8895c"/>
+          <rect x="640" y="496" width="80" height="44" fill="#b8895c"/>
+          <rect x="800" y="496" width="80" height="44" fill="#b8895c"/>
         </g>
-        <circle cx="60" cy="34" r="14" fill="none" stroke="#f472b6" stroke-width="1.2" opacity=".5">
-          <animateTransform attributeName="transform" type="rotate" from="0 60 34" to="360 60 34" dur="8s" repeatCount="indefinite"/>
-        </circle>
-        <rect cx="60" cy="34" x="53" y="27" width="14" height="14" fill="none" stroke="#a78bfa" stroke-width=".8" opacity=".3" transform="rotate(45 60 34)"/>
+        <!-- floor line details -->
+        <line x1="0" y1="364" x2="960" y2="364" stroke="#a87e58" stroke-width="1" opacity=".3"/>
+        <line x1="0" y1="408" x2="960" y2="408" stroke="#a87e58" stroke-width="1" opacity=".3"/>
+        <line x1="0" y1="452" x2="960" y2="452" stroke="#a87e58" stroke-width="1" opacity=".3"/>
+        <line x1="0" y1="496" x2="960" y2="496" stroke="#a87e58" stroke-width="1" opacity=".3"/>
       </g>
-    </g>
 
-    <!-- monitor 3 (right) — DATA -->
-    <g transform="translate(680,412)">
-      <rect x="0" y="66" width="100" height="8" rx="2" fill="#161240"/>
-      <rect x="40" y="58" width="20" height="12" rx="1" fill="#1a1648"/>
-      <rect x="0" y="0" width="100" height="62" rx="5" fill="#0c0c28" stroke="rgba(74,222,128,.3)" stroke-width="1.5"/>
-      <rect x="4" y="4" width="92" height="52" rx="3" fill="#080e22"/>
-      <rect x="4" y="4" width="92" height="52" rx="3" fill="rgba(74,222,128,.02)"/>
-      <g id="monitor3-content">
-        <rect x="12" y="38" width="10" height="14" rx="2" fill="#4ade80" opacity=".35"/>
-        <rect x="26" y="28" width="10" height="24" rx="2" fill="#4ade80" opacity=".45"/>
-        <rect x="40" y="33" width="10" height="19" rx="2" fill="#4ade80" opacity=".35"/>
-        <rect x="54" y="20" width="10" height="32" rx="2" fill="#4ade80" opacity=".55"/>
-        <rect x="68" y="30" width="10" height="22" rx="2" fill="#4ade80" opacity=".45"/>
-        <rect x="82" y="24" width="10" height="28" rx="2" fill="#4ade80" opacity=".4"/>
-        <text x="52" y="14" text-anchor="middle" font-size="5.5" fill="#4ade80" opacity=".6" font-family="monospace" font-weight="600">DATA</text>
+      <!-- ====== POTTED PLANT (left) ====== -->
+      <g transform="translate(40,260)">
+        <!-- pot -->
+        <rect x="0" y="40" width="28" height="20" fill="#c0392b"/>
+        <rect x="-2" y="38" width="32" height="4" fill="#a83228"/>
+        <rect x="2" y="58" width="24" height="4" fill="#a83228"/>
+        <!-- soil -->
+        <rect x="4" y="36" width="20" height="6" fill="#5a3a2a"/>
+        <!-- leaves (pixel style) -->
+        <rect x="10" y="8" width="4" height="28" fill="#2a6a2a"/>
+        <rect x="6" y="12" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="2" y="8" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="18" y="12" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="22" y="8" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="6" y="4" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="14" y="0" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="18" y="4" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="-2" y="16" width="4" height="4" fill="#2a6a2a"/>
+        <rect x="26" y="16" width="4" height="4" fill="#2a6a2a"/>
+        <rect x="10" y="-4" width="4" height="4" fill="#4a9a4a"/>
       </g>
-    </g>
 
-    <!-- ═══ SOFA (back-left, 3D) ═══ -->
-    <g id="sofa-group" transform="translate(60,330)" filter="url(#shadow)">
-      <!-- sofa shadow on floor -->
-      <ellipse cx="135" cy="115" rx="140" ry="12" fill="rgba(0,0,0,.2)"/>
-      <!-- sofa back -->
-      <rect x="0" y="0" width="270" height="55" rx="14" fill="url(#sofaBack)" stroke="rgba(244,114,182,.15)" stroke-width="1.5"/>
-      <!-- sofa back highlight -->
-      <rect x="8" y="5" width="254" height="8" rx="4" fill="rgba(255,255,255,.03)"/>
-      <!-- sofa seat -->
-      <rect x="8" y="48" width="254" height="55" rx="12" fill="url(#sofaSeat)" stroke="rgba(244,114,182,.12)" stroke-width="1"/>
-      <!-- cushion divider -->
-      <line x1="135" y1="52" x2="135" y2="98" stroke="rgba(244,114,182,.08)" stroke-width="1"/>
-      <!-- cushion highlight -->
-      <ellipse cx="70" cy="70" rx="55" ry="8" fill="rgba(255,255,255,.02)"/>
-      <ellipse cx="200" cy="70" rx="55" ry="8" fill="rgba(255,255,255,.02)"/>
-      <!-- sofa arm left -->
-      <rect x="-14" y="15" width="30" height="88" rx="10" fill="#3d1858" stroke="rgba(244,114,182,.1)" stroke-width="1"/>
-      <!-- sofa arm right -->
-      <rect x="254" y="15" width="30" height="88" rx="10" fill="#3d1858" stroke="rgba(244,114,182,.1)" stroke-width="1"/>
-      <!-- sofa legs -->
-      <rect x="10" y="102" width="8" height="12" rx="2" fill="#251040"/>
-      <rect x="252" y="102" width="8" height="12" rx="2" fill="#251040"/>
-      <!-- pillow -->
-      <ellipse cx="50" cy="45" rx="22" ry="14" fill="#4a2570" opacity=".5" transform="rotate(-10 50 45)"/>
-      <ellipse cx="225" cy="47" rx="20" ry="12" fill="#3a2060" opacity=".4" transform="rotate(8 225 47)"/>
-    </g>
-
-    <!-- ═══ CATS ═══ -->
-    <!-- cat 1: walking on desk -->
-    <g transform="translate(400,462)" style="animation:cat-walk 6s ease-in-out infinite;">
-      <ellipse cx="15" cy="8" rx="13" ry="9" fill="#4a4080"/>
-      <circle cx="4" cy="1" r="7" fill="#4a4080"/>
-      <polygon points="0,-8 2,1 -3,1" fill="#4a4080"/><polygon points="8,-8 6,1 11,1" fill="#4a4080"/>
-      <circle cx="2" cy="0" r="1.8" fill="#facc15"/><circle cx="7" cy="0" r="1.8" fill="#facc15"/>
-      <line x1="28" y1="4" x2="38" y2="-2" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round" style="transform-origin:28px 4px;animation:tail-wag 1.5s ease-in-out infinite;"/>
-      <ellipse cx="12" cy="6" rx="8" ry="3.5" fill="none" stroke="#38bdf8" stroke-width="1.2" filter="url(#glow-sm)" opacity=".7"/>
-      <line x1="4" y1="17" x2="4" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="12" y1="17" x2="12" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="19" y1="17" x2="19" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="26" y1="17" x2="26" y2="22" stroke="#4a4080" stroke-width="2.5" stroke-linecap="round"/>
-    </g>
-
-    <!-- cat 2: sitting on desk right -->
-    <g transform="translate(720,458)">
-      <ellipse cx="12" cy="14" rx="11" ry="10" fill="#5a4070"/>
-      <circle cx="5" cy="3" r="8" fill="#5a4070"/>
-      <polygon points="-1,-7 2,2 -4,2" fill="#5a4070"/><polygon points="11,-7 8,2 14,2" fill="#5a4070"/>
-      <g style="transform-origin:5px 2px;animation:blink 4s infinite;">
-        <circle cx="2" cy="1" r="2" fill="#4ade80"/><circle cx="8" cy="1" r="2" fill="#4ade80"/>
+      <!-- ====== WATER COOLER (left area) ====== -->
+      <g transform="translate(100,272)">
+        <!-- body -->
+        <rect x="0" y="16" width="24" height="36" fill="#bdc3c7"/>
+        <rect x="2" y="14" width="20" height="4" fill="#95a5a6"/>
+        <!-- water bottle -->
+        <rect x="4" y="-8" width="16" height="22" fill="#85c1e9" opacity=".7"/>
+        <rect x="6" y="-12" width="12" height="6" fill="#5dade2" opacity=".6"/>
+        <rect x="8" y="-16" width="8" height="6" fill="#aed6f1" opacity=".5"/>
+        <!-- tap -->
+        <rect x="8" y="28" width="4" height="4" fill="#e74c3c"/>
+        <rect x="16" y="28" width="4" height="4" fill="#3498db"/>
+        <!-- legs -->
+        <rect x="2" y="52" width="4" height="12" fill="#7f8c8d"/>
+        <rect x="18" y="52" width="4" height="12" fill="#7f8c8d"/>
+        <!-- drip tray -->
+        <rect x="0" y="36" width="24" height="3" fill="#7f8c8d"/>
       </g>
-      <ellipse cx="12" cy="8" rx="7" ry="3.5" fill="none" stroke="#f472b6" stroke-width="1.2" filter="url(#glow-sm)" opacity=".7"/>
-      <line x1="23" y1="8" x2="33" y2="1" stroke="#5a4070" stroke-width="2.5" stroke-linecap="round"/>
-    </g>
 
-    <!-- cat 3: curled up near sofa -->
-    <g transform="translate(220,425)" style="animation:breathe 4s ease-in-out infinite;">
-      <ellipse cx="14" cy="10" rx="16" ry="11" fill="#4a3860"/>
-      <circle cx="2" cy="4" r="7" fill="#4a3860"/>
-      <polygon points="-3,-5 0,2 -5,2" fill="#4a3860"/><polygon points="7,-5 4,2 9,2" fill="#4a3860"/>
-      <line x1="-1" y1="4" x2="-2" y2="4" stroke="#6668a0" stroke-width="1"/>
-      <line x1="5" y1="4" x2="6" y2="4" stroke="#6668a0" stroke-width="1"/>
-      <ellipse cx="9" cy="6" rx="6" ry="3" fill="none" stroke="#4ade80" stroke-width="1" filter="url(#glow-sm)" opacity=".5"/>
-      <text x="26" y="-3" font-size="7" fill="#6668a0" opacity=".5" font-family="monospace">z</text>
-      <text x="33" y="-9" font-size="6" fill="#6668a0" opacity=".4" font-family="monospace">z</text>
-      <text x="39" y="-14" font-size="5" fill="#6668a0" opacity=".3" font-family="monospace">z</text>
-    </g>
+      <!-- ====== SOFA (break area, left side) ====== -->
+      <g id="sofa-area" transform="translate(30,380)">
+        <!-- sofa back -->
+        <rect x="0" y="0" width="140" height="40" fill="#6b5b7b" rx="0"/>
+        <rect x="4" y="4" width="132" height="32" fill="#7b6b8b"/>
+        <!-- sofa seat -->
+        <rect x="0" y="36" width="140" height="28" fill="#5b4b6b"/>
+        <rect x="4" y="38" width="64" height="24" fill="#6b5b7b"/>
+        <rect x="72" y="38" width="64" height="24" fill="#6b5b7b"/>
+        <!-- sofa arms -->
+        <rect x="-8" y="8" width="12" height="56" fill="#5b4b6b"/>
+        <rect x="136" y="8" width="12" height="56" fill="#5b4b6b"/>
+        <!-- sofa legs -->
+        <rect x="4" y="64" width="8" height="8" fill="#4a3a4a"/>
+        <rect x="128" y="64" width="8" height="8" fill="#4a3a4a"/>
+        <!-- cushions pixel detail -->
+        <rect x="12" y="10" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
+        <rect x="52" y="12" width="8" height="6" fill="#8b7b9b" opacity=".4"/>
+        <rect x="100" y="10" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
+      </g>
 
-    <!-- ═══ SMALL HOLO SCREENS ON WALLS ═══ -->
-    <g transform="translate(130,240)" opacity=".55">
-      <rect x="0" y="0" width="60" height="40" rx="3" fill="rgba(56,189,248,.05)" stroke="rgba(56,189,248,.2)" stroke-width="1"/>
-      <rect x="5" y="5" width="22" height="3" rx="1" fill="#38bdf8" opacity=".4"/>
-      <rect x="5" y="11" width="32" height="3" rx="1" fill="#38bdf8" opacity=".3"/>
-      <rect x="5" y="17" width="18" height="3" rx="1" fill="#38bdf8" opacity=".4"/>
-      <circle cx="46" cy="26" r="10" fill="none" stroke="#38bdf8" stroke-width=".7" stroke-dasharray="2 2">
-        <animateTransform attributeName="transform" type="rotate" from="0 46 26" to="360 46 26" dur="10s" repeatCount="indefinite"/>
-      </circle>
-    </g>
-    <g transform="translate(870,110)" opacity=".45">
-      <rect x="0" y="0" width="65" height="45" rx="3" fill="rgba(74,222,128,.05)" stroke="rgba(74,222,128,.15)" stroke-width="1"/>
-      <polyline points="6,35 18,20 30,26 42,14 54,22 62,10" fill="none" stroke="#4ade80" stroke-width="1.2" opacity=".5"/>
-      <text x="33" y="42" text-anchor="middle" font-size="4" fill="#4ade80" opacity=".4" font-family="monospace">METRICS</text>
-    </g>
+      <!-- sofa character slots -->
+      <g id="sofa-slot-0" transform="translate(60,368)"></g>
+      <g id="sofa-slot-1" transform="translate(120,368)"></g>
 
-    <!-- ═══ AGENT SLOTS ═══ -->
-    <g id="desk-slot-0" transform="translate(258,450)"></g>
-    <g id="desk-slot-1" transform="translate(478,438)"></g>
-    <g id="desk-slot-2" transform="translate(700,448)"></g>
-    <g id="wb-slot" transform="translate(960,415)"></g>
-    <g id="sofa-slot-0" transform="translate(110,335)"></g>
-    <g id="sofa-slot-1" transform="translate(220,335)"></g>
+      <!-- ====== DESK STATION 1 ====== -->
+      <g id="desk-area-0" transform="translate(220,320)">
+        <!-- desk surface -->
+        <rect x="0" y="40" width="120" height="12" fill="#8b6847"/>
+        <rect x="2" y="42" width="116" height="8" fill="#9a7857"/>
+        <!-- desk legs -->
+        <rect x="8" y="52" width="8" height="40" fill="#7a5a3a"/>
+        <rect x="104" y="52" width="8" height="40" fill="#7a5a3a"/>
+        <!-- desk drawer -->
+        <rect x="24" y="52" width="72" height="24" fill="#7a5a3a"/>
+        <rect x="26" y="54" width="30" height="20" fill="#6a4a2a"/>
+        <rect x="62" y="54" width="30" height="20" fill="#6a4a2a"/>
+        <rect x="38" y="62" width="6" height="4" fill="#a08060"/>
+        <rect x="74" y="62" width="6" height="4" fill="#a08060"/>
+        <!-- monitor -->
+        <rect x="32" y="8" width="56" height="36" fill="#2a2a3a"/>
+        <rect x="34" y="10" width="52" height="28" fill="#1a2a1a" id="screen-0"/>
+        <rect x="54" y="44" width="12" height="4" fill="#3a4a5a"/>
+        <rect x="44" y="46" width="32" height="3" fill="#3a4a5a"/>
+        <!-- screen content -->
+        <g clip-path="url(#screen-clip-0)">
+          <rect x="36" y="14" width="20" height="2" fill="#4ade80" opacity=".6"/>
+          <rect x="36" y="18" width="32" height="2" fill="#60a5fa" opacity=".5"/>
+          <rect x="36" y="22" width="16" height="2" fill="#facc15" opacity=".4"/>
+          <rect x="36" y="26" width="28" height="2" fill="#4ade80" opacity=".5"/>
+          <rect x="36" y="30" width="24" height="2" fill="#f472b6" opacity=".4"/>
+          <rect x="80" y="30" width="4" height="2" fill="#4ade80" class="cursor-anim"/>
+        </g>
+        <!-- chair -->
+        <rect x="40" y="76" width="40" height="8" fill="#4a4a5a"/>
+        <rect x="42" y="68" width="36" height="10" fill="#4a4a5a"/>
+        <rect x="56" y="84" width="8" height="12" fill="#3a3a4a"/>
+        <!-- chair wheels (pixel) -->
+        <rect x="44" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="70" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <!-- keyboard -->
+        <rect x="40" y="36" width="28" height="6" fill="#3a3a4a"/>
+        <rect x="42" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="48" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="54" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="60" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <!-- coffee mug -->
+        <rect x="76" y="32" width="8" height="8" fill="#e8e0d0"/>
+        <rect x="84" y="34" width="4" height="4" fill="#e8e0d0"/>
+        <rect x="78" y="30" width="4" height="2" fill="#d4c4a8" opacity=".4"/>
+      </g>
+      <g id="desk-slot-0" transform="translate(268,340)"></g>
 
-  </svg>
+      <!-- ====== DESK STATION 2 ====== -->
+      <g id="desk-area-1" transform="translate(420,320)">
+        <rect x="0" y="40" width="120" height="12" fill="#8b6847"/>
+        <rect x="2" y="42" width="116" height="8" fill="#9a7857"/>
+        <rect x="8" y="52" width="8" height="40" fill="#7a5a3a"/>
+        <rect x="104" y="52" width="8" height="40" fill="#7a5a3a"/>
+        <rect x="24" y="52" width="72" height="24" fill="#7a5a3a"/>
+        <rect x="26" y="54" width="30" height="20" fill="#6a4a2a"/>
+        <rect x="62" y="54" width="30" height="20" fill="#6a4a2a"/>
+        <rect x="38" y="62" width="6" height="4" fill="#a08060"/>
+        <rect x="74" y="62" width="6" height="4" fill="#a08060"/>
+        <!-- monitor -->
+        <rect x="32" y="8" width="56" height="36" fill="#2a2a3a"/>
+        <rect x="34" y="10" width="52" height="28" fill="#1a2a1a" id="screen-1"/>
+        <rect x="54" y="44" width="12" height="4" fill="#3a4a5a"/>
+        <rect x="44" y="46" width="32" height="3" fill="#3a4a5a"/>
+        <g clip-path="url(#screen-clip-1)">
+          <rect x="36" y="14" width="24" height="2" fill="#f472b6" opacity=".5"/>
+          <rect x="36" y="18" width="36" height="2" fill="#4ade80" opacity=".5"/>
+          <rect x="36" y="22" width="20" height="2" fill="#60a5fa" opacity=".4"/>
+          <rect x="36" y="26" width="30" height="2" fill="#facc15" opacity=".5"/>
+          <rect x="36" y="30" width="18" height="2" fill="#4ade80" opacity=".4"/>
+          <rect x="78" y="26" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.3s"/>
+        </g>
+        <!-- chair -->
+        <rect x="40" y="76" width="40" height="8" fill="#4a4a5a"/>
+        <rect x="42" y="68" width="36" height="10" fill="#4a4a5a"/>
+        <rect x="56" y="84" width="8" height="12" fill="#3a3a4a"/>
+        <rect x="44" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="70" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <!-- keyboard -->
+        <rect x="40" y="36" width="28" height="6" fill="#3a3a4a"/>
+        <rect x="42" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="48" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="54" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="60" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <!-- notes -->
+        <rect x="74" y="32" width="12" height="12" fill="#fde68a"/>
+        <rect x="76" y="35" width="8" height="1" fill="#a08060" opacity=".4"/>
+        <rect x="76" y="38" width="6" height="1" fill="#a08060" opacity=".4"/>
+      </g>
+      <g id="desk-slot-1" transform="translate(468,340)"></g>
+
+      <!-- ====== DESK STATION 3 ====== -->
+      <g id="desk-area-2" transform="translate(620,320)">
+        <rect x="0" y="40" width="120" height="12" fill="#8b6847"/>
+        <rect x="2" y="42" width="116" height="8" fill="#9a7857"/>
+        <rect x="8" y="52" width="8" height="40" fill="#7a5a3a"/>
+        <rect x="104" y="52" width="8" height="40" fill="#7a5a3a"/>
+        <rect x="24" y="52" width="72" height="24" fill="#7a5a3a"/>
+        <rect x="26" y="54" width="30" height="20" fill="#6a4a2a"/>
+        <rect x="62" y="54" width="30" height="20" fill="#6a4a2a"/>
+        <rect x="38" y="62" width="6" height="4" fill="#a08060"/>
+        <rect x="74" y="62" width="6" height="4" fill="#a08060"/>
+        <!-- monitor -->
+        <rect x="32" y="8" width="56" height="36" fill="#2a2a3a"/>
+        <rect x="34" y="10" width="52" height="28" fill="#1a2a1a" id="screen-2"/>
+        <rect x="54" y="44" width="12" height="4" fill="#3a4a5a"/>
+        <rect x="44" y="46" width="32" height="3" fill="#3a4a5a"/>
+        <g clip-path="url(#screen-clip-2)">
+          <rect x="36" y="14" width="28" height="2" fill="#60a5fa" opacity=".5"/>
+          <rect x="36" y="18" width="18" height="2" fill="#4ade80" opacity=".5"/>
+          <rect x="36" y="22" width="36" height="2" fill="#f472b6" opacity=".4"/>
+          <rect x="36" y="26" width="22" height="2" fill="#facc15" opacity=".5"/>
+          <rect x="36" y="30" width="30" height="2" fill="#60a5fa" opacity=".4"/>
+          <rect x="72" y="22" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.6s"/>
+        </g>
+        <!-- chair -->
+        <rect x="40" y="76" width="40" height="8" fill="#4a4a5a"/>
+        <rect x="42" y="68" width="36" height="10" fill="#4a4a5a"/>
+        <rect x="56" y="84" width="8" height="12" fill="#3a3a4a"/>
+        <rect x="44" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="70" y="94" width="6" height="4" fill="#2a2a3a"/>
+        <!-- keyboard -->
+        <rect x="40" y="36" width="28" height="6" fill="#3a3a4a"/>
+        <rect x="42" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="48" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="54" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <rect x="60" y="37" width="4" height="2" fill="#5a5a6a"/>
+        <!-- plant on desk -->
+        <rect x="78" y="30" width="8" height="10" fill="#c0392b" opacity=".8"/>
+        <rect x="80" y="24" width="4" height="8" fill="#3a8a3a"/>
+        <rect x="76" y="22" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="84" y="22" width="4" height="4" fill="#4a9a4a"/>
+      </g>
+      <g id="desk-slot-2" transform="translate(668,340)"></g>
+
+      <!-- ====== POTTED PLANT (right) ====== -->
+      <g transform="translate(790,276)">
+        <rect x="0" y="32" width="24" height="16" fill="#c0392b"/>
+        <rect x="-2" y="30" width="28" height="4" fill="#a83228"/>
+        <rect x="2" y="46" width="20" height="4" fill="#a83228"/>
+        <rect x="4" y="28" width="16" height="6" fill="#5a3a2a"/>
+        <rect x="8" y="4" width="4" height="26" fill="#2a6a2a"/>
+        <rect x="4" y="8" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="16" y="6" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="0" y="4" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="20" y="2" width="4" height="4" fill="#4a9a4a"/>
+        <rect x="8" y="0" width="4" height="4" fill="#3a8a3a"/>
+        <rect x="12" y="-4" width="4" height="4" fill="#4a9a4a"/>
+      </g>
+
+      <!-- ====== PIXEL PARTICLE SPOTS ====== -->
+      <g id="particles"></g>
+
+      <!-- ====== LABEL on wall ====== -->
+      <text x="480" y="216" text-anchor="middle" font-size="8" fill="#a09080" class="pixel-font" opacity=".6">- エージェント オフィス -</text>
+
+    </svg>
+  </div>
+
+  <!-- RPG Dialogue Box Info Panel -->
+  <div class="info-panel">
+    <div class="panel-title">▼ エージェント情報</div>
+    <div class="agent-grid" id="agent-panel"></div>
+  </div>
 </div>
 
 <script>
-// ── particles ──
-;(function(){
-  const c = document.getElementById('particles')
-  for (let i = 0; i < 18; i++) {
-    const p = document.createElement('div')
-    p.className = 'particle'
-    p.style.left = Math.random()*100+'%'
-    p.style.animationDuration = (10+Math.random()*15)+'s'
-    p.style.animationDelay = Math.random()*10+'s'
-    p.style.width = p.style.height = (1+Math.random()*2)+'px'
-    const cols = ['#a78bfa','#38bdf8','#f472b6','#4ade80']
-    p.style.background = cols[~~(Math.random()*4)]
-    c.appendChild(p)
-  }
-})()
+// ── API Config ──
+const VPS_URL = location.hostname === 'localhost' ? 'http://162.43.29.31:3001' : ''
+const POLL_INTERVAL = 10000
 
-// ── Agent character SVG generators (smaller for room view) ──
+// ── Color palette for pixel art characters ──
 const COLORS = {
-  blue:   { body:'#38bdf8', dark:'#0369a1', light:'#bae6fd', eye:'#082f49' },
-  pink:   { body:'#f472b6', dark:'#9d174d', light:'#fce7f3', eye:'#1a0f2e' },
-  yellow: { body:'#eab308', dark:'#a16207', light:'#fef9c3', eye:'#1c1004' },
-  green:  { body:'#22c55e', dark:'#16a34a', light:'#bbf7d0', eye:'#052e16' },
-  purple: { body:'#a78bfa', dark:'#6d28d9', light:'#ede9fe', eye:'#1e1040' },
-  orange: { body:'#fb923c', dark:'#c2410c', light:'#ffedd5', eye:'#1a0800' },
+  blue:   { hair:'#38bdf8', skin:'#fde0c8', shirt:'#2563eb', pants:'#1e3a5f', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  pink:   { hair:'#f472b6', skin:'#fde0c8', shirt:'#db2777', pants:'#831843', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  yellow: { hair:'#facc15', skin:'#fde0c8', shirt:'#ca8a04', pants:'#713f12', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  green:  { hair:'#4ade80', skin:'#fde0c8', shirt:'#16a34a', pants:'#14532d', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  purple: { hair:'#a78bfa', skin:'#fde0c8', shirt:'#7c3aed', pants:'#3b0764', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  orange: { hair:'#fb923c', skin:'#fde0c8', shirt:'#ea580c', pants:'#7c2d12', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  red:    { hair:'#f87171', skin:'#fcd9bd', shirt:'#dc2626', pants:'#450a0a', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  teal:   { hair:'#2dd4bf', skin:'#fcd9bd', shirt:'#0d9488', pants:'#134e4a', eye:'#1a1a2e', shoes:'#1a1a2e' },
 }
 const COLOR_KEYS = Object.keys(COLORS)
 
 function charColor(sessionId) {
   let h = 0
-  for (const c of sessionId) h = (h*31 + c.charCodeAt(0)) & 0xffffffff
+  for (const c of sessionId) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff
   return COLOR_KEYS[Math.abs(h) % COLOR_KEYS.length]
 }
 
-// working character (at desk, typing)
-function svgWorking(ck) {
-  const c = COLORS[ck]
-  return `
-    <g transform="scale(.55)">
-      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
-      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
-      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
-      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
-      <circle cx="50" cy="44" r="28" fill="${c.body}"/>
-      <g style="transform-origin:50px 42px;animation:blink 5s infinite;">
-        <ellipse cx="38" cy="42" rx="5" ry="6" fill="${c.eye}"/>
-        <ellipse cx="62" cy="42" rx="5" ry="6" fill="${c.eye}"/>
-        <circle cx="40" cy="40" r="2" fill="white"/>
-        <circle cx="64" cy="40" r="2" fill="white"/>
-      </g>
-      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
-      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
-      <g style="transform-origin:32px 78px;animation:tap-l .55s ease-in-out infinite;">
-        <line x1="32" y1="78" x2="22" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-      </g>
-      <g style="transform-origin:68px 78px;animation:tap-r .55s ease-in-out infinite;">
-        <line x1="68" y1="78" x2="78" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-      </g>
-    </g>`
+// ── Pixel Sprite Renderer ──
+// Each sprite pixel = 4x4 SVG units. Sprites are 9 wide x 16 tall
+const P = 4 // pixel size
+
+function renderSprite(data, x, y, colors) {
+  let svg = ''
+  for (let ry = 0; ry < data.length; ry++) {
+    for (let rx = 0; rx < data[ry].length; rx++) {
+      const cell = data[ry][rx]
+      if (!cell) continue
+      const color = colors[cell] || cell
+      svg += `<rect x="${x + rx * P}" y="${y + ry * P}" width="${P}" height="${P}" fill="${color}"/>`
+    }
+  }
+  return svg
 }
 
-// idle character (on sofa, relaxed)
+// ── Sprite Data ──
+// Legend: h=hair, s=skin, e=eye, t=shirt, p=pants, o=shoes, null=transparent
+// Working (sitting, facing front) - 9w x 16h
+const SPRITE_WORKING = [
+  [null, null, null, 'h',  'h',  'h',  null, null, null],
+  [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+  [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+  [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+  [null, 's',  's',  's',  's',  's',  's',  's',  null],
+  [null, 's',  'e',  's',  's',  's',  'e',  's',  null],
+  [null, 's',  's',  's',  's',  's',  's',  's',  null],
+  [null, null, 's',  's',  's',  's',  's',  null, null],
+  [null, null, null, 't',  't',  't',  null, null, null],
+  [null, null, 't',  't',  't',  't',  't',  null, null],
+  [null, 't',  't',  't',  't',  't',  't',  't',  null],
+  [null, 't',  't',  't',  't',  't',  't',  't',  null],
+  [null, null, 't',  't',  't',  't',  't',  null, null],
+  [null, null, null, 'p',  'p',  'p',  null, null, null],
+  [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+  [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+]
+
+// Working arms (separate so we can animate them)
+const ARM_LEFT = [
+  [null, null],
+  ['t',  null],
+  ['t',  null],
+  ['s',  null],
+]
+const ARM_RIGHT = [
+  [null, null],
+  [null, 't' ],
+  [null, 't' ],
+  [null, 's' ],
+]
+
+// Idle (standing, slight variation) - 9w x 16h
+const SPRITE_IDLE = [
+  [null, null, null, 'h',  'h',  'h',  null, null, null],
+  [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+  [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+  [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+  [null, 's',  's',  's',  's',  's',  's',  's',  null],
+  [null, 's',  'e',  's',  's',  's',  'e',  's',  null],
+  [null, 's',  's',  's',  's',  's',  's',  's',  null],
+  [null, null, 's',  's',  'w',  's',  's',  null, null],
+  [null, null, null, 't',  't',  't',  null, null, null],
+  [null, null, 't',  't',  't',  't',  't',  null, null],
+  [null, 't',  't',  't',  't',  't',  't',  't',  null],
+  [null, 't',  't',  't',  't',  't',  't',  't',  null],
+  [null, null, null, 'p',  'p',  'p',  null, null, null],
+  [null, null, null, 'p',  null, 'p',  null, null, null],
+  [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+  [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+]
+
+// Sleeping (lying down, eyes closed) - 16w x 8h (rotated)
+const SPRITE_SLEEPING = [
+  [null, null, 'o',  'o',  'p',  'p',  'p',  't',  't',  't',  't',  's',  's',  'h',  'h',  null],
+  [null, 'o',  'o',  'p',  'p',  'p',  't',  't',  't',  't',  't',  's',  's',  'h',  'h',  'h' ],
+  [null, null, null, 'p',  'p',  't',  't',  't',  't',  't',  's',  's',  'h',  'h',  'h',  'h' ],
+  [null, null, null, null, null, 't',  't',  't',  null, null, 's',  's',  's',  'h',  'h',  null],
+  [null, null, null, null, null, null, 's',  null, null, null, 's',  '_',  's',  's',  null, null],
+  [null, null, null, null, null, null, null, null, null, null, 's',  '_',  's',  null, null, null],
+  [null, null, null, null, null, null, null, null, null, null, null, 's',  null, null, null, null],
+  [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+]
+
+// ── Render character SVG ──
+function svgWorking(ck, uniqueId) {
+  const c = COLORS[ck]
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes }
+  const body = renderSprite(SPRITE_WORKING, 0, 0, colorMap)
+  // Arms with animation
+  const armLColors = { t:c.shirt, s:c.skin }
+  const armRColors = { t:c.shirt, s:c.skin }
+  const leftArm = renderSprite(ARM_LEFT, -2 * P, 9 * P, armLColors)
+  const rightArm = renderSprite(ARM_RIGHT, 9 * P, 9 * P, armRColors)
+
+  return `<g>
+    ${body}
+    <g class="typing-arm-l">${leftArm}</g>
+    <g class="typing-arm-r">${rightArm}</g>
+  </g>`
+}
+
 function svgIdle(ck) {
   const c = COLORS[ck]
-  return `
-    <g transform="scale(.5)" style="animation:float-idle 4s ease-in-out infinite;">
-      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
-      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
-      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
-      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
-      <circle cx="50" cy="44" r="28" fill="${c.body}" opacity=".8"/>
-      <g style="transform-origin:50px 42px;animation:blink 6s infinite;">
-        <ellipse cx="38" cy="42" rx="5" ry="6" fill="${c.eye}"/>
-        <ellipse cx="62" cy="42" rx="5" ry="6" fill="${c.eye}"/>
-        <circle cx="40" cy="40" r="2" fill="white"/>
-        <circle cx="64" cy="40" r="2" fill="white"/>
-      </g>
-      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
-      <path d="M43,60 Q50,67 57,60" fill="none" stroke="${c.dark}" stroke-width="1.5"/>
-      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
-      <line x1="32" y1="78" x2="18" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-      <line x1="68" y1="78" x2="82" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-    </g>`
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, w:'#e07060' }
+  const body = renderSprite(SPRITE_IDLE, 0, 0, colorMap)
+  return `<g class="idle-anim">${body}</g>`
 }
 
-// sleeping character (on sofa, eyes closed)
 function svgSleeping(ck) {
   const c = COLORS[ck]
-  return `
-    <g transform="scale(.5) rotate(-15,50,60)" style="animation:breathe 4s ease-in-out infinite;">
-      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
-      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
-      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
-      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
-      <circle cx="50" cy="44" r="28" fill="${c.body}" opacity=".7"/>
-      <line x1="33" y1="42" x2="43" y2="42" stroke="${c.eye}" stroke-width="2" stroke-linecap="round"/>
-      <line x1="57" y1="42" x2="67" y2="42" stroke="${c.eye}" stroke-width="2" stroke-linecap="round"/>
-      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
-      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
-      <line x1="32" y1="78" x2="20" y2="95" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-      <line x1="68" y1="78" x2="80" y2="95" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, '_':'#4a4a5a' }
+  const body = renderSprite(SPRITE_SLEEPING, 0, 0, colorMap)
+  // zzZ pixel text
+  const zzz = `
+    <g class="zzz-anim">
+      <rect x="${17*P}" y="${-2*P}" width="${P}" height="${P}" fill="#a0a0c0" opacity=".7"/>
+      <rect x="${16*P}" y="${-1*P}" width="${P}" height="${P}" fill="#a0a0c0" opacity=".7"/>
+      <rect x="${15*P}" y="${0}" width="${P}" height="${P}" fill="#a0a0c0" opacity=".7"/>
     </g>
-    <text x="55" y="-5" font-size="10" fill="var(--dim)" opacity=".6" font-family="monospace">zzZ</text>`
+    <g class="zzz-anim" style="animation-delay:.7s;">
+      <rect x="${18*P}" y="${-4*P}" width="${P}" height="${P}" fill="#8080a0" opacity=".5"/>
+      <rect x="${17*P}" y="${-3*P}" width="${P}" height="${P}" fill="#8080a0" opacity=".5"/>
+    </g>
+    <g class="zzz-anim" style="animation-delay:1.4s;">
+      <rect x="${19*P}" y="${-6*P}" width="${P}" height="${P}" fill="#6060a0" opacity=".4"/>
+    </g>
+  `
+  return `<g class="breathe-anim">${body}</g>${zzz}`
 }
 
-// whiteboard presenter character
-function svgPresenter(ck) {
-  const c = COLORS[ck]
-  return `
-    <g transform="scale(.5)">
-      <polygon points="18,26 28,6 40,26" fill="${c.dark}"/>
-      <polygon points="22,26 28,12 36,26" fill="${c.light}"/>
-      <polygon points="60,26 72,6 82,26" fill="${c.dark}"/>
-      <polygon points="64,26 72,12 78,26" fill="${c.light}"/>
-      <circle cx="50" cy="44" r="28" fill="${c.body}"/>
-      <g style="transform-origin:50px 42px;animation:blink 5.5s infinite;">
-        <ellipse cx="38" cy="42" rx="5" ry="6" fill="${c.eye}"/>
-        <ellipse cx="62" cy="42" rx="5" ry="6" fill="${c.eye}"/>
-        <circle cx="40" cy="40" r="2" fill="white"/>
-        <circle cx="64" cy="40" r="2" fill="white"/>
-      </g>
-      <polygon points="47,52 53,52 50,56" fill="${c.dark}"/>
-      <path d="M43,60 Q50,56 57,60" fill="none" stroke="${c.dark}" stroke-width="1.5"/>
-      <rect x="26" y="72" width="48" height="30" rx="10" fill="${c.dark}"/>
-      <line x1="32" y1="78" x2="12" y2="65" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-      <line x1="68" y1="78" x2="82" y2="98" stroke="${c.dark}" stroke-width="7" stroke-linecap="round"/>
-    </g>`
-}
-
-// status bubble
+// ── Status bubble (pixel art style) ──
 function svgBubble(text, color, x, y) {
-  const w = text.length * 5.5 + 16
+  const charW = 7
+  const w = text.length * charW + 12
   return `
-    <g class="agent-bubble" transform="translate(${x},${y})">
-      <rect x="${-w/2}" y="-14" width="${w}" height="16" rx="8" fill="rgba(14,12,35,.85)" stroke="${color}" stroke-width=".8"/>
-      <circle cx="${-w/2+8}" cy="-6" r="2.5" fill="${color}" style="animation:glow-pulse 2s infinite;"/>
-      <text x="2" y="-3" text-anchor="middle" font-size="6.5" fill="${color}" font-family="monospace" font-weight="600">${text}</text>
-      <polygon points="-3,2 3,2 0,7" fill="rgba(14,12,35,.85)"/>
+    <g transform="translate(${x},${y})">
+      <rect x="${-w/2}" y="-12" width="${w}" height="14" fill="#1e1e32" stroke="${color}" stroke-width="2"/>
+      <rect x="${-w/2+1}" y="-11" width="${w-2}" height="12" fill="#1e1e32"/>
+      <text x="0" y="-2" text-anchor="middle" font-size="6" fill="${color}" class="pixel-font">${text}</text>
+      <!-- arrow -->
+      <rect x="-2" y="2" width="4" height="4" fill="#1e1e32" stroke="${color}" stroke-width="1" transform="rotate(45,-0,4)"/>
+      <rect x="-3" y="1" width="6" height="3" fill="#1e1e32"/>
     </g>`
 }
 
-// ── task label from tool ──
+// ── Task label ──
 function taskLabel(agent) {
   const t = (agent.last_tool || '').toLowerCase()
-  if (t.includes('edit') || t.includes('write')) return 'CODING'
-  if (t.includes('read') || t.includes('grep') || t.includes('glob')) return 'ANALYZING'
-  if (t.includes('bash')) return 'BUILDING'
-  if (agent.status === 'active') return 'BUSY'
-  if (agent.status === 'idle') return 'RELAXING'
-  return 'SLEEPING'
+  if (t.includes('edit') || t.includes('write')) return 'コーディング'
+  if (t.includes('read') || t.includes('grep') || t.includes('glob')) return 'リサーチ'
+  if (t.includes('bash')) return 'ビルド中'
+  if (agent.status === 'active') return 'タスク実行中'
+  if (agent.status === 'idle') return 'スタンバイ'
+  return 'スリープ'
 }
 
 function accentForType(ck) {
-  return COLORS[ck]?.body || '#a78bfa'
+  return COLORS[ck]?.hair || '#a78bfa'
 }
 
-// ── time helpers ──
+// ── Time helpers ──
 function timeAgo(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (s < 60) return s+'秒前'
-  if (s < 3600) return Math.floor(s/60)+'分前'
-  return Math.floor(s/3600)+'時間前'
+  if (s < 60) return s + '秒前'
+  if (s < 3600) return Math.floor(s / 60) + '分前'
+  return Math.floor(s / 3600) + '時間前'
 }
 function elapsed(iso) {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  const m = Math.floor(s/60), h = Math.floor(m/60)
-  if (h>0) return h+'h '+m%60+'m'
-  if (m>0) return m+'m '+s%60+'s'
-  return s+'s'
+  const m = Math.floor(s / 60), h = Math.floor(m / 60)
+  if (h > 0) return h + 'h ' + m % 60 + 'm'
+  if (m > 0) return m + 'm ' + s % 60 + 's'
+  return s + 's'
 }
 
-// ── default agents (when API returns empty) ──
+// ── Default agents ──
 const DEFAULTS = [
   { session_id:'default-blue',   project:'Agent-A', status:'idle',    last_tool:'', last_desc:'タスク待ち...', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
   { session_id:'default-pink',   project:'Agent-B', status:'stopped', last_tool:'', last_desc:'うたた寝中', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
@@ -855,90 +855,121 @@ const DEFAULTS = [
   { session_id:'default-orange', project:'Agent-F', status:'idle',    last_tool:'', last_desc:'準備万端', tool_count:0, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[], _default:true },
 ]
 
-// ── render agents into SVG slots ──
+// ── Update wall clock ──
+function updateClock() {
+  const now = new Date()
+  const h = String(now.getHours()).padStart(2, '0')
+  const m = String(now.getMinutes()).padStart(2, '0')
+  const el = document.getElementById('clock-text')
+  if (el) el.textContent = h + ':' + m
+}
+updateClock()
+setInterval(updateClock, 10000)
+
+// ── Particles ──
+function spawnParticle() {
+  const particles = document.getElementById('particles')
+  if (!particles) return
+  const x = 100 + Math.random() * 760
+  const y = 200 + Math.random() * 300
+  const colors = ['#fde68a', '#a78bfa', '#4ade80', '#f472b6', '#facc15']
+  const color = colors[Math.floor(Math.random() * colors.length)]
+  const id = 'p-' + Date.now() + Math.random()
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+  el.setAttribute('x', x)
+  el.setAttribute('y', y)
+  el.setAttribute('width', '3')
+  el.setAttribute('height', '3')
+  el.setAttribute('fill', color)
+  el.setAttribute('opacity', '0.6')
+  el.style.animation = 'particle-float 2s ease-out forwards'
+  particles.appendChild(el)
+  setTimeout(() => el.remove(), 2000)
+}
+setInterval(spawnParticle, 3000)
+
+// ── Render agents into SVG + info panel ──
 function renderRoom(agents) {
   const data = agents.length > 0 ? agents : DEFAULTS
-
   const active = data.filter(a => a.status === 'active')
-  const idle = data.filter(a => a.status !== 'active')
+  const idle = data.filter(a => a.status === 'idle')
+  const stopped = data.filter(a => a.status === 'stopped')
+  const nonActive = data.filter(a => a.status !== 'active')
 
-  // desk slots (up to 3 active)
+  // Desk slots (up to 3 active agents)
   for (let i = 0; i < 3; i++) {
-    const slot = document.getElementById('desk-slot-'+i)
+    const slot = document.getElementById('desk-slot-' + i)
+    const screen = document.getElementById('screen-' + i)
     if (active[i]) {
       const a = active[i], ck = charColor(a.session_id)
       const label = taskLabel(a)
-      slot.innerHTML = svgWorking(ck) + svgBubble(label, accentForType(ck), 28, -15)
+      const charSvg = svgWorking(ck, i)
+      const bubble = svgBubble(label, accentForType(ck), 18, -8)
+      slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+      if (screen) screen.setAttribute('fill', '#0a1a0a')
     } else {
       slot.innerHTML = ''
+      if (screen) screen.setAttribute('fill', '#1a2a1a')
     }
   }
 
-  // whiteboard slot (4th active or first idle with highest tool_count)
-  const wbSlot = document.getElementById('wb-slot')
-  if (active[3]) {
-    const a = active[3], ck = charColor(a.session_id)
-    wbSlot.innerHTML = svgPresenter(ck) + svgBubble('PRESENTING', accentForType(ck), 28, -15)
-  } else if (active.length > 0) {
-    // no one at whiteboard when less than 4 active
-    wbSlot.innerHTML = ''
-  } else {
-    wbSlot.innerHTML = ''
-  }
-
-  // sofa slots (idle agents — up to 2 shown, rest go to extra active or are implied)
+  // Sofa slots (idle/stopped agents)
+  const sofaAgents = [...stopped, ...idle]
   for (let i = 0; i < 2; i++) {
-    const slot = document.getElementById('sofa-slot-'+i)
-    if (idle[i]) {
-      const a = idle[i], ck = charColor(a.session_id)
+    const slot = document.getElementById('sofa-slot-' + i)
+    if (sofaAgents[i]) {
+      const a = sofaAgents[i], ck = charColor(a.session_id)
       const isSleeping = a.status === 'stopped' || (a._default && a.last_desc.includes('寝'))
-      const label = isSleeping ? 'SLEEPING' : 'RELAXING'
-      const svgFn = isSleeping ? svgSleeping : svgIdle
-      slot.innerHTML = svgFn(ck) + svgBubble(label, accentForType(ck), 28, -15)
+      if (isSleeping) {
+        const charSvg = svgSleeping(ck)
+        const bubble = svgBubble('スリープ', '#6b7280', 32, -12)
+        slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${bubble}`
+      } else {
+        const charSvg = svgIdle(ck)
+        const bubble = svgBubble('スタンバイ', accentForType(ck), 18, -8)
+        slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+      }
     } else {
       slot.innerHTML = ''
     }
   }
 
-  // update tasks panel
-  const tasksList = document.getElementById('tasks-list')
-  const taskItems = data.map(a => {
-    const isActive = a.status === 'active'
-    const dotClass = isActive ? 'run' : a.status === 'idle' ? 'idle' : 'off'
-    const desc = a.last_desc || a.last_tool || (isActive ? 'Processing...' : 'Idle')
-    return `<div class="task-item">
-      <div class="task-dot ${dotClass}"></div>
-      <span class="task-text ${isActive?'active':''}">${desc}</span>
-    </div>`
-  })
-  tasksList.innerHTML = taskItems.join('')
-
-  // update agents panel
-  const agentsList = document.getElementById('agents-list')
-  const apItems = data.map(a => {
+  // Info panel
+  const panel = document.getElementById('agent-panel')
+  const cards = data.map(a => {
     const ck = charColor(a.session_id)
     const col = accentForType(ck)
-    const stLabel = a.status === 'active' ? 'BUSY' : a.status === 'idle' ? 'IDLE' : 'OFF'
-    return `<div class="ap-row">
-      <div class="ap-avatar" style="background:${col};"></div>
-      <span class="ap-name">${a.project}</span>
-      <span class="ap-status ${a.status}">${stLabel}</span>
+    const stClass = a.status === 'active' ? 'active' : a.status === 'idle' ? 'idle' : 'stopped'
+    const stText = a.status === 'active' ? '稼働中' : a.status === 'idle' ? '待機中' : '停止'
+    const desc = a.last_desc || a.last_tool || (a.status === 'active' ? '処理中...' : '待機中')
+    const uptime = elapsed(a.started_at)
+    return `<div class="agent-card">
+      <div class="status-dot ${stClass}"></div>
+      <div class="agent-info">
+        <div class="agent-name" style="color:${col};">${a.project}</div>
+        <div class="agent-status">[${stText}] ツール: ${a.tool_count}回</div>
+        <div class="agent-task">${desc}</div>
+        <div class="agent-meta">稼働時間: ${uptime} | 最終: ${timeAgo(a.last_seen)}</div>
+      </div>
     </div>`
   })
-  agentsList.innerHTML = apItems.join('')
+  panel.innerHTML = cards.join('')
 
-  // update status bar metrics
+  // Update status bar
   const activeCount = active.length
-  const cpuPct = Math.min(95, 15 + activeCount * 20 + Math.floor(Math.random()*5))
-  const memPct = Math.min(90, 30 + activeCount * 12 + Math.floor(Math.random()*5))
-  document.getElementById('sb-cpu').style.width = cpuPct+'%'
-  document.getElementById('sb-cpu-val').textContent = cpuPct+'%'
-  document.getElementById('sb-mem').style.width = memPct+'%'
-  document.getElementById('sb-mem-val').textContent = memPct+'%'
-  document.getElementById('sb-net').style.width = agents.length > 0 ? '85%' : '40%'
+  const totalCount = data.length
+  document.getElementById('sb-active-count').textContent = activeCount + '/' + totalCount
+
+  const hpPct = Math.min(100, 20 + activeCount * 25 + Math.floor(Math.random() * 5))
+  const mpPct = Math.min(100, 30 + totalCount * 10 + Math.floor(Math.random() * 5))
+  const hpEl = document.getElementById('sb-hp')
+  const mpEl = document.getElementById('sb-mp')
+  hpEl.style.width = hpPct + '%'
+  hpEl.style.background = hpPct > 60 ? 'var(--active-green)' : hpPct > 30 ? 'var(--idle-yellow)' : '#ef4444'
+  mpEl.style.width = mpPct + '%'
 }
 
-// ── polling ──
+// ── Polling ──
 let lastFetch = null
 
 async function fetchAgents() {
@@ -954,8 +985,8 @@ async function fetchAgents() {
     lastFetch = new Date()
     updateInfo()
   } catch (e) {
-    document.getElementById('update-info').textContent = '⚠ VPSに接続できません'
-    renderRoom([]) // show defaults
+    document.getElementById('update-info').textContent = '接続エラー'
+    renderRoom([])
   } finally {
     spinner.classList.remove('show')
   }
@@ -964,10 +995,10 @@ async function fetchAgents() {
 function updateInfo() {
   if (!lastFetch) return
   const sec = Math.floor((Date.now() - lastFetch) / 1000)
-  document.getElementById('update-info').textContent = `${sec}秒前 | ${POLL_INTERVAL/1000}s間隔`
+  document.getElementById('update-info').textContent = `${sec}秒前 | ${POLL_INTERVAL / 1000}s間隔`
 }
 
-// init
+// Init
 renderRoom([])
 fetchAgents()
 setInterval(fetchAgents, POLL_INTERVAL)
