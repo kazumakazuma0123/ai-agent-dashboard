@@ -900,16 +900,21 @@ function svgBubble(text, color, x, y) {
 }
 
 // ── Name label (large, below character) with role ──
-function svgNameLabel(name, color, x, y, role) {
+function svgNameLabel(name, color, x, y, role, status) {
   const charW = 17
-  const nameW = name.length * charW + 12
+  const dotW = 14
+  const nameW = name.length * charW + dotW + 16
   const roleW = role ? role.length * 9 + 12 : 0
   const w = Math.max(nameW, roleW)
   const h = role ? 40 : 22
+  const dotColor = status === 'active' ? '#4ade80' : '#6b7280'
+  const dotGlow = status === 'active' ? `<rect x="${-w/2 + 3}" y="4" width="8" height="8" fill="${dotColor}" opacity=".3"/>` : ''
   return `
     <g transform="translate(${x},${y})">
       <rect x="${-w/2}" y="-2" width="${w}" height="${h}" fill="rgba(30,30,50,.88)" rx="0"/>
-      <text x="0" y="14" text-anchor="middle" font-size="16" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="3" paint-order="stroke">${name}</text>
+      ${dotGlow}
+      <rect x="${-w/2 + 5}" y="5" width="6" height="6" fill="${dotColor}"/>
+      <text x="${dotW/2}" y="14" text-anchor="middle" font-size="16" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="3" paint-order="stroke">${name}</text>
       ${role ? `<text x="0" y="32" text-anchor="middle" font-size="9" fill="#a0a0b0" class="pixel-font">${role}</text>` : ''}
     </g>`
 }
@@ -1011,7 +1016,7 @@ function renderRoom(agents) {
     const a = active[i], ck = charColor(a.member_id)
     const label = a.command || taskLabel(a)
     const charSvg = svgWorking(ck, i)
-    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role)
+    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     const taskBubble = svgBubble(label, '#facc15', 18, -8)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}`
     if (screen) screen.setAttribute('fill', '#0a1a0a')
@@ -1025,7 +1030,7 @@ function renderRoom(agents) {
     const slot = document.getElementById('sofa-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgSleeping(ck)
-    const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 18, a.role)
+    const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 18, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${nameLabel}`
   }
 
@@ -1034,7 +1039,7 @@ function renderRoom(agents) {
     const slot = document.getElementById('stand-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck)
-    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role)
+    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
   }
 
@@ -1044,7 +1049,7 @@ function renderRoom(agents) {
     if (slot.innerHTML !== '') continue
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck)
-    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role)
+    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
     idleIdx++
   }
