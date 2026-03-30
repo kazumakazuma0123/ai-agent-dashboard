@@ -870,7 +870,7 @@ function svgSleeping(ck) {
   return `<g class="breathe-anim">${body}</g>${zzz}`
 }
 
-// ── Status bubble (pixel art style) ──
+// ── Status bubble (small, for task/status) ──
 function svgBubble(text, color, x, y) {
   const charW = 7
   const w = text.length * charW + 12
@@ -879,9 +879,19 @@ function svgBubble(text, color, x, y) {
       <rect x="${-w/2}" y="-12" width="${w}" height="14" fill="#1e1e32" stroke="${color}" stroke-width="2"/>
       <rect x="${-w/2+1}" y="-11" width="${w-2}" height="12" fill="#1e1e32"/>
       <text x="0" y="-2" text-anchor="middle" font-size="6" fill="${color}" class="pixel-font">${text}</text>
-      <!-- arrow -->
       <rect x="-2" y="2" width="4" height="4" fill="#1e1e32" stroke="${color}" stroke-width="1" transform="rotate(45,-0,4)"/>
       <rect x="-3" y="1" width="6" height="3" fill="#1e1e32"/>
+    </g>`
+}
+
+// ── Name label (large, below character) ──
+function svgNameLabel(name, color, x, y) {
+  const charW = 11
+  const w = name.length * charW + 8
+  return `
+    <g transform="translate(${x},${y})">
+      <rect x="${-w/2}" y="-1" width="${w}" height="14" fill="rgba(30,30,50,.85)" rx="0"/>
+      <text x="0" y="10" text-anchor="middle" font-size="10" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="2" paint-order="stroke">${name}</text>
     </g>`
 }
 
@@ -982,9 +992,9 @@ function renderRoom(agents) {
     const a = active[i], ck = charColor(a.member_id)
     const label = a.command || taskLabel(a)
     const charSvg = svgWorking(ck, i)
-    const nameBubble = svgBubble(a.name, accentForType(ck), 18, -20)
+    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24)
     const taskBubble = svgBubble(label, '#facc15', 18, -8)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameBubble}${taskBubble}`
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}`
     if (screen) screen.setAttribute('fill', '#0a1a0a')
   }
 
@@ -996,8 +1006,8 @@ function renderRoom(agents) {
     const slot = document.getElementById('sofa-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgSleeping(ck)
-    const bubble = svgBubble(a.name, '#6b7280', 32, -12)
-    slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${bubble}`
+    const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 18)
+    slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${nameLabel}`
   }
 
   // Standing (up to 3)
@@ -1005,8 +1015,8 @@ function renderRoom(agents) {
     const slot = document.getElementById('stand-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck)
-    const bubble = svgBubble(a.name, accentForType(ck), 18, -8)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
   }
 
   // Remaining idle at empty desks
@@ -1015,8 +1025,8 @@ function renderRoom(agents) {
     if (slot.innerHTML !== '') continue
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck)
-    const bubble = svgBubble(a.name, accentForType(ck), 18, -8)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${bubble}`
+    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
     idleIdx++
   }
 
