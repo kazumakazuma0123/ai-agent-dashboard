@@ -901,16 +901,16 @@ function svgBubble(text, color, x, y) {
 
 // ── Name label (large, below character) with role ──
 function svgNameLabel(name, color, x, y, role) {
-  const charW = 11
-  const nameW = name.length * charW + 8
-  const roleW = role ? role.length * 5.5 + 8 : 0
+  const charW = 17
+  const nameW = name.length * charW + 12
+  const roleW = role ? role.length * 9 + 12 : 0
   const w = Math.max(nameW, roleW)
-  const h = role ? 26 : 14
+  const h = role ? 40 : 22
   return `
     <g transform="translate(${x},${y})">
-      <rect x="${-w/2}" y="-1" width="${w}" height="${h}" fill="rgba(30,30,50,.85)" rx="0"/>
-      <text x="0" y="10" text-anchor="middle" font-size="10" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="2" paint-order="stroke">${name}</text>
-      ${role ? `<text x="0" y="22" text-anchor="middle" font-size="5" fill="#8a8a9a" class="pixel-font">${role}</text>` : ''}
+      <rect x="${-w/2}" y="-2" width="${w}" height="${h}" fill="rgba(30,30,50,.88)" rx="0"/>
+      <text x="0" y="14" text-anchor="middle" font-size="16" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="3" paint-order="stroke">${name}</text>
+      ${role ? `<text x="0" y="32" text-anchor="middle" font-size="9" fill="#a0a0b0" class="pixel-font">${role}</text>` : ''}
     </g>`
 }
 
