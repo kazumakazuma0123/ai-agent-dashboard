@@ -142,10 +142,16 @@ body {
 .agent-card {
   background:rgba(255,255,255,.03);
   border:2px solid rgba(196,154,108,.25);
+  border-left:4px solid var(--stopped-gray);
   padding:8px 10px;
   display:flex; align-items:flex-start; gap:10px;
   font-size:7px; line-height:1.6;
 }
+.agent-card.is-active {
+  border-left-color:var(--active-green);
+  background:rgba(74,222,128,.04);
+}
+.agent-card.is-idle { border-left-color:var(--idle-yellow); }
 .agent-card .status-dot {
   width:8px; height:8px; flex-shrink:0; margin-top:2px;
   image-rendering: pixelated;
@@ -217,16 +223,19 @@ body {
   #update-info { display:none; }
   .main-wrap { margin-top:36px; padding-bottom:16px; }
   .scene-wrap { width:100%; }
-  .info-panel { font-size:7px; padding:8px; margin:4px 4px 0; border-width:3px; }
+  .info-panel { padding:8px 6px; margin:4px 4px 0; border-width:3px; }
   .info-panel::before { top:3px; left:3px; right:3px; bottom:3px; }
-  .panel-title { font-size:8px; margin-bottom:6px; }
-  .agent-grid { grid-template-columns:1fr 1fr; gap:6px; }
-  .agent-card { font-size:7px; padding:6px 8px; gap:6px; line-height:1.5; }
-  .agent-card .status-dot { width:6px; height:6px; }
-  .agent-name { font-size:8px; }
-  .agent-name span { display:none; }
-  .agent-status { font-size:6px; }
-  .agent-task { font-size:7px; max-width:120px; }
+  .panel-title { font-size:9px; margin-bottom:8px; }
+  .agent-grid { grid-template-columns:1fr; gap:6px; }
+  .agent-card {
+    padding:10px 12px; gap:10px; line-height:1.6;
+    border-left-width:6px;
+  }
+  .agent-card .status-dot { width:12px; height:12px; margin-top:1px; }
+  .agent-name { font-size:11px; }
+  .agent-name span { font-size:8px; display:inline; }
+  .agent-status { font-size:9px; margin-top:2px; }
+  .agent-task { font-size:9px; max-width:none; white-space:normal; }
 }
 </style>
 </head>
@@ -1071,10 +1080,11 @@ function renderRoom(agents) {
     const timeInfo = a.status === 'active' && a.started_at
       ? ` | ${elapsed(a.started_at)}`
       : ''
-    return `<div class="agent-card">
+    const cardClass = a.status === 'active' ? 'is-active' : a.status === 'idle' ? 'is-idle' : ''
+    return `<div class="agent-card ${cardClass}">
       <div class="status-dot ${stClass}"></div>
       <div class="agent-info">
-        <div class="agent-name" style="color:${col};">${a.name} <span style="color:var(--text-dim);font-size:6px;">${a.role}</span></div>
+        <div class="agent-name" style="color:${col};">${a.name} <span style="color:var(--text-dim);">${a.role}</span></div>
         <div class="agent-status">[${stText}]${toolInfo}${timeInfo}</div>
         <div class="agent-task">${desc}</div>
       </div>
