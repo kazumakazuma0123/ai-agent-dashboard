@@ -14,13 +14,16 @@ const MEMBERS = [
   { id: 'yamada',   name: '山田', role: 'ライター',           commands: ['/write'] },
   { id: 'suzuki',   name: '鈴木', role: 'エディター',         commands: ['/direct'] },
   { id: 'nakamura', name: '中村', role: 'ホテル運営部長',     commands: ['/hotel'] },
+  { id: 'ito',      name: '伊藤', role: '集客マネージャー',   commands: ['/hotel'] },
+  { id: 'takahashi',name: '高橋', role: '清掃マネージャー',   commands: ['/hotel'] },
   { id: 'watanabe', name: '渡辺', role: '開発部長',           commands: ['/dev'] },
+  { id: 'kobayashi',name: '小林', role: 'エンジニア',         commands: ['/dev'] },
   { id: 'kato',     name: '加藤', role: 'インフラ部長',       commands: ['/infra'] },
+  { id: 'yoshida',  name: '吉田', role: '自動化エンジニア',   commands: ['/infra'] },
   { id: 'matsumoto',name: '松本', role: '経営企画',           commands: ['/ceo', '/standup'] },
 ]
 
 // ── 社員ステート管理 ──
-// { id → { status, command, task, started_at, last_seen, tool_count, last_tool, last_desc, history } }
 const memberState = new Map()
 
 function initMemberState() {
@@ -39,6 +42,12 @@ function initMemberState() {
   }
 }
 initMemberState()
+
+// ── セッション→社員 自動紐付け ──
+// /api/command start 時に session_id が不明なので、
+// session_id→member_id マッピングと、member_id→session_id マッピングを管理
+const sessionMemberMap = new Map()   // session_id → member_id
+const memberSessionMap = new Map()   // member_id → session_id
 
 // ── ツール名の日本語表示 ──
 function describeToolUse(tool, input) {
@@ -66,8 +75,7 @@ app.post('/api/command', (req, res) => {
     return res.status(401).json({ error: 'unauthorized' })
   }
 
-  const { member_id, action, command, task } = req.body
-  // action: 'start' | 'end'
+  const { member_id, action, command, task, session_id } = req.body
   if (!member_id || !action) {
     return res.status(400).json({ error: 'missing member_id or action' })
   }
@@ -78,6 +86,12 @@ app.post('/api/command', (req, res) => {
   }
 
   if (action === 'start') {
+    // session_id が渡されたらマッピングに登録
+    if (session_id) {
+      sessionMemberMap.set(session_id, member_id)
+      memberSessionMap.set(member_id, session_id)
+    }
+
     memberState.set(member_id, {
       ...state,
       status: 'active',
@@ -91,6 +105,13 @@ app.post('/api/command', (req, res) => {
       history: [],
     })
   } else if (action === 'end') {
+    // セッションマッピングをクリア
+    const sid = memberSessionMap.get(member_id)
+    if (sid) {
+      sessionMemberMap.delete(sid)
+      memberSessionMap.delete(member_id)
+    }
+
     memberState.set(member_id, {
       ...state,
       status: 'idle',
@@ -104,7 +125,6 @@ app.post('/api/command', (req, res) => {
 })
 
 // ── POST /api/update — PostToolUseフックから受信 ──
-// member_id が含まれていれば社員のステートを更新
 const sessions = new Map()
 
 app.post('/api/update', (req, res) => {
@@ -112,7 +132,7 @@ app.post('/api/update', (req, res) => {
     return res.status(401).json({ error: 'unauthorized' })
   }
 
-  const { session_id, tool_name, cwd, tool_input, member_id } = req.body
+  let { session_id, tool_name, cwd, tool_input, member_id } = req.body
 
   const entry = {
     tool: tool_name,
@@ -120,7 +140,33 @@ app.post('/api/update', (req, res) => {
     time: new Date().toISOString()
   }
 
-  // 社員IDが指定されている場合、社員ステートも更新
+  // member_id が未指定の場合、セッション→社員マッピングから自動解決
+  if (!member_id && session_id) {
+    member_id = sessionMemberMap.get(session_id) || null
+  }
+
+  // まだ不明なら、アクティブな社員の中から最も最近 start した部長を探す
+  // （フックからの初回updateで、まだマッピングがない場合のフォールバック）
+  if (!member_id && session_id) {
+    let bestMatch = null
+    let bestTime = 0
+    for (const [mid, state] of memberState) {
+      if (state.status === 'active' && !memberSessionMap.has(mid)) {
+        const t = new Date(state.started_at).getTime()
+        if (t > bestTime) {
+          bestTime = t
+          bestMatch = mid
+        }
+      }
+    }
+    if (bestMatch && (Date.now() - bestTime) < 60000) {
+      member_id = bestMatch
+      sessionMemberMap.set(session_id, member_id)
+      memberSessionMap.set(member_id, session_id)
+    }
+  }
+
+  // 社員ステートを更新
   if (member_id && memberState.has(member_id)) {
     const state = memberState.get(member_id)
     memberState.set(member_id, {
@@ -138,13 +184,15 @@ app.post('/api/update', (req, res) => {
     const project = (cwd || '').split('/').filter(Boolean).pop() || 'unknown'
     const existing = sessions.get(session_id) || {
       session_id, project, cwd: cwd || '', tool_count: 0,
-      started_at: new Date().toISOString(), history: []
+      started_at: new Date().toISOString(), history: [],
+      member_id: member_id || null,
     }
     sessions.set(session_id, {
       ...existing, project, cwd: cwd || existing.cwd,
       last_tool: tool_name, last_desc: entry.desc,
       tool_count: existing.tool_count + 1,
       last_seen: new Date().toISOString(),
+      member_id: member_id || existing.member_id,
       history: [entry, ...existing.history].slice(0, 8)
     })
   }
@@ -153,7 +201,6 @@ app.post('/api/update', (req, res) => {
 })
 
 // ── GET /api/agents — ダッシュボード用 ──
-// 社員マスタベースで返す（常に全員表示）
 app.get('/api/agents', (req, res) => {
   const now = Date.now()
   const result = MEMBERS.map(m => {
@@ -165,6 +212,11 @@ app.get('/api/agents', (req, res) => {
       const diffSec = (now - new Date(state.last_seen).getTime()) / 1000
       if (diffSec > 300) {
         status = 'idle'
+        const sid = memberSessionMap.get(m.id)
+        if (sid) {
+          sessionMemberMap.delete(sid)
+          memberSessionMap.delete(m.id)
+        }
         memberState.set(m.id, { ...state, status: 'idle', command: null, task: null })
       }
     }
@@ -187,6 +239,14 @@ app.get('/api/agents', (req, res) => {
   })
 
   res.json(result)
+})
+
+// ── GET /api/sessions — セッション一覧（デバッグ用） ──
+app.get('/api/sessions', (req, res) => {
+  if (req.headers['x-api-key'] !== API_KEY) {
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+  res.json([...sessions.values()])
 })
 
 // ヘルスチェック
