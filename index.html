@@ -7,25 +7,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
 :root {
-  --wall: #e8dcc8;
-  --floor-a: #c49a6c;
-  --floor-b: #b8895c;
-  --desk: #8b6847;
-  --desk-dark: #7a5a3a;
-  --monitor-body: #2a2a3a;
-  --monitor-border: #3a4a5a;
-  --chair: #4a4a5a;
-  --plant-a: #3a8a3a;
-  --plant-b: #2a6a2a;
-  --sky: #87ceeb;
-  --bg: #1a1a2e;
-  --panel-bg: #1e1e32;
-  --panel-border: #c49a6c;
-  --text: #f0e6d0;
-  --text-dim: #8a7e6a;
-  --active-green: #4ade80;
-  --idle-yellow: #facc15;
-  --stopped-gray: #6b7280;
+  --wall: #f8f0d8;
+  --floor-a: #f0f0f0;
+  --floor-b: #d8d8e0;
+  --desk: #b07848;
+  --desk-dark: #885830;
+  --monitor-body: #384048;
+  --monitor-border: #484858;
+  --chair: #c03030;
+  --plant-a: #48a848;
+  --plant-b: #307830;
+  --sky: #88c8e8;
+  --bg: #181828;
+  --panel-bg: #181830;
+  --panel-border: #b8a878;
+  --text: #f8f0d8;
+  --text-dim: #908870;
+  --active-green: #48c048;
+  --idle-yellow: #f8c818;
+  --stopped-gray: #687080;
   --pixel: 4px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -52,8 +52,8 @@ body {
 }
 .sb-left { display:flex; align-items:center; gap:12px; }
 .sb-title {
-  font-size:9px; color:#facc15;
-  text-shadow: 2px 2px 0 #7a5a3a;
+  font-size:9px; color:#f8c818;
+  text-shadow: 2px 2px 0 #706028;
   letter-spacing: 1px;
 }
 .sb-metric { display:flex; align-items:center; gap:6px; color:var(--text-dim); }
@@ -77,7 +77,7 @@ body {
   font-family:'Press Start 2P', monospace; font-size:7px;
   transition:all .15s;
 }
-.refresh-btn:hover { background:var(--panel-border); color:#1a1a2e; }
+.refresh-btn:hover { background:var(--panel-border); color:#181828; }
 .refresh-btn:active { transform:scale(.95); }
 .spinner {
   width:10px; height:10px; border-radius:50%;
@@ -125,12 +125,12 @@ body {
 .info-panel::before {
   content:'';
   position:absolute; top:4px; left:4px; right:4px; bottom:4px;
-  border:2px solid rgba(196,154,108,.3);
+  border:2px solid rgba(184,168,120,.3);
   pointer-events:none;
 }
 .panel-title {
-  font-size:8px; color:#facc15;
-  text-shadow:1px 1px 0 #7a5a3a;
+  font-size:8px; color:#f8c818;
+  text-shadow:1px 1px 0 #706028;
   margin-bottom:8px;
   letter-spacing:1px;
 }
@@ -141,7 +141,7 @@ body {
 }
 .agent-card {
   background:rgba(255,255,255,.03);
-  border:2px solid rgba(196,154,108,.25);
+  border:2px solid rgba(184,168,120,.25);
   border-left:4px solid var(--stopped-gray);
   padding:8px 10px;
   display:flex; align-items:flex-start; gap:10px;
@@ -150,10 +150,10 @@ body {
 .agent-card.is-active {
   border-left-color:var(--active-green);
   border-left-width:6px;
-  background:rgba(74,222,128,.08);
-  border:2px solid rgba(74,222,128,.3);
+  background:rgba(72,192,72,.08);
+  border:2px solid rgba(72,192,72,.3);
   border-left:6px solid var(--active-green);
-  box-shadow: 0 0 12px rgba(74,222,128,.15);
+  box-shadow: 0 0 12px rgba(72,192,72,.15);
 }
 .agent-card.is-active .agent-name { font-size:9px; }
 .agent-card.is-active .agent-task {
@@ -176,7 +176,7 @@ body {
 .agent-card .status-dot.idle { background:var(--idle-yellow); }
 .agent-card .status-dot.stopped { background:var(--stopped-gray); }
 .agent-info { flex:1; min-width:0; }
-.agent-name { color:#facc15; font-size:8px; }
+.agent-name { color:#f8c818; font-size:8px; }
 .agent-name span { font-size:8px; display:inline; }
 .agent-status { color:var(--text-dim); }
 .agent-task { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
@@ -275,12 +275,12 @@ body {
 .char-popup::before {
   content:'';
   position:absolute; top:4px; left:4px; right:4px; bottom:4px;
-  border:2px solid rgba(196,154,108,.3);
+  border:2px solid rgba(184,168,120,.3);
   pointer-events:none;
 }
 .char-popup-title {
-  font-size:10px; color:#facc15;
-  text-shadow:1px 1px 0 #7a5a3a;
+  font-size:10px; color:#f8c818;
+  text-shadow:1px 1px 0 #706028;
   margin-bottom:8px;
 }
 .char-popup-status {
@@ -298,7 +298,7 @@ body {
 }
 .char-popup-history .hist-item {
   display:flex; justify-content:space-between; gap:8px;
-  border-bottom:1px solid rgba(196,154,108,.15);
+  border-bottom:1px solid rgba(184,168,120,.15);
   padding:2px 0;
 }
 .char-popup-close {
@@ -324,8 +324,8 @@ body {
 /* ── Section headers ── */
 .section-header {
   font-size:8px;
-  color:#facc15;
-  text-shadow:1px 1px 0 #7a5a3a;
+  color:#f8c818;
+  text-shadow:1px 1px 0 #706028;
   margin:10px 0 6px;
   letter-spacing:1px;
   display:flex;
@@ -342,7 +342,7 @@ body {
 }
 .section-divider {
   height:1px;
-  background:rgba(196,154,108,.2);
+  background:rgba(184,168,120,.2);
   margin:8px 0;
 }
 </style>
@@ -401,426 +401,420 @@ body {
         </style>
       </defs>
 
-      <!-- ====== WALL STRIP (top-down: thin back wall, y=0 to y=80) ====== -->
-      <rect x="0" y="0" width="960" height="80" fill="#e8dcc8"/>
-      <!-- wall texture lines -->
-      <line x1="0" y1="20" x2="960" y2="20" stroke="#ddd0b8" stroke-width="1"/>
-      <line x1="0" y1="40" x2="960" y2="40" stroke="#ddd0b8" stroke-width="1"/>
-      <line x1="0" y1="60" x2="960" y2="60" stroke="#ddd0b8" stroke-width="1"/>
-      <!-- baseboard at bottom of wall -->
-      <rect x="0" y="72" width="960" height="8" fill="#a08060"/>
-      <rect x="0" y="78" width="960" height="2" fill="#8a6e50"/>
+      <!-- ====== WALL STRIP (Pokemon-style, y=0 to y=80) ====== -->
+      <rect x="0" y="0" width="960" height="80" fill="#f8f0d8"/>
+      <!-- wall texture line -->
+      <line x1="0" y1="35" x2="960" y2="35" stroke="#e8e0c8" stroke-width="1"/>
+      <!-- baseboard (Pokemon-style border) -->
+      <rect x="0" y="72" width="960" height="8" fill="#b8a878"/>
+      <rect x="0" y="70" width="960" height="2" fill="#d0c090"/>
 
-      <!-- ====== WINDOW on wall (small, centered) ====== -->
-      <rect x="400" y="8" width="160" height="56" fill="#6ab4d6"/>
-      <rect x="404" y="12" width="152" height="48" fill="#87ceeb"/>
-      <!-- sky pixel clouds -->
-      <g class="cloud-anim">
-        <rect x="420" y="20" width="16" height="4" fill="white" opacity=".7"/>
-        <rect x="416" y="24" width="24" height="4" fill="white" opacity=".7"/>
-        <rect x="420" y="28" width="16" height="4" fill="white" opacity=".5"/>
+      <!-- ====== WINDOW on wall (Pokemon-style cross frame) ====== -->
+      <g transform="translate(400,8)">
+        <rect x="0" y="0" width="160" height="56" fill="#b8a878"/>
+        <rect x="4" y="4" width="152" height="48" fill="#88c8e8"/>
+        <!-- cross frame -->
+        <rect x="78" y="4" width="4" height="48" fill="#b8a878"/>
+        <rect x="4" y="26" width="152" height="4" fill="#b8a878"/>
+        <!-- clouds -->
+        <g class="cloud-anim">
+          <rect x="20" y="12" width="16" height="4" fill="white" opacity=".6"/>
+          <rect x="16" y="16" width="24" height="4" fill="white" opacity=".6"/>
+        </g>
+        <g class="cloud-anim" style="animation-delay:-8s;">
+          <rect x="100" y="20" width="20" height="4" fill="white" opacity=".5"/>
+          <rect x="96" y="24" width="28" height="4" fill="white" opacity=".5"/>
+        </g>
+        <!-- sun -->
+        <rect x="130" y="8" width="8" height="8" fill="#f8e060"/>
+        <rect x="126" y="12" width="4" height="4" fill="#f8e060" opacity=".5"/>
+        <rect x="138" y="12" width="4" height="4" fill="#f8e060" opacity=".5"/>
       </g>
-      <g class="cloud-anim" style="animation-delay:-8s;">
-        <rect x="500" y="30" width="20" height="4" fill="white" opacity=".6"/>
-        <rect x="496" y="34" width="28" height="4" fill="white" opacity=".6"/>
-      </g>
-      <!-- sun -->
-      <rect x="530" y="16" width="8" height="8" fill="#fde68a"/>
-      <rect x="526" y="20" width="4" height="4" fill="#fde68a" opacity=".5"/>
-      <rect x="538" y="20" width="4" height="4" fill="#fde68a" opacity=".5"/>
-      <!-- window frame cross -->
-      <rect x="478" y="8" width="4" height="56" fill="#a08060"/>
-      <rect x="400" y="34" width="160" height="4" fill="#a08060"/>
-      <!-- window outer frame -->
-      <rect x="396" y="4" width="168" height="4" fill="#a08060"/>
-      <rect x="396" y="64" width="168" height="4" fill="#a08060"/>
-      <rect x="396" y="4" width="4" height="64" fill="#a08060"/>
-      <rect x="560" y="4" width="4" height="64" fill="#a08060"/>
 
       <!-- ====== CLOCK ON WALL (left of window) ====== -->
       <g id="wall-clock">
-        <rect x="310" y="14" width="40" height="40" fill="#f5f0e0" stroke="#a08060" stroke-width="3"/>
+        <rect x="310" y="14" width="40" height="40" fill="#f8f0e0" stroke="#b8a878" stroke-width="3"/>
         <rect x="314" y="18" width="32" height="32" fill="#fffef8"/>
         <text id="clock-text" x="330" y="40" text-anchor="middle" font-size="10" fill="#4a4040" class="pixel-font">00:00</text>
         <text x="330" y="46" text-anchor="middle" font-size="5" fill="#8a7a6a" class="pixel-font" id="clock-colon-dot" class="clock-colon">●</text>
       </g>
 
-      <!-- ====== WHITEBOARD on wall (right of window) ====== -->
-      <g id="whiteboard">
-        <rect x="620" y="10" width="120" height="52" fill="white" stroke="#a08060" stroke-width="3"/>
-        <rect x="626" y="16" width="108" height="40" fill="#f8f8f0"/>
-        <!-- whiteboard content -->
-        <rect x="632" y="22" width="40" height="3" fill="#e74c3c" opacity=".6"/>
-        <rect x="632" y="28" width="60" height="3" fill="#3498db" opacity=".5"/>
-        <rect x="632" y="34" width="50" height="3" fill="#2ecc71" opacity=".5"/>
-        <rect x="632" y="40" width="35" height="3" fill="#e74c3c" opacity=".4"/>
-        <rect x="672" y="40" width="20" height="3" fill="#3498db" opacity=".4"/>
-        <rect x="632" y="46" width="45" height="3" fill="#8e44ad" opacity=".4"/>
+      <!-- ====== BULLETIN BOARD on wall (Pokemon-style, right of window) ====== -->
+      <g id="whiteboard" transform="translate(620,10)">
+        <rect x="0" y="0" width="120" height="52" fill="#b07848"/>
+        <rect x="4" y="4" width="112" height="44" fill="#d8c098"/>
+        <!-- pinned memos -->
+        <rect x="10" y="10" width="30" height="20" fill="#f8f080"/>
+        <rect x="22" y="8" width="4" height="4" fill="#f03030" rx="2"/>
+        <rect x="50" y="8" width="25" height="18" fill="#a0d8f0"/>
+        <rect x="60" y="6" width="4" height="4" fill="#3070d0" rx="2"/>
+        <rect x="80" y="14" width="28" height="24" fill="#f8c0c0"/>
+        <rect x="92" y="12" width="4" height="4" fill="#48b848" rx="2"/>
+        <!-- memo text lines -->
+        <rect x="12" y="14" width="20" height="2" fill="#a09060" opacity=".5"/>
+        <rect x="12" y="18" width="16" height="2" fill="#a09060" opacity=".5"/>
+        <rect x="52" y="12" width="18" height="2" fill="#6090b0" opacity=".5"/>
+        <rect x="82" y="20" width="22" height="2" fill="#c08080" opacity=".5"/>
       </g>
 
-      <!-- ====== FLOOR (top-down checkerboard, y=80 to y=540) ====== -->
+      <!-- ====== FLOOR (Pokemon-style tile, y=80 to y=540) ====== -->
       <g id="floor">
-        <rect x="0" y="80" width="960" height="460" fill="#c49a6c"/>
-        <!-- checkerboard tile pattern -->
-        <g opacity=".25">
+        <rect x="0" y="80" width="960" height="460" fill="#f0f0f0"/>
+        <!-- Pokemon-style checker tile (48x48 grid, alternating white/gray) -->
+        <g opacity=".3">
           <!-- Row 0: y=80 -->
-          <rect x="0" y="80" width="80" height="46" fill="#b8895c"/>
-          <rect x="160" y="80" width="80" height="46" fill="#b8895c"/>
-          <rect x="320" y="80" width="80" height="46" fill="#b8895c"/>
-          <rect x="480" y="80" width="80" height="46" fill="#b8895c"/>
-          <rect x="640" y="80" width="80" height="46" fill="#b8895c"/>
-          <rect x="800" y="80" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 1: y=126 -->
-          <rect x="80" y="126" width="80" height="46" fill="#b8895c"/>
-          <rect x="240" y="126" width="80" height="46" fill="#b8895c"/>
-          <rect x="400" y="126" width="80" height="46" fill="#b8895c"/>
-          <rect x="560" y="126" width="80" height="46" fill="#b8895c"/>
-          <rect x="720" y="126" width="80" height="46" fill="#b8895c"/>
-          <rect x="880" y="126" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 2: y=172 -->
-          <rect x="0" y="172" width="80" height="46" fill="#b8895c"/>
-          <rect x="160" y="172" width="80" height="46" fill="#b8895c"/>
-          <rect x="320" y="172" width="80" height="46" fill="#b8895c"/>
-          <rect x="480" y="172" width="80" height="46" fill="#b8895c"/>
-          <rect x="640" y="172" width="80" height="46" fill="#b8895c"/>
-          <rect x="800" y="172" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 3: y=218 -->
-          <rect x="80" y="218" width="80" height="46" fill="#b8895c"/>
-          <rect x="240" y="218" width="80" height="46" fill="#b8895c"/>
-          <rect x="400" y="218" width="80" height="46" fill="#b8895c"/>
-          <rect x="560" y="218" width="80" height="46" fill="#b8895c"/>
-          <rect x="720" y="218" width="80" height="46" fill="#b8895c"/>
-          <rect x="880" y="218" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 4: y=264 -->
-          <rect x="0" y="264" width="80" height="46" fill="#b8895c"/>
-          <rect x="160" y="264" width="80" height="46" fill="#b8895c"/>
-          <rect x="320" y="264" width="80" height="46" fill="#b8895c"/>
-          <rect x="480" y="264" width="80" height="46" fill="#b8895c"/>
-          <rect x="640" y="264" width="80" height="46" fill="#b8895c"/>
-          <rect x="800" y="264" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 5: y=310 -->
-          <rect x="80" y="310" width="80" height="46" fill="#b8895c"/>
-          <rect x="240" y="310" width="80" height="46" fill="#b8895c"/>
-          <rect x="400" y="310" width="80" height="46" fill="#b8895c"/>
-          <rect x="560" y="310" width="80" height="46" fill="#b8895c"/>
-          <rect x="720" y="310" width="80" height="46" fill="#b8895c"/>
-          <rect x="880" y="310" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 6: y=356 -->
-          <rect x="0" y="356" width="80" height="46" fill="#b8895c"/>
-          <rect x="160" y="356" width="80" height="46" fill="#b8895c"/>
-          <rect x="320" y="356" width="80" height="46" fill="#b8895c"/>
-          <rect x="480" y="356" width="80" height="46" fill="#b8895c"/>
-          <rect x="640" y="356" width="80" height="46" fill="#b8895c"/>
-          <rect x="800" y="356" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 7: y=402 -->
-          <rect x="80" y="402" width="80" height="46" fill="#b8895c"/>
-          <rect x="240" y="402" width="80" height="46" fill="#b8895c"/>
-          <rect x="400" y="402" width="80" height="46" fill="#b8895c"/>
-          <rect x="560" y="402" width="80" height="46" fill="#b8895c"/>
-          <rect x="720" y="402" width="80" height="46" fill="#b8895c"/>
-          <rect x="880" y="402" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 8: y=448 -->
-          <rect x="0" y="448" width="80" height="46" fill="#b8895c"/>
-          <rect x="160" y="448" width="80" height="46" fill="#b8895c"/>
-          <rect x="320" y="448" width="80" height="46" fill="#b8895c"/>
-          <rect x="480" y="448" width="80" height="46" fill="#b8895c"/>
-          <rect x="640" y="448" width="80" height="46" fill="#b8895c"/>
-          <rect x="800" y="448" width="80" height="46" fill="#b8895c"/>
-          <!-- Row 9: y=494 -->
-          <rect x="80" y="494" width="80" height="46" fill="#b8895c"/>
-          <rect x="240" y="494" width="80" height="46" fill="#b8895c"/>
-          <rect x="400" y="494" width="80" height="46" fill="#b8895c"/>
-          <rect x="560" y="494" width="80" height="46" fill="#b8895c"/>
-          <rect x="720" y="494" width="80" height="46" fill="#b8895c"/>
-          <rect x="880" y="494" width="80" height="46" fill="#b8895c"/>
+          <rect x="0" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="96" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="192" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="288" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="384" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="480" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="576" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="672" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="768" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="864" y="80" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 1: y=128 -->
+          <rect x="48" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="144" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="240" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="336" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="432" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="528" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="624" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="720" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="816" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="912" y="128" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 2: y=176 -->
+          <rect x="0" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="96" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="192" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="288" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="384" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="480" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="576" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="672" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="768" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="864" y="176" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 3: y=224 -->
+          <rect x="48" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="144" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="240" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="336" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="432" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="528" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="624" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="720" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="816" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="912" y="224" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 4: y=272 -->
+          <rect x="0" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="96" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="192" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="288" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="384" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="480" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="576" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="672" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="768" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="864" y="272" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 5: y=320 -->
+          <rect x="48" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="144" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="240" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="336" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="432" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="528" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="624" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="720" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="816" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="912" y="320" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 6: y=368 -->
+          <rect x="0" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="96" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="192" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="288" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="384" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="480" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="576" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="672" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="768" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="864" y="368" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 7: y=416 -->
+          <rect x="48" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="144" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="240" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="336" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="432" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="528" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="624" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="720" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="816" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="912" y="416" width="48" height="48" fill="#d8d8e0"/>
+          <!-- Row 8: y=464 -->
+          <rect x="0" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="96" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="192" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="288" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="384" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="480" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="576" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="672" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="768" y="464" width="48" height="48" fill="#d8d8e0"/>
+          <rect x="864" y="464" width="48" height="48" fill="#d8d8e0"/>
         </g>
-        <!-- floor grid lines -->
-        <g stroke="#a87e58" stroke-width="1" opacity=".2">
-          <line x1="0" y1="126" x2="960" y2="126"/>
-          <line x1="0" y1="172" x2="960" y2="172"/>
-          <line x1="0" y1="218" x2="960" y2="218"/>
-          <line x1="0" y1="264" x2="960" y2="264"/>
-          <line x1="0" y1="310" x2="960" y2="310"/>
-          <line x1="0" y1="356" x2="960" y2="356"/>
-          <line x1="0" y1="402" x2="960" y2="402"/>
-          <line x1="0" y1="448" x2="960" y2="448"/>
-          <line x1="0" y1="494" x2="960" y2="494"/>
-          <line x1="80" y1="80" x2="80" y2="540"/>
-          <line x1="160" y1="80" x2="160" y2="540"/>
+        <!-- tile grid lines -->
+        <g stroke="#d0d0d8" stroke-width="1" opacity=".4">
+          <line x1="0" y1="128" x2="960" y2="128"/>
+          <line x1="0" y1="176" x2="960" y2="176"/>
+          <line x1="0" y1="224" x2="960" y2="224"/>
+          <line x1="0" y1="272" x2="960" y2="272"/>
+          <line x1="0" y1="320" x2="960" y2="320"/>
+          <line x1="0" y1="368" x2="960" y2="368"/>
+          <line x1="0" y1="416" x2="960" y2="416"/>
+          <line x1="0" y1="464" x2="960" y2="464"/>
+          <line x1="0" y1="512" x2="960" y2="512"/>
+          <line x1="48" y1="80" x2="48" y2="540"/>
+          <line x1="96" y1="80" x2="96" y2="540"/>
+          <line x1="144" y1="80" x2="144" y2="540"/>
+          <line x1="192" y1="80" x2="192" y2="540"/>
           <line x1="240" y1="80" x2="240" y2="540"/>
-          <line x1="320" y1="80" x2="320" y2="540"/>
-          <line x1="400" y1="80" x2="400" y2="540"/>
+          <line x1="288" y1="80" x2="288" y2="540"/>
+          <line x1="336" y1="80" x2="336" y2="540"/>
+          <line x1="384" y1="80" x2="384" y2="540"/>
+          <line x1="432" y1="80" x2="432" y2="540"/>
           <line x1="480" y1="80" x2="480" y2="540"/>
-          <line x1="560" y1="80" x2="560" y2="540"/>
-          <line x1="640" y1="80" x2="640" y2="540"/>
+          <line x1="528" y1="80" x2="528" y2="540"/>
+          <line x1="576" y1="80" x2="576" y2="540"/>
+          <line x1="624" y1="80" x2="624" y2="540"/>
+          <line x1="672" y1="80" x2="672" y2="540"/>
           <line x1="720" y1="80" x2="720" y2="540"/>
-          <line x1="800" y1="80" x2="800" y2="540"/>
-          <line x1="880" y1="80" x2="880" y2="540"/>
+          <line x1="768" y1="80" x2="768" y2="540"/>
+          <line x1="816" y1="80" x2="816" y2="540"/>
+          <line x1="864" y1="80" x2="864" y2="540"/>
+          <line x1="912" y1="80" x2="912" y2="540"/>
         </g>
       </g>
 
-      <!-- ====== BOOKSHELF (top-down, right side against wall, y=82-140) ====== -->
+      <!-- ====== BOOKSHELF (Pokemon-style, right side against wall) ====== -->
       <g transform="translate(780,82)">
-        <!-- bookshelf body (top-down rectangle) -->
-        <rect x="0" y="0" width="140" height="56" fill="#7a5a3a"/>
-        <!-- depth shadow (3/4 perspective) -->
-        <rect x="0" y="56" width="140" height="4" fill="#5a3a1a"/>
-        <!-- shelf interior -->
-        <rect x="4" y="4" width="132" height="48" fill="#6a4a2a"/>
-        <!-- books as colored strips seen from above -->
-        <rect x="8" y="8" width="8" height="40" fill="#c0392b"/>
-        <rect x="18" y="8" width="8" height="40" fill="#2980b9"/>
-        <rect x="28" y="8" width="6" height="40" fill="#27ae60"/>
-        <rect x="36" y="8" width="8" height="40" fill="#8e44ad"/>
-        <rect x="46" y="8" width="8" height="40" fill="#d35400"/>
-        <rect x="56" y="8" width="6" height="40" fill="#16a085"/>
-        <rect x="64" y="8" width="8" height="40" fill="#e74c3c"/>
-        <rect x="74" y="8" width="10" height="40" fill="#3498db"/>
-        <rect x="86" y="8" width="8" height="40" fill="#2ecc71"/>
-        <rect x="96" y="8" width="6" height="40" fill="#f39c12"/>
-        <rect x="104" y="8" width="10" height="40" fill="#9b59b6"/>
-        <rect x="116" y="8" width="8" height="40" fill="#1abc9c"/>
-        <rect x="126" y="8" width="8" height="40" fill="#e67e22"/>
-        <!-- shelf divider lines -->
-        <line x1="4" y1="28" x2="136" y2="28" stroke="#5a3a1a" stroke-width="2"/>
+        <rect x="0" y="0" width="140" height="56" fill="#906030"/>
+        <rect x="0" y="56" width="140" height="4" fill="#684020"/>
+        <rect x="4" y="4" width="132" height="48" fill="#785028"/>
+        <!-- colorful book spines -->
+        <rect x="8" y="8" width="8" height="40" fill="#d03030"/>
+        <rect x="18" y="8" width="8" height="40" fill="#3070d0"/>
+        <rect x="28" y="8" width="6" height="40" fill="#30a030"/>
+        <rect x="36" y="8" width="8" height="40" fill="#a048c0"/>
+        <rect x="46" y="8" width="8" height="40" fill="#d07020"/>
+        <rect x="56" y="8" width="6" height="40" fill="#18a080"/>
+        <rect x="64" y="8" width="8" height="40" fill="#e04040"/>
+        <rect x="74" y="10" width="10" height="38" fill="#4088d0"/>
+        <rect x="86" y="8" width="8" height="40" fill="#40b040"/>
+        <rect x="96" y="8" width="6" height="40" fill="#e0a020"/>
+        <rect x="104" y="10" width="10" height="38" fill="#8050b0"/>
+        <rect x="116" y="8" width="8" height="40" fill="#20a898"/>
+        <rect x="126" y="8" width="8" height="40" fill="#d87020"/>
+        <line x1="4" y1="28" x2="136" y2="28" stroke="#684020" stroke-width="2"/>
       </g>
 
       <!-- ====== BREAK AREA (left portion) ====== -->
 
-      <!-- ====== SOFA (top-down view, x=40-190, y=160-260) ====== -->
+      <!-- ====== SOFA (Pokemon Center-style red bench) ====== -->
       <g id="sofa-area" transform="translate(40,160)">
-        <!-- sofa body top-down -->
-        <rect x="0" y="0" width="150" height="90" fill="#6b5b7b"/>
-        <!-- depth shadow -->
-        <rect x="0" y="90" width="150" height="4" fill="#4a3a5a"/>
-        <!-- back rest (top edge, thicker) -->
-        <rect x="0" y="0" width="150" height="20" fill="#5b4b6b"/>
+        <rect x="0" y="0" width="150" height="90" fill="#c03030"/>
+        <rect x="0" y="90" width="150" height="4" fill="#901818"/>
+        <!-- back rest -->
+        <rect x="0" y="0" width="150" height="18" fill="#a02828"/>
         <!-- left arm -->
-        <rect x="0" y="0" width="16" height="90" fill="#5b4b6b"/>
-        <rect x="0" y="90" width="16" height="4" fill="#3a2a4a"/>
+        <rect x="0" y="0" width="14" height="90" fill="#a02828"/>
         <!-- right arm -->
-        <rect x="134" y="0" width="16" height="90" fill="#5b4b6b"/>
-        <rect x="134" y="90" width="16" height="4" fill="#3a2a4a"/>
+        <rect x="136" y="0" width="14" height="90" fill="#a02828"/>
         <!-- seat cushions -->
-        <rect x="20" y="24" width="52" height="62" fill="#7b6b8b"/>
-        <rect x="78" y="24" width="52" height="62" fill="#7b6b8b"/>
-        <!-- cushion detail pixels -->
-        <rect x="30" y="34" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
-        <rect x="54" y="40" width="8" height="6" fill="#8b7b9b" opacity=".4"/>
-        <rect x="88" y="34" width="8" height="8" fill="#8b7b9b" opacity=".5"/>
-        <rect x="112" y="40" width="8" height="6" fill="#8b7b9b" opacity=".4"/>
+        <rect x="18" y="22" width="54" height="64" fill="#d04040"/>
+        <rect x="78" y="22" width="54" height="64" fill="#d04040"/>
       </g>
 
-      <!-- ====== WATER COOLER (top-down, near sofa) ====== -->
+      <!-- ====== VENDING MACHINE (Pokemon-style) ====== -->
       <g transform="translate(60,290)">
-        <!-- body (top-down square) -->
-        <rect x="0" y="0" width="28" height="28" fill="#bdc3c7"/>
-        <!-- depth shadow -->
-        <rect x="0" y="28" width="28" height="3" fill="#8a9a9a"/>
-        <!-- water bottle circle (top view) -->
-        <rect x="6" y="6" width="16" height="16" fill="#85c1e9" opacity=".7"/>
-        <rect x="10" y="10" width="8" height="8" fill="#aed6f1" opacity=".6"/>
-        <!-- bottle cap center -->
-        <rect x="12" y="12" width="4" height="4" fill="#5dade2" opacity=".8"/>
-        <!-- tap indicators -->
-        <rect x="2" y="22" width="4" height="4" fill="#e74c3c"/>
-        <rect x="22" y="22" width="4" height="4" fill="#3498db"/>
+        <rect x="0" y="0" width="28" height="36" fill="#3858a8"/>
+        <rect x="0" y="36" width="28" height="3" fill="#283878"/>
+        <rect x="2" y="2" width="24" height="18" fill="#88c8f8"/>
+        <!-- drink items -->
+        <rect x="4" y="4" width="6" height="6" fill="#f03030"/>
+        <rect x="12" y="4" width="6" height="6" fill="#48b848"/>
+        <rect x="4" y="12" width="6" height="6" fill="#f8c818"/>
+        <rect x="12" y="12" width="6" height="6" fill="#3890f8"/>
+        <!-- dispensing slot -->
+        <rect x="4" y="22" width="20" height="10" fill="#202030"/>
+        <rect x="8" y="26" width="12" height="4" fill="#383848"/>
       </g>
 
-      <!-- ====== POTTED PLANT large (top-down, break area) ====== -->
+      <!-- ====== POTTED PLANT large (Pokemon-style round leaves) ====== -->
       <g transform="translate(130,290)">
-        <!-- pot (seen from above: circle-ish square) -->
-        <rect x="4" y="4" width="28" height="28" fill="#c0392b"/>
-        <rect x="2" y="2" width="32" height="32" fill="none" stroke="#a83228" stroke-width="2"/>
-        <!-- depth shadow -->
-        <rect x="4" y="34" width="28" height="3" fill="#7a1a10"/>
-        <!-- soil -->
-        <rect x="8" y="8" width="20" height="20" fill="#5a3a2a"/>
-        <!-- leaves from above (radial pixel pattern) -->
-        <rect x="10" y="0" width="8" height="8" fill="#3a8a3a"/>
-        <rect x="0" y="10" width="8" height="8" fill="#3a8a3a"/>
-        <rect x="20" y="2" width="8" height="8" fill="#4a9a4a"/>
-        <rect x="26" y="12" width="8" height="8" fill="#3a8a3a"/>
-        <rect x="12" y="24" width="8" height="8" fill="#4a9a4a"/>
-        <rect x="0" y="20" width="8" height="8" fill="#2a6a2a"/>
-        <rect x="24" y="22" width="8" height="8" fill="#2a6a2a"/>
-        <rect x="8" y="-4" width="8" height="8" fill="#4a9a4a"/>
-        <rect x="22" y="-2" width="6" height="6" fill="#3a8a3a"/>
-        <rect x="-2" y="16" width="6" height="6" fill="#2a6a2a"/>
-        <rect x="32" y="18" width="6" height="6" fill="#2a6a2a"/>
+        <!-- pot -->
+        <rect x="6" y="16" width="24" height="16" fill="#d06040"/>
+        <rect x="4" y="14" width="28" height="4" fill="#e07050"/>
+        <rect x="8" y="18" width="20" height="10" fill="#a04830"/>
+        <!-- round leaves (top-down radial) -->
+        <circle cx="18" cy="10" r="12" fill="#48a848"/>
+        <circle cx="12" cy="6" r="8" fill="#58b858"/>
+        <circle cx="24" cy="6" r="8" fill="#389038"/>
+        <circle cx="18" cy="0" r="6" fill="#58b858"/>
       </g>
 
-      <!-- ====== DESK STATION 1 (top-down, center-left) ====== -->
+      <!-- ====== DESK STATION 1 (Pokemon Lab-style PC terminal) ====== -->
       <g id="desk-area-0" transform="translate(260,150)">
-        <!-- desk surface (top-down rectangle) -->
-        <rect x="0" y="0" width="140" height="70" fill="#8b6847"/>
-        <rect x="2" y="2" width="136" height="66" fill="#9a7857"/>
-        <!-- depth shadow -->
-        <rect x="0" y="70" width="140" height="3" fill="#6a4a2a"/>
-        <!-- monitor (top-down: angled screen visible) -->
-        <rect x="42" y="6" width="56" height="16" fill="#2a2a3a"/>
-        <rect x="44" y="8" width="52" height="12" fill="#1a2a1a" id="screen-0"/>
-        <!-- monitor stand -->
-        <rect x="64" y="22" width="12" height="6" fill="#3a4a5a"/>
-        <!-- screen content -->
-        <rect x="46" y="10" width="20" height="2" fill="#4ade80" opacity=".6"/>
-        <rect x="46" y="13" width="32" height="2" fill="#60a5fa" opacity=".5"/>
-        <rect x="46" y="16" width="16" height="2" fill="#facc15" opacity=".4"/>
-        <rect x="90" y="16" width="4" height="2" fill="#4ade80" class="cursor-anim"/>
+        <!-- desk surface -->
+        <rect x="0" y="0" width="140" height="70" fill="#b07848"/>
+        <rect x="2" y="2" width="136" height="66" fill="#c08858"/>
+        <rect x="0" y="70" width="140" height="3" fill="#885830"/>
+        <!-- Pokemon-style PC monitor (rounded) -->
+        <rect x="44" y="4" width="52" height="18" rx="2" fill="#384048"/>
+        <rect x="46" y="6" width="48" height="14" rx="1" fill="#183018" id="screen-0"/>
+        <rect x="66" y="22" width="8" height="4" fill="#384048"/>
+        <!-- screen code lines -->
+        <rect x="48" y="8" width="20" height="2" fill="#48c048" opacity=".7"/>
+        <rect x="48" y="12" width="32" height="2" fill="#48a8f0" opacity=".5"/>
+        <rect x="48" y="16" width="16" height="2" fill="#f8c848" opacity=".5"/>
+        <rect x="90" y="16" width="4" height="2" fill="#48c048" class="cursor-anim"/>
         <!-- keyboard -->
-        <rect x="48" y="32" width="32" height="12" fill="#3a3a4a"/>
-        <rect x="50" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="56" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="62" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="68" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="50" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="56" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="62" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="68" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <!-- mouse -->
-        <rect x="88" y="36" width="8" height="12" fill="#4a4a5a"/>
-        <rect x="90" y="38" width="4" height="4" fill="#5a5a6a"/>
-        <!-- coffee mug (top-down circle) -->
+        <rect x="50" y="30" width="30" height="10" rx="1" fill="#484858"/>
+        <!-- coffee mug -->
         <rect x="10" y="10" width="12" height="12" fill="#e8e0d0"/>
         <rect x="12" y="12" width="8" height="8" fill="#6b4226"/>
-        <!-- chair (south of desk, rounded rect) -->
-        <rect x="44" y="78" width="44" height="36" fill="#4a4a5a"/>
-        <rect x="46" y="80" width="40" height="32" fill="#555566"/>
-        <!-- depth shadow on chair -->
-        <rect x="44" y="114" width="44" height="3" fill="#2a2a3a"/>
-        <!-- chair wheels -->
-        <rect x="46" y="116" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="80" y="116" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="62" y="118" width="6" height="4" fill="#2a2a3a"/>
+        <!-- Pokemon-style red chair -->
+        <rect x="46" y="78" width="40" height="32" rx="4" fill="#c03030"/>
+        <rect x="48" y="80" width="36" height="28" rx="3" fill="#d04040"/>
+        <rect x="46" y="110" width="40" height="3" fill="#901818"/>
       </g>
       <g id="desk-slot-0" transform="translate(326,254)"></g>
 
-      <!-- ====== DESK STATION 2 (top-down, center) ====== -->
+      <!-- ====== DESK STATION 2 (Pokemon Lab-style PC terminal) ====== -->
       <g id="desk-area-1" transform="translate(470,150)">
         <!-- desk surface -->
-        <rect x="0" y="0" width="140" height="70" fill="#8b6847"/>
-        <rect x="2" y="2" width="136" height="66" fill="#9a7857"/>
-        <!-- depth shadow -->
-        <rect x="0" y="70" width="140" height="3" fill="#6a4a2a"/>
-        <!-- monitor -->
-        <rect x="42" y="6" width="56" height="16" fill="#2a2a3a"/>
-        <rect x="44" y="8" width="52" height="12" fill="#1a2a1a" id="screen-1"/>
-        <rect x="64" y="22" width="12" height="6" fill="#3a4a5a"/>
-        <!-- screen content -->
-        <rect x="46" y="10" width="24" height="2" fill="#f472b6" opacity=".5"/>
-        <rect x="46" y="13" width="36" height="2" fill="#4ade80" opacity=".5"/>
-        <rect x="46" y="16" width="20" height="2" fill="#60a5fa" opacity=".4"/>
-        <rect x="88" y="13" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.3s"/>
+        <rect x="0" y="0" width="140" height="70" fill="#b07848"/>
+        <rect x="2" y="2" width="136" height="66" fill="#c08858"/>
+        <rect x="0" y="70" width="140" height="3" fill="#885830"/>
+        <!-- Pokemon-style PC monitor (rounded) -->
+        <rect x="44" y="4" width="52" height="18" rx="2" fill="#384048"/>
+        <rect x="46" y="6" width="48" height="14" rx="1" fill="#183018" id="screen-1"/>
+        <rect x="66" y="22" width="8" height="4" fill="#384048"/>
+        <!-- screen code lines -->
+        <rect x="48" y="8" width="24" height="2" fill="#f870a8" opacity=".5"/>
+        <rect x="48" y="12" width="36" height="2" fill="#48c048" opacity=".5"/>
+        <rect x="48" y="16" width="20" height="2" fill="#48a8f0" opacity=".4"/>
+        <rect x="88" y="12" width="4" height="2" fill="#48c048" class="cursor-anim" style="animation-delay:.3s"/>
         <!-- keyboard -->
-        <rect x="48" y="32" width="32" height="12" fill="#3a3a4a"/>
-        <rect x="50" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="56" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="62" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="68" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="50" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="56" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="62" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="68" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <!-- mouse -->
-        <rect x="88" y="36" width="8" height="12" fill="#4a4a5a"/>
-        <rect x="90" y="38" width="4" height="4" fill="#5a5a6a"/>
-        <!-- notes (sticky note top-down) -->
-        <rect x="10" y="8" width="16" height="16" fill="#fde68a"/>
-        <rect x="12" y="11" width="10" height="1" fill="#a08060" opacity=".4"/>
-        <rect x="12" y="14" width="8" height="1" fill="#a08060" opacity=".4"/>
-        <rect x="12" y="17" width="6" height="1" fill="#a08060" opacity=".4"/>
-        <!-- chair -->
-        <rect x="44" y="78" width="44" height="36" fill="#4a4a5a"/>
-        <rect x="46" y="80" width="40" height="32" fill="#555566"/>
-        <rect x="44" y="114" width="44" height="3" fill="#2a2a3a"/>
-        <rect x="46" y="116" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="80" y="116" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="62" y="118" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="50" y="30" width="30" height="10" rx="1" fill="#484858"/>
+        <!-- notes (sticky note) -->
+        <rect x="10" y="8" width="16" height="16" fill="#f8f080"/>
+        <rect x="12" y="11" width="10" height="1" fill="#a09060" opacity=".4"/>
+        <rect x="12" y="14" width="8" height="1" fill="#a09060" opacity=".4"/>
+        <rect x="12" y="17" width="6" height="1" fill="#a09060" opacity=".4"/>
+        <!-- Pokemon-style red chair -->
+        <rect x="46" y="78" width="40" height="32" rx="4" fill="#c03030"/>
+        <rect x="48" y="80" width="36" height="28" rx="3" fill="#d04040"/>
+        <rect x="46" y="110" width="40" height="3" fill="#901818"/>
       </g>
       <g id="desk-slot-1" transform="translate(536,254)"></g>
 
-      <!-- ====== DESK STATION 3 (top-down, center-right) ====== -->
+      <!-- ====== DESK STATION 3 (Pokemon Lab-style PC terminal) ====== -->
       <g id="desk-area-2" transform="translate(680,150)">
         <!-- desk surface -->
-        <rect x="0" y="0" width="140" height="70" fill="#8b6847"/>
-        <rect x="2" y="2" width="136" height="66" fill="#9a7857"/>
-        <!-- depth shadow -->
-        <rect x="0" y="70" width="140" height="3" fill="#6a4a2a"/>
-        <!-- monitor -->
-        <rect x="42" y="6" width="56" height="16" fill="#2a2a3a"/>
-        <rect x="44" y="8" width="52" height="12" fill="#1a2a1a" id="screen-2"/>
-        <rect x="64" y="22" width="12" height="6" fill="#3a4a5a"/>
-        <!-- screen content -->
-        <rect x="46" y="10" width="28" height="2" fill="#60a5fa" opacity=".5"/>
-        <rect x="46" y="13" width="18" height="2" fill="#4ade80" opacity=".5"/>
-        <rect x="46" y="16" width="36" height="2" fill="#f472b6" opacity=".4"/>
-        <rect x="86" y="13" width="4" height="2" fill="#4ade80" class="cursor-anim" style="animation-delay:.6s"/>
+        <rect x="0" y="0" width="140" height="70" fill="#b07848"/>
+        <rect x="2" y="2" width="136" height="66" fill="#c08858"/>
+        <rect x="0" y="70" width="140" height="3" fill="#885830"/>
+        <!-- Pokemon-style PC monitor (rounded) -->
+        <rect x="44" y="4" width="52" height="18" rx="2" fill="#384048"/>
+        <rect x="46" y="6" width="48" height="14" rx="1" fill="#183018" id="screen-2"/>
+        <rect x="66" y="22" width="8" height="4" fill="#384048"/>
+        <!-- screen code lines -->
+        <rect x="48" y="8" width="28" height="2" fill="#48a8f0" opacity=".5"/>
+        <rect x="48" y="12" width="18" height="2" fill="#48c048" opacity=".5"/>
+        <rect x="48" y="16" width="36" height="2" fill="#f870a8" opacity=".4"/>
+        <rect x="86" y="12" width="4" height="2" fill="#48c048" class="cursor-anim" style="animation-delay:.6s"/>
         <!-- keyboard -->
-        <rect x="48" y="32" width="32" height="12" fill="#3a3a4a"/>
-        <rect x="50" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="56" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="62" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="68" y="34" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="50" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="56" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="62" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <rect x="68" y="38" width="4" height="2" fill="#5a5a6a"/>
-        <!-- mouse -->
-        <rect x="88" y="36" width="8" height="12" fill="#4a4a5a"/>
-        <rect x="90" y="38" width="4" height="4" fill="#5a5a6a"/>
-        <!-- small plant on desk (top-down) -->
-        <rect x="10" y="10" width="12" height="12" fill="#c0392b" opacity=".8"/>
-        <rect x="12" y="12" width="8" height="8" fill="#5a3a2a"/>
-        <rect x="8" y="6" width="8" height="8" fill="#3a8a3a"/>
-        <rect x="16" y="8" width="8" height="8" fill="#4a9a4a"/>
-        <rect x="10" y="14" width="6" height="6" fill="#2a6a2a"/>
-        <!-- chair -->
-        <rect x="44" y="78" width="44" height="36" fill="#4a4a5a"/>
-        <rect x="46" y="80" width="40" height="32" fill="#555566"/>
-        <rect x="44" y="114" width="44" height="3" fill="#2a2a3a"/>
-        <rect x="46" y="116" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="80" y="116" width="6" height="4" fill="#2a2a3a"/>
-        <rect x="62" y="118" width="6" height="4" fill="#2a2a3a"/>
+        <rect x="50" y="30" width="30" height="10" rx="1" fill="#484858"/>
+        <!-- small plant on desk (Pokemon-style) -->
+        <rect x="10" y="14" width="14" height="10" fill="#d06040"/>
+        <rect x="8" y="12" width="18" height="4" fill="#e07050"/>
+        <circle cx="17" cy="8" r="8" fill="#48a848"/>
+        <circle cx="13" cy="5" r="5" fill="#58b858"/>
+        <circle cx="21" cy="5" r="5" fill="#389038"/>
+        <!-- Pokemon-style red chair -->
+        <rect x="46" y="78" width="40" height="32" rx="4" fill="#c03030"/>
+        <rect x="48" y="80" width="36" height="28" rx="3" fill="#d04040"/>
+        <rect x="46" y="110" width="40" height="3" fill="#901818"/>
       </g>
       <g id="desk-slot-2" transform="translate(746,254)"></g>
 
-      <!-- ====== POTTED PLANT small #1 (floor, near desk area) ====== -->
+      <!-- ====== POTTED PLANT small #1 (Pokemon-style, near desk area) ====== -->
       <g transform="translate(240,310)">
-        <rect x="2" y="2" width="16" height="16" fill="#c0392b"/>
-        <rect x="0" y="0" width="20" height="20" fill="none" stroke="#a83228" stroke-width="2"/>
-        <rect x="2" y="18" width="16" height="2" fill="#7a1a10"/>
-        <rect x="4" y="4" width="12" height="12" fill="#5a3a2a"/>
-        <rect x="4" y="0" width="8" height="6" fill="#3a8a3a"/>
-        <rect x="10" y="2" width="8" height="6" fill="#4a9a4a"/>
-        <rect x="0" y="6" width="6" height="6" fill="#2a6a2a"/>
-        <rect x="14" y="6" width="6" height="6" fill="#2a6a2a"/>
-        <rect x="6" y="12" width="6" height="6" fill="#4a9a4a"/>
+        <rect x="4" y="12" width="14" height="10" fill="#d06040"/>
+        <rect x="2" y="10" width="18" height="4" fill="#e07050"/>
+        <circle cx="11" cy="6" r="8" fill="#48a848"/>
+        <circle cx="7" cy="3" r="5" fill="#58b858"/>
+        <circle cx="15" cy="3" r="5" fill="#389038"/>
       </g>
 
-      <!-- ====== POTTED PLANT small #2 (floor, right side) ====== -->
+      <!-- ====== POTTED PLANT small #2 (Pokemon-style, right side) ====== -->
       <g transform="translate(860,310)">
-        <rect x="2" y="2" width="16" height="16" fill="#c0392b"/>
-        <rect x="0" y="0" width="20" height="20" fill="none" stroke="#a83228" stroke-width="2"/>
-        <rect x="2" y="18" width="16" height="2" fill="#7a1a10"/>
-        <rect x="4" y="4" width="12" height="12" fill="#5a3a2a"/>
-        <rect x="2" y="0" width="8" height="6" fill="#4a9a4a"/>
-        <rect x="12" y="2" width="6" height="6" fill="#3a8a3a"/>
-        <rect x="0" y="8" width="6" height="6" fill="#3a8a3a"/>
-        <rect x="14" y="8" width="6" height="6" fill="#2a6a2a"/>
-        <rect x="6" y="14" width="8" height="6" fill="#4a9a4a"/>
+        <rect x="4" y="12" width="14" height="10" fill="#d06040"/>
+        <rect x="2" y="10" width="18" height="4" fill="#e07050"/>
+        <circle cx="11" cy="6" r="8" fill="#48a848"/>
+        <circle cx="7" cy="3" r="5" fill="#389038"/>
+        <circle cx="15" cy="3" r="5" fill="#58b858"/>
       </g>
 
-      <!-- ====== POTTED PLANT small #3 (floor, bottom left) ====== -->
+      <!-- ====== POTTED PLANT small #3 (Pokemon-style, bottom left) ====== -->
       <g transform="translate(40,440)">
-        <rect x="2" y="2" width="16" height="16" fill="#c0392b"/>
-        <rect x="0" y="0" width="20" height="20" fill="none" stroke="#a83228" stroke-width="2"/>
-        <rect x="2" y="18" width="16" height="2" fill="#7a1a10"/>
-        <rect x="4" y="4" width="12" height="12" fill="#5a3a2a"/>
-        <rect x="6" y="0" width="6" height="6" fill="#3a8a3a"/>
-        <rect x="0" y="4" width="6" height="6" fill="#4a9a4a"/>
-        <rect x="14" y="4" width="6" height="6" fill="#2a6a2a"/>
-        <rect x="4" y="12" width="6" height="6" fill="#3a8a3a"/>
-        <rect x="12" y="10" width="6" height="6" fill="#4a9a4a"/>
+        <rect x="4" y="12" width="14" height="10" fill="#d06040"/>
+        <rect x="2" y="10" width="18" height="4" fill="#e07050"/>
+        <circle cx="11" cy="6" r="8" fill="#48a848"/>
+        <circle cx="7" cy="2" r="5" fill="#58b858"/>
+        <circle cx="15" cy="2" r="5" fill="#307830"/>
+      </g>
+
+      <!-- ====== MONSTER BALL decoration (floor) ====== -->
+      <g transform="translate(470,420)">
+        <!-- top half: red -->
+        <rect x="2" y="0" width="16" height="8" fill="#f03030"/>
+        <rect x="0" y="2" width="20" height="6" fill="#f03030"/>
+        <!-- bottom half: white -->
+        <rect x="2" y="12" width="16" height="8" fill="#f0f0f0"/>
+        <rect x="0" y="12" width="20" height="6" fill="#f0f0f0"/>
+        <!-- center line -->
+        <rect x="0" y="8" width="20" height="4" fill="#303030"/>
+        <!-- center button -->
+        <rect x="7" y="7" width="6" height="6" fill="white"/>
+        <rect x="8" y="8" width="4" height="4" fill="#e0e0e0"/>
+        <!-- outline -->
+        <rect x="2" y="0" width="16" height="1" fill="#303030"/>
+        <rect x="2" y="19" width="16" height="1" fill="#303030"/>
+        <rect x="0" y="2" width="1" height="16" fill="#303030"/>
+        <rect x="19" y="2" width="1" height="16" fill="#303030"/>
+      </g>
+
+      <!-- ====== MONSTER BALL #2 (on bookshelf area) ====== -->
+      <g transform="translate(930,100)">
+        <rect x="2" y="0" width="12" height="6" fill="#f03030"/>
+        <rect x="0" y="2" width="16" height="4" fill="#f03030"/>
+        <rect x="2" y="10" width="12" height="6" fill="#f0f0f0"/>
+        <rect x="0" y="10" width="16" height="4" fill="#f0f0f0"/>
+        <rect x="0" y="6" width="16" height="4" fill="#303030"/>
+        <rect x="5" y="5" width="6" height="6" fill="white"/>
+        <rect x="6" y="6" width="4" height="4" fill="#e0e0e0"/>
+        <rect x="2" y="0" width="12" height="1" fill="#303030"/>
+        <rect x="2" y="15" width="12" height="1" fill="#303030"/>
+        <rect x="0" y="2" width="1" height="12" fill="#303030"/>
+        <rect x="15" y="2" width="1" height="12" fill="#303030"/>
+      </g>
+
+      <!-- ====== WELCOME MAT (Pokemon-style entrance mat) ====== -->
+      <g transform="translate(430,500)">
+        <rect x="0" y="0" width="100" height="30" fill="#c06848"/>
+        <rect x="2" y="2" width="96" height="26" fill="#d07858"/>
+        <text x="50" y="20" text-anchor="middle" font-size="7" fill="#f0d8c0" class="pixel-font">WELCOME</text>
       </g>
 
       <!-- sofa character slots (sleeping on sofa, top-down) -->
@@ -854,14 +848,14 @@ const POLL_INTERVAL = 10000
 
 // ── Color palette for pixel art characters ──
 const COLORS = {
-  blue:   { hair:'#38bdf8', skin:'#fde0c8', shirt:'#2563eb', pants:'#1e3a5f', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  pink:   { hair:'#f472b6', skin:'#fde0c8', shirt:'#db2777', pants:'#831843', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  yellow: { hair:'#facc15', skin:'#fde0c8', shirt:'#ca8a04', pants:'#713f12', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  green:  { hair:'#4ade80', skin:'#fde0c8', shirt:'#16a34a', pants:'#14532d', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  purple: { hair:'#a78bfa', skin:'#fde0c8', shirt:'#7c3aed', pants:'#3b0764', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  orange: { hair:'#fb923c', skin:'#fde0c8', shirt:'#ea580c', pants:'#7c2d12', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  red:    { hair:'#f87171', skin:'#fcd9bd', shirt:'#dc2626', pants:'#450a0a', eye:'#1a1a2e', shoes:'#1a1a2e' },
-  teal:   { hair:'#2dd4bf', skin:'#fcd9bd', shirt:'#0d9488', pants:'#134e4a', eye:'#1a1a2e', shoes:'#1a1a2e' },
+  blue:   { hair:'#3890f8', skin:'#f8d0a8', shirt:'#2868c0', pants:'#183860', eye:'#202030', shoes:'#202030' },
+  pink:   { hair:'#f870a8', skin:'#f8d0a8', shirt:'#d02870', pants:'#801840', eye:'#202030', shoes:'#202030' },
+  yellow: { hair:'#f8c818', skin:'#f8d0a8', shirt:'#c89808', pants:'#705010', eye:'#202030', shoes:'#202030' },
+  green:  { hair:'#48b848', skin:'#f8d0a8', shirt:'#189818', pants:'#105028', eye:'#202030', shoes:'#202030' },
+  purple: { hair:'#a078f0', skin:'#f8d0a8', shirt:'#7838d0', pants:'#380860', eye:'#202030', shoes:'#202030' },
+  orange: { hair:'#f89038', skin:'#f8d0a8', shirt:'#d86008', pants:'#783010', eye:'#202030', shoes:'#202030' },
+  red:    { hair:'#f06868', skin:'#f0c8a0', shirt:'#d02828', pants:'#400808', eye:'#202030', shoes:'#202030' },
+  teal:   { hair:'#30c8b0', skin:'#f0c8a0', shirt:'#109080', pants:'#104840', eye:'#202030', shoes:'#202030' },
 }
 const COLOR_KEYS = Object.keys(COLORS)
 
@@ -894,22 +888,22 @@ function renderSprite(data, x, y, colors) {
 
 // ── Sprite Data ──
 // Legend: h=hair, s=skin, e=eye, t=shirt, p=pants, o=shoes, null=transparent
-// Working (sitting, facing front) - 9w x 16h
+// Working (sitting, facing front, Pokemon trainer-style) - 9w x 16h
 const SPRITE_WORKING = [
-  [null, null, null, 'h',  'h',  'h',  null, null, null],
   [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
   [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
-  [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+  ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+  ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+  [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
   [null, 's',  's',  's',  's',  's',  's',  's',  null],
-  [null, 's',  'e',  's',  's',  's',  'e',  's',  null],
-  [null, 's',  's',  's',  's',  's',  's',  's',  null],
-  [null, null, 's',  's',  's',  's',  's',  null, null],
-  [null, null, null, 't',  't',  't',  null, null, null],
+  [null, null, 's',  's',  'm',  's',  's',  null, null],
+  [null, null, null, 's',  's',  's',  null, null, null],
   [null, null, 't',  't',  't',  't',  't',  null, null],
   [null, 't',  't',  't',  't',  't',  't',  't',  null],
   [null, 't',  't',  't',  't',  't',  't',  't',  null],
   [null, null, 't',  't',  't',  't',  't',  null, null],
   [null, null, null, 'p',  'p',  'p',  null, null, null],
+  [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
   [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
   [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
 ]
@@ -928,19 +922,19 @@ const ARM_RIGHT = [
   [null, 's' ],
 ]
 
-// Idle (standing, slight variation) - 9w x 16h
+// Idle (standing, Pokemon trainer-style) - 9w x 16h
 const SPRITE_IDLE = [
-  [null, null, null, 'h',  'h',  'h',  null, null, null],
   [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
   [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
-  [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+  ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+  ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+  [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
   [null, 's',  's',  's',  's',  's',  's',  's',  null],
-  [null, 's',  'e',  's',  's',  's',  'e',  's',  null],
-  [null, 's',  's',  's',  's',  's',  's',  's',  null],
-  [null, null, 's',  's',  'w',  's',  's',  null, null],
-  [null, null, null, 't',  't',  't',  null, null, null],
+  [null, null, 's',  's',  'm',  's',  's',  null, null],
+  [null, null, null, 's',  's',  's',  null, null, null],
   [null, null, 't',  't',  't',  't',  't',  null, null],
   [null, 't',  't',  't',  't',  't',  't',  't',  null],
+  ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
   [null, 't',  't',  't',  't',  't',  't',  't',  null],
   [null, null, null, 'p',  'p',  'p',  null, null, null],
   [null, null, null, 'p',  null, 'p',  null, null, null],
@@ -948,22 +942,22 @@ const SPRITE_IDLE = [
   [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
 ]
 
-// Sleeping (lying down, eyes closed) - 16w x 8h (rotated)
+// Sleeping (lying down, Pokemon trainer-style) - 16w x 8h (rotated)
 const SPRITE_SLEEPING = [
-  [null, null, 'o',  'o',  'p',  'p',  'p',  't',  't',  't',  't',  's',  's',  'h',  'h',  null],
-  [null, 'o',  'o',  'p',  'p',  'p',  't',  't',  't',  't',  't',  's',  's',  'h',  'h',  'h' ],
-  [null, null, null, 'p',  'p',  't',  't',  't',  't',  't',  's',  's',  'h',  'h',  'h',  'h' ],
-  [null, null, null, null, null, 't',  't',  't',  null, null, 's',  's',  's',  'h',  'h',  null],
-  [null, null, null, null, null, null, 's',  null, null, null, 's',  '_',  's',  's',  null, null],
-  [null, null, null, null, null, null, null, null, null, null, 's',  '_',  's',  null, null, null],
-  [null, null, null, null, null, null, null, null, null, null, null, 's',  null, null, null, null],
+  [null, null, 'o',  'o',  'p',  'p',  'p',  't',  't',  't',  't',  's',  'h',  'h',  'h',  null],
+  [null, 'o',  'o',  'p',  'p',  'p',  't',  't',  't',  't',  's',  's',  'h',  'h',  'h',  'h' ],
+  [null, null, null, 'p',  'p',  't',  't',  't',  't',  's',  's',  's',  'h',  'h',  'h',  'h' ],
+  [null, null, null, null, null, 't',  't',  't',  null, 's',  's',  's',  's',  'h',  'h',  'h' ],
+  [null, null, null, null, null, null, 's',  null, null, 's',  '_',  's',  's',  's',  'h',  null],
+  [null, null, null, null, null, null, null, null, null, null, 's',  '_',  's',  's',  null, null],
+  [null, null, null, null, null, null, null, null, null, null, null, 's',  's',  null, null, null],
   [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
 ]
 
 // ── Render character SVG ──
 function svgWorking(ck, uniqueId) {
   const c = COLORS[ck]
-  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes }
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060' }
   const body = renderSprite(SPRITE_WORKING, 0, 0, colorMap)
   // Arms with animation
   const armLColors = { t:c.shirt, s:c.skin }
@@ -980,7 +974,7 @@ function svgWorking(ck, uniqueId) {
 
 function svgIdle(ck) {
   const c = COLORS[ck]
-  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, w:'#e07060' }
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060' }
   const body = renderSprite(SPRITE_IDLE, 0, 0, colorMap)
   return `<g class="idle-anim">${body}</g>`
 }
@@ -1013,11 +1007,11 @@ function svgBubble(text, color, x, y) {
   const w = text.length * charW + 12
   return `
     <g transform="translate(${x},${y})">
-      <rect x="${-w/2}" y="-12" width="${w}" height="14" fill="#1e1e32" stroke="${color}" stroke-width="2"/>
-      <rect x="${-w/2+1}" y="-11" width="${w-2}" height="12" fill="#1e1e32"/>
+      <rect x="${-w/2}" y="-12" width="${w}" height="14" fill="#181830" stroke="${color}" stroke-width="2"/>
+      <rect x="${-w/2+1}" y="-11" width="${w-2}" height="12" fill="#181830"/>
       <text x="0" y="-2" text-anchor="middle" font-size="6" fill="${color}" class="pixel-font">${text}</text>
-      <rect x="-2" y="2" width="4" height="4" fill="#1e1e32" stroke="${color}" stroke-width="1" transform="rotate(45,-0,4)"/>
-      <rect x="-3" y="1" width="6" height="3" fill="#1e1e32"/>
+      <rect x="-2" y="2" width="4" height="4" fill="#181830" stroke="${color}" stroke-width="1" transform="rotate(45,-0,4)"/>
+      <rect x="-3" y="1" width="6" height="3" fill="#181830"/>
     </g>`
 }
 
@@ -1029,14 +1023,14 @@ function svgNameLabel(name, color, x, y, role, status) {
   const roleW = role ? role.length * 9 + 12 : 0
   const w = Math.max(nameW, roleW)
   const h = role ? 44 : 22
-  const dotColor = status === 'active' ? '#4ade80' : '#6b7280'
+  const dotColor = status === 'active' ? '#48c048' : '#687080'
   const dotGlow = status === 'active' ? `<rect x="${-w/2 + 3}" y="4" width="8" height="8" fill="${dotColor}" opacity=".3"/>` : ''
   return `
     <g transform="translate(${x},${y})">
       <rect x="${-w/2}" y="-2" width="${w}" height="${h}" fill="rgba(30,30,50,.88)" rx="0"/>
       ${dotGlow}
       <rect x="${-w/2 + 5}" y="5" width="6" height="6" fill="${dotColor}"/>
-      <text x="${dotW/2}" y="14" text-anchor="middle" font-size="16" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="3" paint-order="stroke">${name}</text>
+      <text x="${dotW/2}" y="14" text-anchor="middle" font-size="16" fill="${color}" class="pixel-font" stroke="#181828" stroke-width="3" paint-order="stroke">${name}</text>
       ${role ? `<text x="0" y="34" text-anchor="middle" font-size="12" fill="#b0b0c0" class="pixel-font">${role}</text>` : ''}
     </g>`
 }
@@ -1100,7 +1094,7 @@ function spawnParticle() {
   if (!particles) return
   const x = 100 + Math.random() * 760
   const y = 200 + Math.random() * 300
-  const colors = ['#fde68a', '#a78bfa', '#4ade80', '#f472b6', '#facc15']
+  const colors = ['#f8e060', '#a078f0', '#48c048', '#f870a8', '#f8c818']
   const color = colors[Math.floor(Math.random() * colors.length)]
   const id = 'p-' + Date.now() + Math.random()
   const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
@@ -1230,7 +1224,7 @@ function renderRoom(agents) {
     const charSvg = svgWorking(ck, i)
     const glowSvg = `<circle cx="18" cy="0" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
-    const taskBubble = svgBubble(label, '#facc15', 18, -8)
+    const taskBubble = svgBubble(label, '#f8c818', 18, -8)
     slot.innerHTML = `${glowSvg}<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}`
     slot.setAttribute('data-member-id', a.member_id)
     slot.style.cursor = 'pointer'
