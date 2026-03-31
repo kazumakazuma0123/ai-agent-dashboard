@@ -922,6 +922,466 @@ const ARM_RIGHT = [
   [null, 's' ],
 ]
 
+// ── Per-character sprite variants ──
+const MEMBER_SPRITES = {
+  sato: { /* ジャック - 白衣博士 */
+    working: [
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, 'c',  'c',  't',  't',  't',  'c',  'c',  null],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      [null, 'c',  'c',  'c',  'c',  'c',  'c',  'c',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, 'c',  'c',  't',  't',  't',  'c',  'c',  null],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      [null, 'c',  'c',  'c',  'c',  'c',  'c',  'c',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  tanaka: { /* ニコル - ロングヘア */
+    working: [
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      ['h',  's',  's',  'e',  's',  'e',  's',  's',  'h' ],
+      ['h',  's',  's',  's',  's',  's',  's',  's',  'h' ],
+      ['h',  null, 's',  's',  'm',  's',  's',  null, 'h' ],
+      ['h',  null, null, 's',  's',  's',  null, null, 'h' ],
+      ['h',  null, 't',  't',  't',  't',  't',  null, 'h' ],
+      ['h',  't',  't',  't',  't',  't',  't',  't',  'h' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      ['h',  's',  's',  'e',  's',  'e',  's',  's',  'h' ],
+      ['h',  's',  's',  's',  's',  's',  's',  's',  'h' ],
+      ['h',  null, 's',  's',  'm',  's',  's',  null, 'h' ],
+      ['h',  null, null, 's',  's',  's',  null, null, 'h' ],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  yamada: { /* アレックス - キャップ帽 */
+    working: [
+      [null, null, null, 'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  'k' ],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, null, 'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  'k' ],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  suzuki: { /* エマ - ショートボブ+スカート */
+    working: [
+      [null, null, null, 'h',  'h',  'h',  null, null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      ['h',  's',  's',  'e',  's',  'e',  's',  's',  'h' ],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, 's',  's',  null, 's',  's',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, null, 'h',  'h',  'h',  null, null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      ['h',  's',  's',  'e',  's',  'e',  's',  's',  'h' ],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, 's',  's',  null, 's',  's',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  nakamura: { /* オリバー - ハット+ネクタイ */
+    working: [
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  null],
+      ['k',  'k',  'k',  'k',  'k',  'k',  'k',  'k',  'k' ],
+      [null, null, 'k',  'k',  'k',  'k',  'k',  null, null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  'n',  't',  't',  null, null],
+      [null, 't',  't',  't',  'n',  't',  't',  't',  null],
+      [null, 't',  't',  't',  'n',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  null],
+      ['k',  'k',  'k',  'k',  'k',  'k',  'k',  'k',  'k' ],
+      [null, null, 'k',  'k',  'k',  'k',  'k',  null, null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  'n',  't',  't',  null, null],
+      [null, 't',  't',  't',  'n',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  'n',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  ito: { /* ソフィー - おだんごヘア */
+    working: [
+      [null, null, null, null, 'h',  null, null, null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, null, null, 'h',  null, null, null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  takahashi: { /* ルカス - バンダナ */
+    working: [
+      [null, null, 'b',  'b',  'b',  'b',  'b',  null, null],
+      [null, 'b',  'b',  'b',  'b',  'b',  'b',  'b',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, 'b',  'b',  'b',  'b',  'b',  null, null],
+      [null, 'b',  'b',  'b',  'b',  'b',  'b',  'b',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  watanabe: { /* ライアン - スパイキーヘア */
+    working: [
+      [null, 'h',  null, 'h',  'h',  'h',  null, 'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, 'h',  null, 'h',  'h',  'h',  null, 'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  kobayashi: { /* イーサン - メガネ+帽子 */
+    working: [
+      [null, null, null, 'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  'k' ],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  'g',  'e',  'g',  'e',  'g',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, null, 'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  'k' ],
+      [null, 'k',  'k',  'k',  'k',  'k',  'k',  'k',  null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  'g',  'e',  'g',  'e',  'g',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  kato: { /* レオ - サイド刈り上げ */
+    working: [
+      [null, null, null, 'h',  'h',  'h',  'h',  null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  'h',  null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      [null, 's',  's',  's',  's',  's',  's',  's',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, null, 'h',  'h',  'h',  'h',  null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  'h',  null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      [null, 's',  's',  's',  's',  's',  's',  's',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, null, 't',  't',  't',  't',  't',  null, null],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      ['s',  't',  't',  't',  't',  't',  't',  't',  's' ],
+      [null, 't',  't',  't',  't',  't',  't',  't',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  yoshida: { /* マックス - メガネ+白衣 */
+    working: [
+      [null, null, null, 'h',  'h',  'h',  null, null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  'g',  'e',  'g',  'e',  'g',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, 'c',  'c',  't',  't',  't',  'c',  'c',  null],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      [null, 'c',  'c',  'c',  'c',  'c',  'c',  'c',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, null, 'h',  'h',  'h',  null, null, null],
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      [null, 'h',  's',  's',  's',  's',  's',  'h',  null],
+      [null, 's',  'g',  'e',  'g',  'e',  'g',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, 'c',  'c',  't',  't',  't',  'c',  'c',  null],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      ['c',  'c',  'c',  't',  't',  't',  'c',  'c',  'c' ],
+      [null, 'c',  'c',  'c',  'c',  'c',  'c',  'c',  null],
+      [null, null, null, 'p',  'p',  'p',  null, null, null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+  matsumoto: { /* ノア - マント */
+    working: [
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, 'a',  't',  't',  't',  't',  't',  'a',  null],
+      ['a',  'a',  't',  't',  't',  't',  't',  'a',  'a' ],
+      ['a',  'a',  't',  't',  't',  't',  't',  'a',  'a' ],
+      ['a',  'a',  't',  't',  't',  't',  't',  'a',  'a' ],
+      [null, 'a',  null, 'p',  'p',  'p',  null, 'a',  null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+    idle: [
+      [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
+      [null, 'h',  'h',  'h',  'h',  'h',  'h',  'h',  null],
+      ['h',  'h',  'h',  'h',  'h',  'h',  'h',  'h',  'h' ],
+      ['h',  'h',  's',  's',  's',  's',  's',  'h',  'h' ],
+      [null, 's',  's',  'e',  's',  'e',  's',  's',  null],
+      [null, 's',  's',  's',  's',  's',  's',  's',  null],
+      [null, null, 's',  's',  'm',  's',  's',  null, null],
+      [null, null, null, 's',  's',  's',  null, null, null],
+      [null, 'a',  't',  't',  't',  't',  't',  'a',  null],
+      ['a',  'a',  't',  't',  't',  't',  't',  'a',  'a' ],
+      ['a',  'a',  't',  't',  't',  't',  't',  'a',  'a' ],
+      ['a',  'a',  't',  't',  't',  't',  't',  'a',  'a' ],
+      [null, 'a',  null, 'p',  'p',  'p',  null, 'a',  null],
+      [null, null, null, 'p',  null, 'p',  null, null, null],
+      [null, null, 'p',  'p',  null, 'p',  'p',  null, null],
+      [null, null, 'o',  'o',  null, 'o',  'o',  null, null],
+    ],
+  },
+}
+
 // Idle (standing, Pokemon trainer-style) - 9w x 16h
 const SPRITE_IDLE = [
   [null, null, 'h',  'h',  'h',  'h',  'h',  null, null],
@@ -955,13 +1415,14 @@ const SPRITE_SLEEPING = [
 ]
 
 // ── Render character SVG ──
-function svgWorking(ck, uniqueId) {
+function svgWorking(ck, uniqueId, memberId) {
   const c = COLORS[ck]
-  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060' }
-  const body = renderSprite(SPRITE_WORKING, 0, 0, colorMap)
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060', g:'#404060', c:'#f0f0f8', k:c.shirt, n:'#d02020', a:'#483068', b:c.hair }
+  const spriteData = (memberId && MEMBER_SPRITES[memberId]) ? MEMBER_SPRITES[memberId].working : SPRITE_WORKING
+  const body = renderSprite(spriteData, 0, 0, colorMap)
   // Arms with animation
-  const armLColors = { t:c.shirt, s:c.skin }
-  const armRColors = { t:c.shirt, s:c.skin }
+  const armLColors = { t:c.shirt, s:c.skin, c:'#f0f0f8' }
+  const armRColors = { t:c.shirt, s:c.skin, c:'#f0f0f8' }
   const leftArm = renderSprite(ARM_LEFT, -2 * P, 9 * P, armLColors)
   const rightArm = renderSprite(ARM_RIGHT, 9 * P, 9 * P, armRColors)
 
@@ -972,10 +1433,11 @@ function svgWorking(ck, uniqueId) {
   </g>`
 }
 
-function svgIdle(ck) {
+function svgIdle(ck, memberId) {
   const c = COLORS[ck]
-  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060' }
-  const body = renderSprite(SPRITE_IDLE, 0, 0, colorMap)
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060', g:'#404060', c:'#f0f0f8', k:c.shirt, n:'#d02020', a:'#483068', b:c.hair }
+  const spriteData = (memberId && MEMBER_SPRITES[memberId]) ? MEMBER_SPRITES[memberId].idle : SPRITE_IDLE
+  const body = renderSprite(spriteData, 0, 0, colorMap)
   return `<g class="idle-anim">${body}</g>`
 }
 
@@ -1221,7 +1683,7 @@ function renderRoom(agents) {
     const screen = document.getElementById('screen-' + i)
     const a = active[i], ck = charColor(a.member_id)
     const label = a.command || taskLabel(a)
-    const charSvg = svgWorking(ck, i)
+    const charSvg = svgWorking(ck, i, a.member_id)
     const glowSvg = `<circle cx="18" cy="0" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     const taskBubble = svgBubble(label, '#f8c818', 18, -8)
@@ -1251,7 +1713,7 @@ function renderRoom(agents) {
   for (let i = 0; i < 3 && idleIdx < nonActive.length; i++, idleIdx++) {
     const slot = document.getElementById('stand-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
-    const charSvg = svgIdle(ck)
+    const charSvg = svgIdle(ck, a.member_id)
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
     slot.setAttribute('data-member-id', a.member_id)
@@ -1264,7 +1726,7 @@ function renderRoom(agents) {
     const slot = document.getElementById('desk-slot-' + i)
     if (slot.innerHTML !== '') continue
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
-    const charSvg = svgIdle(ck)
+    const charSvg = svgIdle(ck, a.member_id)
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
     slot.setAttribute('data-member-id', a.member_id)
