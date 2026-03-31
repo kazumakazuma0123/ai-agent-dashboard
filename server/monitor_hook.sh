@@ -1,5 +1,7 @@
 #!/bin/bash
 # Claude Code PostToolUse フック
+# エージェントモニターにツール使用をリアルタイム送信
+#
 # 設置場所: ~/.claude/hooks/monitor_hook.sh
 # 事前に chmod +x しておくこと
 #
@@ -12,7 +14,7 @@
 # }
 
 VPS_URL="http://162.43.29.31:3001"
-API_KEY="YOUR_API_KEY"               # ← server.js と同じキーを設定
+API_KEY="changeme"
 
 INPUT=$(cat)
 
