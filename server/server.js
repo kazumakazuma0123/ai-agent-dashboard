@@ -277,6 +277,29 @@ app.get('/api/sessions', (req, res) => {
   res.json([...sessions.values()])
 })
 
+// ── POST /api/proxy — localhost:3002 への中継 ──
+// port 3002（claude proxy）はパケットフィルター未開放のため外部から到達不可。
+// port 3001（本サーバー）経由でlocalhost:3002にリクエストを中継する。
+app.post('/api/proxy', async (req, res) => {
+  if (req.headers['x-api-key'] !== API_KEY) {
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+  const { path, body: proxyBody } = req.body
+  if (!path) return res.status(400).json({ error: 'missing path' })
+  try {
+    const resp = await fetch(`http://localhost:3002${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(proxyBody || {}),
+      signal: AbortSignal.timeout(10000),
+    })
+    const json = await resp.json()
+    res.status(resp.status).json(json)
+  } catch (e) {
+    res.status(502).json({ error: e.message })
+  }
+})
+
 // ── POST /api/deploy — リモートデプロイ ──
 app.post('/api/deploy', (req, res) => {
   if (req.headers['x-api-key'] !== API_KEY) {
