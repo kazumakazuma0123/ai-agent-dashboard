@@ -10,18 +10,18 @@ const API_KEY = process.env.API_KEY || 'changeme'
 
 // ── 社員マスタ（常駐表示） ──
 const MEMBERS = [
-  { id: 'sato',     name: '佐藤', role: 'コンテンツ制作部長', commands: ['/article'] },
-  { id: 'tanaka',   name: '田中', role: 'リサーチャー',       commands: ['/research'] },
-  { id: 'yamada',   name: '山田', role: 'ライター',           commands: ['/write'] },
-  { id: 'suzuki',   name: '鈴木', role: 'エディター',         commands: ['/direct'] },
-  { id: 'nakamura', name: '中村', role: 'ホテル運営部長',     commands: ['/hotel'] },
-  { id: 'ito',      name: '伊藤', role: '集客マネージャー',   commands: ['/hotel'] },
-  { id: 'takahashi',name: '高橋', role: '清掃マネージャー',   commands: ['/hotel'] },
-  { id: 'watanabe', name: '渡辺', role: '開発部長',           commands: ['/dev'] },
-  { id: 'kobayashi',name: '小林', role: 'エンジニア',         commands: ['/dev'] },
-  { id: 'kato',     name: '加藤', role: 'インフラ部長',       commands: ['/infra'] },
-  { id: 'yoshida',  name: '吉田', role: '自動化エンジニア',   commands: ['/infra'] },
-  { id: 'matsumoto',name: '松本', role: '経営企画',           commands: ['/ceo', '/standup'] },
+  { id: 'sato',     name: 'Jack',    role: 'コンテンツ制作部長', commands: ['/article'] },
+  { id: 'tanaka',   name: 'Nicole',  role: 'リサーチャー',       commands: ['/research'] },
+  { id: 'yamada',   name: 'Alex',    role: 'ライター',           commands: ['/write'] },
+  { id: 'suzuki',   name: 'Emma',    role: 'エディター',         commands: ['/direct'] },
+  { id: 'nakamura', name: 'Oliver',  role: 'ホテル運営部長',     commands: ['/hotel'] },
+  { id: 'ito',      name: 'Sophie',  role: '集客マネージャー',   commands: ['/hotel'] },
+  { id: 'takahashi',name: 'Lucas',   role: '清掃マネージャー',   commands: ['/hotel'] },
+  { id: 'watanabe', name: 'Ryan',    role: '開発部長',           commands: ['/dev'] },
+  { id: 'kobayashi',name: 'Ethan',   role: 'エンジニア',         commands: ['/dev'] },
+  { id: 'kato',     name: 'Leo',     role: 'インフラ部長',       commands: ['/infra'] },
+  { id: 'yoshida',  name: 'Max',     role: '自動化エンジニア',   commands: ['/infra'] },
+  { id: 'matsumoto',name: 'Noah',    role: '経営企画',           commands: ['/ceo', '/standup'] },
 ]
 
 // ── 社員ステート管理 ──
