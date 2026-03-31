@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import fs from 'fs'
+import path from 'path'
 import { execSync, spawn } from 'child_process'
 
 const app = express()
@@ -334,6 +335,8 @@ app.post('/api/vps-file', (req, res) => {
     if (!file || !content || !ALLOWED.includes(file)) {
       return res.status(403).json({ error: 'path not allowed: ' + file })
     }
+    const dir = path.dirname(file)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
     fs.writeFileSync(file, content, 'utf-8')
     return res.json({ ok: true, file, size: content.length })
   }
