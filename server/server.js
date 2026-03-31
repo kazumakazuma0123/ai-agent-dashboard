@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
-import { execSync } from 'child_process'
+import fs from 'fs'
+import { execSync, spawn } from 'child_process'
 
 const app = express()
 app.use(cors())
@@ -318,6 +319,51 @@ app.post('/api/deploy', (req, res) => {
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message })
   }
+})
+
+// ── POST /api/vps-file — VPSにファイルを書き込み＆プロセス管理 ──
+// claude-proxy-server.js 等のファイルをリモートから配置・起動するためのエンドポイント
+app.post('/api/vps-file', (req, res) => {
+  if (req.headers['x-api-key'] !== API_KEY) {
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+  const { action, file, content } = req.body
+  const ALLOWED = ['/root/claude-proxy-server.js', '/root/hotel-sui-slack/daily-slack-report.sh', '/root/hotel-sui-slack/todo.json']
+
+  if (action === 'write') {
+    if (!file || !content || !ALLOWED.includes(file)) {
+      return res.status(403).json({ error: 'path not allowed: ' + file })
+    }
+    fs.writeFileSync(file, content, 'utf-8')
+    return res.json({ ok: true, file, size: content.length })
+  }
+
+  if (action === 'start-proxy') {
+    // claude-proxy-server.js をバックグラウンド起動
+    try {
+      // まず既存プロセスを停止
+      try { execSync('kill $(lsof -t -i:3002 -sTCP:LISTEN) 2>/dev/null', { encoding: 'utf8' }) } catch {}
+      // 1秒待ってから起動
+      spawn('bash', ['-c', 'sleep 1 && cd /root && nohup node claude-proxy-server.js >> claude-proxy.log 2>&1 &'], {
+        detached: true, stdio: 'ignore'
+      }).unref()
+      return res.json({ ok: true, message: 'proxy starting on :3002' })
+    } catch (e) {
+      return res.status(500).json({ error: e.message })
+    }
+  }
+
+  if (action === 'status') {
+    // port 3002 のプロセス状態を確認
+    try {
+      const pid = execSync('lsof -t -i:3002 -sTCP:LISTEN 2>/dev/null', { encoding: 'utf8' }).trim()
+      return res.json({ ok: true, port3002: pid ? 'running (PID: ' + pid + ')' : 'stopped' })
+    } catch {
+      return res.json({ ok: true, port3002: 'stopped' })
+    }
+  }
+
+  return res.status(400).json({ error: 'unknown action. use: write, start-proxy, status' })
 })
 
 // ヘルスチェック
