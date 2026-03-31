@@ -237,6 +237,63 @@ body {
   .agent-status { font-size:9px; margin-top:2px; }
   .agent-task { font-size:9px; max-width:none; white-space:normal; }
 }
+
+/* ── Character Popup ── */
+.char-popup-overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,.5); z-index:300;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.char-popup {
+  background: var(--panel-bg);
+  border: 4px solid var(--panel-border);
+  padding: 16px 20px;
+  max-width: 420px; width: 90%;
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  position: relative;
+  cursor: default;
+}
+.char-popup::before {
+  content:'';
+  position:absolute; top:4px; left:4px; right:4px; bottom:4px;
+  border:2px solid rgba(196,154,108,.3);
+  pointer-events:none;
+}
+.char-popup-title {
+  font-size:10px; color:#facc15;
+  text-shadow:1px 1px 0 #7a5a3a;
+  margin-bottom:8px;
+}
+.char-popup-status {
+  font-size:8px; color:var(--text-dim);
+  margin-bottom:6px;
+}
+.char-popup-task {
+  font-size:9px; color:var(--text);
+  margin-bottom:8px;
+  line-height:1.6;
+}
+.char-popup-history {
+  font-size:7px; color:var(--text-dim);
+  line-height:1.8;
+}
+.char-popup-history .hist-item {
+  display:flex; justify-content:space-between; gap:8px;
+  border-bottom:1px solid rgba(196,154,108,.15);
+  padding:2px 0;
+}
+.char-popup-close {
+  font-size:7px; color:var(--text-dim);
+  text-align:center; margin-top:10px;
+}
+@media (max-width:600px) {
+  .char-popup { max-width: 95%; padding: 14px 12px; }
+  .char-popup-title { font-size: 12px; }
+  .char-popup-task { font-size: 10px; }
+  .char-popup-history { font-size: 8px; }
+}
 </style>
 </head>
 <body>
@@ -1003,10 +1060,100 @@ function spawnParticle() {
 }
 setInterval(spawnParticle, 3000)
 
+// ── Character Popup ──
+let lastAgentData = []
+
+function showCharPopup(memberId) {
+  const agent = lastAgentData.find(a => a.member_id === memberId)
+  if (!agent) return
+
+  // Remove existing popup if any
+  const existing = document.querySelector('.char-popup-overlay')
+  if (existing) existing.remove()
+
+  const isActive = agent.status === 'active'
+  const statusText = isActive ? '稼働中' : '待機中'
+  const statusColor = isActive ? 'var(--active-green)' : 'var(--idle-yellow)'
+
+  // Determine task info to display
+  let taskSection = ''
+  if (isActive) {
+    // Currently active: show current task
+    const toolCount = agent.tool_count || 0
+    const elapsedTime = agent.started_at ? elapsed(agent.started_at) : '-'
+    taskSection = `
+      <div class="char-popup-task">
+        ◆ 現在のタスク<br>
+        コマンド: ${agent.command || '-'}<br>
+        タスク: ${agent.task || '-'}<br>
+        ツール使用: ${toolCount}回<br>
+        経過時間: ${elapsedTime}
+      </div>`
+  } else if (agent.last_task) {
+    // Has previous task
+    const lt = agent.last_task
+    const toolCount = lt.tool_count || 0
+    const startedAt = lt.started_at ? new Date(lt.started_at) : null
+    const endedAt = lt.ended_at ? new Date(lt.ended_at) : null
+    let duration = '-'
+    if (startedAt && endedAt) {
+      const diffSec = Math.floor((endedAt - startedAt) / 1000)
+      const m = Math.floor(diffSec / 60), s = diffSec % 60
+      duration = m > 0 ? `${m}m ${s}s` : `${s}s`
+    }
+    const endedAgo = lt.ended_at ? timeAgo(lt.ended_at) : '-'
+    taskSection = `
+      <div class="char-popup-task">
+        ◆ 前回のタスク<br>
+        コマンド: ${lt.command || '-'}<br>
+        タスク: ${lt.task || '-'}<br>
+        ツール使用: ${toolCount}回<br>
+        実行時間: ${duration}<br>
+        終了: ${endedAgo}
+      </div>`
+  } else {
+    taskSection = `<div class="char-popup-task">◆ タスク履歴なし</div>`
+  }
+
+  // Tool history
+  const historyData = isActive ? (agent.history || []) : (agent.last_task?.history || [])
+  let historySection = ''
+  if (historyData.length > 0) {
+    const items = historyData.map(h => {
+      const t = h.time ? new Date(h.time) : null
+      const timeStr = t ? `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}` : ''
+      return `<div class="hist-item"><span>${h.tool} — ${h.desc}</span><span>${timeStr}</span></div>`
+    }).join('')
+    historySection = `
+      <div class="char-popup-history">
+        ◆ ツール履歴<br>
+        ${items}
+      </div>`
+  }
+
+  const separator = `<div style="color:var(--panel-border);font-size:7px;margin:4px 0;">─────────────</div>`
+
+  const overlay = document.createElement('div')
+  overlay.className = 'char-popup-overlay'
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove() }
+  overlay.innerHTML = `
+    <div class="char-popup" onclick="event.stopPropagation()">
+      <div class="char-popup-title">▶ ${agent.name} — ${agent.role}</div>
+      ${separator}
+      <div class="char-popup-status" style="color:${statusColor};">現在のステータス: ${statusText}</div>
+      ${taskSection}
+      ${historySection}
+      ${separator}
+      <div class="char-popup-close">▶ タップで閉じる</div>
+    </div>`
+  document.body.appendChild(overlay)
+}
+
 // ── Render agents into SVG + info panel ──
 function renderRoom(agents) {
   // Use API data if available, else defaults
   const data = (agents.length > 0 && agents[0].member_id) ? agents : MEMBERS_DEFAULT
+  lastAgentData = data
   const active = data.filter(a => a.status === 'active')
   const nonActive = data.filter(a => a.status !== 'active')
 
@@ -1028,6 +1175,9 @@ function renderRoom(agents) {
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     const taskBubble = svgBubble(label, '#facc15', 18, -8)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}`
+    slot.setAttribute('data-member-id', a.member_id)
+    slot.style.cursor = 'pointer'
+    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
     if (screen) screen.setAttribute('fill', '#0a1a0a')
   }
 
@@ -1041,6 +1191,9 @@ function renderRoom(agents) {
     const charSvg = svgSleeping(ck)
     const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 18, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${nameLabel}`
+    slot.setAttribute('data-member-id', a.member_id)
+    slot.style.cursor = 'pointer'
+    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
   }
 
   // Standing (up to 3)
@@ -1050,6 +1203,9 @@ function renderRoom(agents) {
     const charSvg = svgIdle(ck)
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
+    slot.setAttribute('data-member-id', a.member_id)
+    slot.style.cursor = 'pointer'
+    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
   }
 
   // Remaining idle at empty desks
@@ -1060,6 +1216,9 @@ function renderRoom(agents) {
     const charSvg = svgIdle(ck)
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
+    slot.setAttribute('data-member-id', a.member_id)
+    slot.style.cursor = 'pointer'
+    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
     idleIdx++
   }
 

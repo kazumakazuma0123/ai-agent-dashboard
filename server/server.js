@@ -39,6 +39,7 @@ function initMemberState() {
       last_tool: null,
       last_desc: null,
       history: [],
+      last_task: null,
     })
   }
 }
@@ -119,6 +120,16 @@ app.post('/api/command', (req, res) => {
       command: null,
       task: null,
       last_seen: new Date().toISOString(),
+      last_task: {
+        command: state.command,
+        task: state.task,
+        tool_count: state.tool_count,
+        started_at: state.started_at,
+        ended_at: new Date().toISOString(),
+        last_tool: state.last_tool,
+        last_desc: state.last_desc,
+        history: state.history,
+      },
     })
   }
 
@@ -218,7 +229,22 @@ app.get('/api/agents', (req, res) => {
           sessionMemberMap.delete(sid)
           memberSessionMap.delete(m.id)
         }
-        memberState.set(m.id, { ...state, status: 'idle', command: null, task: null })
+        memberState.set(m.id, {
+          ...state,
+          status: 'idle',
+          command: null,
+          task: null,
+          last_task: {
+            command: state.command,
+            task: state.task,
+            tool_count: state.tool_count,
+            started_at: state.started_at,
+            ended_at: new Date().toISOString(),
+            last_tool: state.last_tool,
+            last_desc: state.last_desc,
+            history: state.history,
+          },
+        })
       }
     }
 
@@ -236,6 +262,7 @@ app.get('/api/agents', (req, res) => {
       last_tool: state.last_tool,
       last_desc: state.last_desc,
       history: state.history,
+      last_task: state.last_task,
     }
   })
 
