@@ -820,10 +820,16 @@ body {
       <!-- sofa character slots (sleeping on sofa, top-down) -->
       <g id="sofa-slot-0" transform="translate(80,190)"></g>
       <g id="sofa-slot-1" transform="translate(140,190)"></g>
-      <!-- standing slots (break area near water cooler / sofa vicinity) -->
+      <!-- standing slots (spread across the floor) -->
       <g id="stand-slot-0" transform="translate(80,350)"></g>
-      <g id="stand-slot-1" transform="translate(120,370)"></g>
-      <g id="stand-slot-2" transform="translate(160,350)"></g>
+      <g id="stand-slot-1" transform="translate(140,370)"></g>
+      <g id="stand-slot-2" transform="translate(200,350)"></g>
+      <g id="stand-slot-3" transform="translate(320,380)"></g>
+      <g id="stand-slot-4" transform="translate(420,360)"></g>
+      <g id="stand-slot-5" transform="translate(540,380)"></g>
+      <g id="stand-slot-6" transform="translate(660,370)"></g>
+      <g id="stand-slot-7" transform="translate(780,360)"></g>
+      <g id="stand-slot-8" transform="translate(860,380)"></g>
 
       <!-- ====== PIXEL PARTICLE SPOTS ====== -->
       <g id="particles"></g>
@@ -1687,7 +1693,7 @@ function renderRoom(agents) {
   const nonActive = data.filter(a => a.status !== 'active')
 
   // Clear all slots
-  const allSlotIds = ['desk-slot-0','desk-slot-1','desk-slot-2','sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2']
+  const allSlotIds = ['desk-slot-0','desk-slot-1','desk-slot-2','sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
   allSlotIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '' })
   for (let i = 0; i < 3; i++) {
     const screen = document.getElementById('screen-' + i)
@@ -1719,15 +1725,15 @@ function renderRoom(agents) {
     const slot = document.getElementById('sofa-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgSleeping(ck)
-    const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 18, a.role, a.status)
-    slot.innerHTML = `<g transform="translate(-8, 8)">${charSvg}</g>${nameLabel}`
+    const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 50, a.role, a.status)
+    slot.innerHTML = `<g transform="translate(-8, 4)">${charSvg}</g>${nameLabel}`
     slot.setAttribute('data-member-id', a.member_id)
     slot.style.cursor = 'pointer'
     slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
   }
 
-  // Standing (up to 3)
-  for (let i = 0; i < 3 && idleIdx < nonActive.length; i++, idleIdx++) {
+  // Standing (up to 9)
+  for (let i = 0; i < 9 && idleIdx < nonActive.length; i++, idleIdx++) {
     const slot = document.getElementById('stand-slot-' + i)
     const a = nonActive[idleIdx], ck = charColor(a.member_id)
     const charSvg = svgIdle(ck, a.member_id)
@@ -1738,19 +1744,7 @@ function renderRoom(agents) {
     slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
   }
 
-  // Remaining idle at empty desks
-  for (let i = 0; i < 3 && idleIdx < nonActive.length; i++) {
-    const slot = document.getElementById('desk-slot-' + i)
-    if (slot.innerHTML !== '') continue
-    const a = nonActive[idleIdx], ck = charColor(a.member_id)
-    const charSvg = svgIdle(ck, a.member_id)
-    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
-    slot.setAttribute('data-member-id', a.member_id)
-    slot.style.cursor = 'pointer'
-    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
-    idleIdx++
-  }
+  // (idle agents no longer placed at empty desks — only active agents sit at desks)
 
   // Info panel — split into active and idle sections
   const panel = document.getElementById('agent-panel')
