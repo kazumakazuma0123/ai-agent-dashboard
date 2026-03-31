@@ -177,6 +177,7 @@ body {
 .agent-card .status-dot.stopped { background:var(--stopped-gray); }
 .agent-info { flex:1; min-width:0; }
 .agent-name { color:#facc15; font-size:8px; }
+.agent-name span { font-size:8px; display:inline; }
 .agent-status { color:var(--text-dim); }
 .agent-task { color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
 .agent-meta { color:var(--text-dim); font-size:6px; }
@@ -1027,7 +1028,7 @@ function svgNameLabel(name, color, x, y, role, status) {
   const nameW = name.length * charW + dotW + 16
   const roleW = role ? role.length * 9 + 12 : 0
   const w = Math.max(nameW, roleW)
-  const h = role ? 40 : 22
+  const h = role ? 44 : 22
   const dotColor = status === 'active' ? '#4ade80' : '#6b7280'
   const dotGlow = status === 'active' ? `<rect x="${-w/2 + 3}" y="4" width="8" height="8" fill="${dotColor}" opacity=".3"/>` : ''
   return `
@@ -1036,7 +1037,7 @@ function svgNameLabel(name, color, x, y, role, status) {
       ${dotGlow}
       <rect x="${-w/2 + 5}" y="5" width="6" height="6" fill="${dotColor}"/>
       <text x="${dotW/2}" y="14" text-anchor="middle" font-size="16" fill="${color}" class="pixel-font" stroke="#1a1a2e" stroke-width="3" paint-order="stroke">${name}</text>
-      ${role ? `<text x="0" y="32" text-anchor="middle" font-size="9" fill="#a0a0b0" class="pixel-font">${role}</text>` : ''}
+      ${role ? `<text x="0" y="34" text-anchor="middle" font-size="12" fill="#b0b0c0" class="pixel-font">${role}</text>` : ''}
     </g>`
 }
 
@@ -1072,14 +1073,14 @@ function elapsed(iso) {
 
 // ── 社員マスタ（デフォルト表示） ──
 const MEMBERS_DEFAULT = [
-  { member_id:'sato',     name:'Jack',   role:'コンテンツ制作部長', commands:['/article'],           status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'tanaka',   name:'Nicole', role:'リサーチャー',       commands:['/research'],          status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'yamada',   name:'Alex',   role:'ライター',           commands:['/write'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'suzuki',   name:'Emma',   role:'エディター',         commands:['/direct'],            status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'nakamura', name:'Oliver', role:'ホテル運営部長',     commands:['/hotel'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'watanabe', name:'Ryan',   role:'開発部長',           commands:['/dev'],               status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'kato',     name:'Leo',    role:'インフラ部長',       commands:['/infra'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
-  { member_id:'matsumoto',name:'Noah',   role:'経営企画',           commands:['/ceo','/standup'],    status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'sato',     name:'ジャック',   role:'コンテンツ制作部長', commands:['/article'],           status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'tanaka',   name:'ニコル', role:'リサーチャー',       commands:['/research'],          status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'yamada',   name:'アレックス',   role:'ライター',           commands:['/write'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'suzuki',   name:'エマ',   role:'エディター',         commands:['/direct'],            status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'nakamura', name:'オリバー', role:'ホテル運営部長',     commands:['/hotel'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'watanabe', name:'ライアン',   role:'開発部長',           commands:['/dev'],               status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'kato',     name:'レオ',    role:'インフラ部長',       commands:['/infra'],             status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
+  { member_id:'matsumoto',name:'ノア',   role:'経営企画',           commands:['/ceo','/standup'],    status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
 ]
 
 // ── Update wall clock ──
