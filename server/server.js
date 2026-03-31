@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import { execSync } from 'child_process'
 
 const app = express()
 app.use(cors())
@@ -247,6 +248,26 @@ app.get('/api/sessions', (req, res) => {
     return res.status(401).json({ error: 'unauthorized' })
   }
   res.json([...sessions.values()])
+})
+
+// ── POST /api/deploy — リモートデプロイ ──
+app.post('/api/deploy', (req, res) => {
+  if (req.headers['x-api-key'] !== API_KEY) {
+    return res.status(401).json({ error: 'unauthorized' })
+  }
+  try {
+    const cwd = process.cwd()
+    const pull = execSync('git pull', { cwd, encoding: 'utf8', timeout: 15000 })
+    res.json({ ok: true, pull: pull.trim() })
+    // git pullの後、pm2で自身を再起動（レスポンス送信後に実行）
+    if (!pull.includes('Already up to date')) {
+      setTimeout(() => {
+        try { execSync('pm2 restart ai-agent-dashboard', { encoding: 'utf8' }) } catch {}
+      }, 500)
+    }
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message })
+  }
 })
 
 // ヘルスチェック
