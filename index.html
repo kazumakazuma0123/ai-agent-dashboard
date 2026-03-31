@@ -223,6 +223,30 @@ body {
   0% { opacity:.8; transform:translateY(0) scale(1); }
   100% { opacity:0; transform:translateY(-20px) scale(.5); }
 }
+@keyframes kata-vibrate {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1px); }
+  75% { transform: translateX(1px); }
+}
+@keyframes kata-text-pop {
+  0% { opacity:0; transform: translateY(0); }
+  15% { opacity:.9; transform: translateY(-2px); }
+  80% { opacity:.9; transform: translateY(-10px); }
+  100% { opacity:0; transform: translateY(-16px); }
+}
+@keyframes thought-pop {
+  0% { opacity:0; transform: translateY(4px) scale(0.6); }
+  12% { opacity:1; transform: translateY(0) scale(1); }
+  82% { opacity:1; transform: translateY(0) scale(1); }
+  100% { opacity:0; transform: translateY(-8px) scale(0.7); }
+}
+@keyframes look-around {
+  0%,100% { transform: translateX(0); }
+  30% { transform: translateX(-2px); }
+  70% { transform: translateX(2px); }
+}
+.thought-anim { animation: thought-pop var(--thought-dur, 4s) ease-in-out forwards; }
+.look-anim { animation: look-around 2.5s ease-in-out infinite; }
 
 /* ── Responsive (Tablet) ── */
 @media (max-width:768px) {
@@ -393,6 +417,9 @@ body {
           .clock-colon { animation: clock-tick 1s step-end infinite; }
           .screen-lines { animation: screen-scroll 3s linear infinite; }
           .breathe-anim { animation: breathe 3s ease-in-out infinite; }
+          .kata-body { animation: kata-vibrate 0.12s ease-in-out infinite; transform-origin: center; }
+          .kata-text { animation: kata-text-pop 2s ease-in-out infinite; }
+          .kata-text-delay { animation: kata-text-pop 2s ease-in-out infinite; animation-delay: 1s; }
           .pixel-font { font-family: 'Press Start 2P', monospace; }
           @keyframes active-glow {
             0%,100% { opacity:.3; }
@@ -830,6 +857,9 @@ body {
       <g id="stand-slot-6" transform="translate(660,370)"></g>
       <g id="stand-slot-7" transform="translate(780,360)"></g>
       <g id="stand-slot-8" transform="translate(860,380)"></g>
+
+      <!-- walk animation layer for idle wandering -->
+      <g id="walk-layer"></g>
 
       <!-- ====== PIXEL PARTICLE SPOTS ====== -->
       <g id="particles"></g>
@@ -1562,6 +1592,16 @@ const MEMBERS_DEFAULT = [
   { member_id:'matsumoto',name:'ノア',   role:'経営企画',           commands:['/ceo','/standup'],    status:'idle', command:null, task:null, tool_count:0, last_tool:null, last_desc:null, started_at:new Date().toISOString(), last_seen:new Date().toISOString(), history:[] },
 ]
 
+// Slot position map for walk animations
+const SLOT_POSITIONS = {
+  'desk-slot-0': {x:326,y:254}, 'desk-slot-1': {x:536,y:254}, 'desk-slot-2': {x:746,y:254},
+  'sofa-slot-0': {x:80,y:190}, 'sofa-slot-1': {x:140,y:190},
+  'stand-slot-0': {x:80,y:350}, 'stand-slot-1': {x:140,y:370}, 'stand-slot-2': {x:200,y:350},
+  'stand-slot-3': {x:320,y:380}, 'stand-slot-4': {x:420,y:360}, 'stand-slot-5': {x:540,y:380},
+  'stand-slot-6': {x:660,y:370}, 'stand-slot-7': {x:780,y:360}, 'stand-slot-8': {x:860,y:380},
+}
+let prevSlotMap = {} // member_id -> previous slot id
+
 // ── Update wall clock ──
 function updateClock() {
   const now = new Date()
@@ -1692,6 +1732,9 @@ function renderRoom(agents) {
   const active = data.filter(a => a.status === 'active')
   const nonActive = data.filter(a => a.status !== 'active')
 
+  // Cancel any in-progress idle wandering
+  clearWalking()
+
   // Clear all slots
   const allSlotIds = ['desk-slot-0','desk-slot-1','desk-slot-2','sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
   allSlotIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '' })
@@ -1710,7 +1753,22 @@ function renderRoom(agents) {
     const glowSvg = `<circle cx="18" cy="0" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
     const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
     const taskBubble = svgBubble(label, '#f8c818', 18, -8)
-    slot.innerHTML = `${glowSvg}<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}`
+
+    // Walk-to-desk animation (from previous idle slot)
+    const deskId = 'desk-slot-' + i
+    const prev = prevSlotMap[a.member_id]
+    let wOpen = '', wClose = ''
+    if (prev && prev !== deskId && SLOT_POSITIONS[prev]) {
+      const dx = SLOT_POSITIONS[prev].x - SLOT_POSITIONS[deskId].x
+      const dy = SLOT_POSITIONS[prev].y - SLOT_POSITIONS[deskId].y
+      wOpen = `<g><animateTransform attributeName="transform" type="translate" from="${dx} ${dy}" to="0 0" dur="0.8s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/><g><animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -6;0 0;0 -3;0 0" dur="0.8s" fill="freeze"/>`
+      wClose = `</g></g>`
+    }
+
+    // カタカタ typing effect
+    const kataText = `<text x="18" y="-54" text-anchor="middle" font-size="5" fill="#f8c818" class="pixel-font kata-text">カタカタ</text><text x="30" y="-62" text-anchor="middle" font-size="4" fill="#a0d8f0" class="pixel-font kata-text kata-text-delay">カタカタ</text>`
+
+    slot.innerHTML = `${wOpen}${glowSvg}<g class="kata-body" transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}${kataText}${wClose}`
     slot.setAttribute('data-member-id', a.member_id)
     slot.style.cursor = 'pointer'
     slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
@@ -1809,6 +1867,361 @@ function renderRoom(agents) {
   hpEl.style.width = hpPct + '%'
   hpEl.style.background = hpPct > 60 ? 'var(--active-green)' : hpPct > 30 ? 'var(--idle-yellow)' : '#ef4444'
   mpEl.style.width = mpPct + '%'
+
+  // Update slot map for next render's walk animations
+  prevSlotMap = {}
+  allSlotIds.forEach(id => {
+    const el = document.getElementById(id)
+    if (el) {
+      const mid = el.getAttribute('data-member-id')
+      if (mid) prevSlotMap[mid] = id
+    }
+  })
+}
+
+// ── Idle Agent Behavior System ──
+let walkingAgents = {} // member_id -> timeoutId or array of timeoutIds
+
+function clearWalking() {
+  Object.values(walkingAgents).forEach(v => {
+    if (Array.isArray(v)) v.forEach(tid => clearTimeout(tid))
+    else clearTimeout(v)
+  })
+  walkingAgents = {}
+  const wl = document.getElementById('walk-layer')
+  if (wl) wl.innerHTML = ''
+}
+
+// Activity waypoints (non-slot locations agents can visit)
+const ACTIVITY_POINTS = {
+  'vending':   {x:74, y:320},
+  'bookshelf': {x:850, y:140},
+  'entrance':  {x:480, y:490},
+  'center-a':  {x:350, y:420},
+  'center-b':  {x:600, y:420},
+  'hall-left': {x:40, y:430},
+  'hall-right':{x:920, y:430},
+}
+
+// Stroll routes — sequences of waypoint keys to walk through
+const STROLL_ROUTES = [
+  ['center-a', 'center-b'],
+  ['center-a', 'entrance', 'center-b'],
+  ['hall-left', 'center-a'],
+  ['center-b', 'hall-right'],
+  ['center-a', 'entrance'],
+  ['hall-left', 'center-a', 'center-b', 'hall-right'],
+]
+
+// Activity thought texts (randomly picked)
+const THOUGHT_TEXTS = {
+  'vending':   ['ｼﾞｭｰｽ', 'ｺｰﾋｰ♪', 'ﾎｯﾄ一息', 'ﾌﾞﾚｲｸ!'],
+  'bookshelf': ['ﾌﾑﾌﾑ..', 'ﾅﾙﾎﾄﾞ!', 'ﾒﾓﾒﾓ', 'ｲｲ本♪'],
+}
+
+// SVG thought bubble
+function svgThought(text, x, y, durSec) {
+  return `
+    <g class="thought-anim" style="--thought-dur:${durSec}s;">
+      <rect x="${x-22}" y="${y-14}" width="44" height="16" fill="rgba(24,24,48,.92)" stroke="#a8a8c8" stroke-width="1" rx="2"/>
+      <text x="${x}" y="${y-3}" text-anchor="middle" font-size="5" fill="#d0d0e8" class="pixel-font">${text}</text>
+      <rect x="${x-1}" y="${y+2}" width="3" height="3" fill="rgba(24,24,48,.92)" stroke="#a8a8c8" stroke-width="1" transform="rotate(45,${x},${y+3})"/>
+      <circle cx="${x+4}" cy="${y+7}" r="1.5" fill="#a8a8c8" opacity=".5"/>
+    </g>`
+}
+
+// Create walking SVG element, returns { dur (seconds) }
+function createWalkElement(agent, from, to) {
+  const ck = charColor(agent.member_id)
+  const dist = Math.sqrt((to.x - from.x)**2 + (to.y - from.y)**2)
+  const dur = Math.max(0.8, Math.min(2.5, dist / 250))
+
+  const walkLayer = document.getElementById('walk-layer')
+  if (!walkLayer) return { dur: 0 }
+
+  const walkId = 'walk-' + agent.member_id
+  const existing = document.getElementById(walkId)
+  if (existing) existing.remove()
+
+  const idleSvg = svgIdle(ck, agent.member_id)
+  const nameLabel = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, 'idle')
+
+  const walkEl = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+  walkEl.id = walkId
+  walkEl.innerHTML = `
+    <animateTransform attributeName="transform" type="translate"
+      from="${from.x} ${from.y}" to="${to.x} ${to.y}"
+      dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+    <g>
+      <animateTransform attributeName="transform" type="translate"
+        values="0 0;0 -5;0 0;0 -5;0 0" dur="0.5s" repeatCount="${Math.ceil(dur / 0.5)}"/>
+      <g transform="translate(-18,-44)">${idleSvg}</g>
+    </g>
+    ${nameLabel}`
+  walkLayer.appendChild(walkEl)
+
+  return { dur }
+}
+
+// Place agent at an activity point (standing with optional thought bubble)
+function placeAtActivity(agent, pos, thoughtText, durSec) {
+  const walkLayer = document.getElementById('walk-layer')
+  if (!walkLayer) return
+
+  const actId = 'act-' + agent.member_id
+  const existing = document.getElementById(actId)
+  if (existing) existing.remove()
+
+  const ck = charColor(agent.member_id)
+  const idleSvg = svgIdle(ck, agent.member_id)
+  const nameLabel = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, 'idle')
+  const thought = thoughtText ? svgThought(thoughtText, 18, -54, durSec) : ''
+
+  const actEl = document.createElementNS('http://www.w3.org/2000/svg', 'g')
+  actEl.id = actId
+  actEl.setAttribute('transform', `translate(${pos.x},${pos.y})`)
+  actEl.innerHTML = `
+    <g class="look-anim">
+      <g transform="translate(-18,-44)">${idleSvg}</g>
+    </g>
+    ${nameLabel}${thought}`
+  walkLayer.appendChild(actEl)
+}
+
+function removeActivity(memberId) {
+  const el = document.getElementById('act-' + memberId)
+  if (el) el.remove()
+}
+
+// Place agent at a destination slot
+function placeAtSlot(agent, slotId) {
+  const slot = document.getElementById(slotId)
+  if (!slot) return
+
+  const ck = charColor(agent.member_id)
+  if (slotId.startsWith('sofa-')) {
+    const sleepSvg = svgSleeping(ck)
+    const nl = svgNameLabel(agent.name, '#8a8a9a', 32, 50, agent.role, agent.status)
+    slot.innerHTML = `<g transform="translate(-8, 4)">${sleepSvg}</g>${nl}`
+  } else {
+    const idleSvg2 = svgIdle(ck, agent.member_id)
+    const nl = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, agent.status)
+    slot.innerHTML = `<g transform="translate(-18,-44)">${idleSvg2}</g>${nl}`
+  }
+  slot.setAttribute('data-member-id', agent.member_id)
+  slot.style.cursor = 'pointer'
+  slot.onclick = () => showCharPopup(agent.member_id)
+  prevSlotMap[agent.member_id] = slotId
+}
+
+// Remove agent from their current slot
+function removeFromSlot(memberId, slotId) {
+  const srcSlot = document.getElementById(slotId)
+  if (srcSlot) {
+    srcSlot.innerHTML = ''
+    srcSlot.removeAttribute('data-member-id')
+  }
+  delete prevSlotMap[memberId]
+}
+
+// Find an available idle slot
+function findAvailableSlot(occupied, preferSofa) {
+  const sofaSlots = ['sofa-slot-0', 'sofa-slot-1']
+  const standSlots = ['stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
+  if (preferSofa) {
+    const avail = sofaSlots.filter(s => !occupied.has(s))
+    if (avail.length > 0) return avail[Math.floor(Math.random() * avail.length)]
+  }
+  const all = [...sofaSlots, ...standSlots].filter(s => !occupied.has(s))
+  return all.length > 0 ? all[Math.floor(Math.random() * all.length)] : null
+}
+
+// ── Behavior: Simple Wander (move to another random slot) ──
+function doWander(agent, currentSlotId, occupied) {
+  const idleSlots = ['sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
+  const available = idleSlots.filter(s => s !== currentSlotId && !occupied.has(s))
+  if (available.length === 0) return
+
+  const destSlotId = available[Math.floor(Math.random() * available.length)]
+  const from = SLOT_POSITIONS[currentSlotId]
+  const to = SLOT_POSITIONS[destSlotId]
+
+  removeFromSlot(agent.member_id, currentSlotId)
+  const { dur } = createWalkElement(agent, from, to)
+  if (dur === 0) return
+
+  walkingAgents[agent.member_id] = setTimeout(() => {
+    const el = document.getElementById('walk-' + agent.member_id)
+    if (el) el.remove()
+    delete walkingAgents[agent.member_id]
+    placeAtSlot(agent, destSlotId)
+  }, dur * 1000 + 100)
+}
+
+// ── Behavior: Stroll (walk through multiple waypoints) ──
+function doStroll(agent, currentSlotId, occupied) {
+  const route = STROLL_ROUTES[Math.floor(Math.random() * STROLL_ROUTES.length)]
+  const from = SLOT_POSITIONS[currentSlotId]
+
+  const standSlots = ['stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
+  const available = standSlots.filter(s => s !== currentSlotId && !occupied.has(s))
+  if (available.length === 0) { doWander(agent, currentSlotId, occupied); return }
+
+  const destSlotId = available[Math.floor(Math.random() * available.length)]
+  const destPos = SLOT_POSITIONS[destSlotId]
+
+  // Build path: current pos -> waypoints -> destination
+  const points = [from, ...route.map(k => ACTIVITY_POINTS[k]), destPos]
+
+  removeFromSlot(agent.member_id, currentSlotId)
+
+  let totalDelay = 0
+  const timeouts = []
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const segFrom = points[i]
+    const segTo = points[i + 1]
+    const dist = Math.sqrt((segTo.x - segFrom.x)**2 + (segTo.y - segFrom.y)**2)
+    const dur = Math.max(0.6, Math.min(2.0, dist / 250))
+
+    const delay = totalDelay
+    timeouts.push(setTimeout(() => {
+      createWalkElement(agent, segFrom, segTo)
+    }, delay))
+
+    totalDelay += dur * 1000 + 50
+  }
+
+  // Place at destination after full stroll
+  timeouts.push(setTimeout(() => {
+    const walkEl = document.getElementById('walk-' + agent.member_id)
+    if (walkEl) walkEl.remove()
+    delete walkingAgents[agent.member_id]
+    placeAtSlot(agent, destSlotId)
+  }, totalDelay + 100))
+
+  walkingAgents[agent.member_id] = timeouts
+}
+
+// ── Behavior: Activity Visit (vending machine, bookshelf, etc.) ──
+function doActivityVisit(agent, currentSlotId, occupied, activityKey) {
+  const from = SLOT_POSITIONS[currentSlotId]
+  const actPos = ACTIVITY_POINTS[activityKey]
+  if (!actPos) { doWander(agent, currentSlotId, occupied); return }
+
+  const texts = THOUGHT_TEXTS[activityKey] || ['...']
+  const thoughtText = texts[Math.floor(Math.random() * texts.length)]
+  const pauseDur = 3000 + Math.random() * 4000  // 3-7 seconds at activity
+
+  removeFromSlot(agent.member_id, currentSlotId)
+
+  // Step 1: Walk to activity point
+  const { dur: dur1 } = createWalkElement(agent, from, actPos)
+  if (dur1 === 0) return
+
+  const timeouts = []
+
+  // Step 2: Arrive, stand with thought bubble
+  timeouts.push(setTimeout(() => {
+    const walkEl = document.getElementById('walk-' + agent.member_id)
+    if (walkEl) walkEl.remove()
+    placeAtActivity(agent, actPos, thoughtText, pauseDur / 1000)
+  }, dur1 * 1000 + 100))
+
+  // Step 3: After pause, walk to a random available slot
+  timeouts.push(setTimeout(() => {
+    removeActivity(agent.member_id)
+
+    const currentOccupied = new Set(Object.values(prevSlotMap))
+    const destSlotId = findAvailableSlot(currentOccupied, false)
+    if (!destSlotId) {
+      delete walkingAgents[agent.member_id]
+      return
+    }
+    const destPos = SLOT_POSITIONS[destSlotId]
+    const { dur: dur2 } = createWalkElement(agent, actPos, destPos)
+
+    timeouts.push(setTimeout(() => {
+      const walkEl = document.getElementById('walk-' + agent.member_id)
+      if (walkEl) walkEl.remove()
+      delete walkingAgents[agent.member_id]
+      placeAtSlot(agent, destSlotId)
+    }, dur2 * 1000 + 100))
+  }, dur1 * 1000 + 100 + pauseDur))
+
+  walkingAgents[agent.member_id] = timeouts
+}
+
+// ── Behavior: Sofa Nap (walk to sofa and sleep) ──
+function doSofaNap(agent, currentSlotId, occupied) {
+  if (currentSlotId.startsWith('sofa-')) { doWander(agent, currentSlotId, occupied); return }
+
+  const sofaSlots = ['sofa-slot-0', 'sofa-slot-1']
+  const availSofa = sofaSlots.filter(s => !occupied.has(s))
+  if (availSofa.length === 0) { doWander(agent, currentSlotId, occupied); return }
+
+  const destSlotId = availSofa[Math.floor(Math.random() * availSofa.length)]
+  const from = SLOT_POSITIONS[currentSlotId]
+  const to = SLOT_POSITIONS[destSlotId]
+
+  removeFromSlot(agent.member_id, currentSlotId)
+  const { dur } = createWalkElement(agent, from, to)
+  if (dur === 0) return
+
+  walkingAgents[agent.member_id] = setTimeout(() => {
+    const walkEl = document.getElementById('walk-' + agent.member_id)
+    if (walkEl) walkEl.remove()
+    delete walkingAgents[agent.member_id]
+    placeAtSlot(agent, destSlotId)
+  }, dur * 1000 + 100)
+}
+
+// ── Main behavior dispatcher ──
+function performIdleBehavior() {
+  const data = lastAgentData
+  if (!data || data.length === 0) return
+
+  const idle = data.filter(a => a.status !== 'active' && !walkingAgents[a.member_id])
+  if (idle.length < 1) return
+
+  const agent = idle[Math.floor(Math.random() * idle.length)]
+  const currentSlotId = prevSlotMap[agent.member_id]
+  if (!currentSlotId || !SLOT_POSITIONS[currentSlotId]) return
+  if (currentSlotId.startsWith('desk-')) return
+
+  const occupied = new Set(Object.values(prevSlotMap))
+
+  // Weighted random behavior selection
+  const behaviors = [
+    { type: 'wander',    weight: 3 },
+    { type: 'stroll',    weight: 2 },
+    { type: 'sofa-nap',  weight: 2 },
+    { type: 'vending',   weight: 1.5 },
+    { type: 'bookshelf', weight: 1.5 },
+  ]
+  const total = behaviors.reduce((s, b) => s + b.weight, 0)
+  let r = Math.random() * total
+  let picked = 'wander'
+  for (const b of behaviors) {
+    r -= b.weight
+    if (r <= 0) { picked = b.type; break }
+  }
+
+  switch (picked) {
+    case 'stroll':    doStroll(agent, currentSlotId, occupied); break
+    case 'sofa-nap':  doSofaNap(agent, currentSlotId, occupied); break
+    case 'vending':   doActivityVisit(agent, currentSlotId, occupied, 'vending'); break
+    case 'bookshelf': doActivityVisit(agent, currentSlotId, occupied, 'bookshelf'); break
+    default:          doWander(agent, currentSlotId, occupied); break
+  }
+}
+
+function scheduleNextWander() {
+  const delay = 3000 + Math.floor(Math.random() * 5000)
+  setTimeout(() => {
+    performIdleBehavior()
+    scheduleNextWander()
+  }, delay)
 }
 
 // ── Polling ──
@@ -1845,6 +2258,7 @@ renderRoom([])
 fetchAgents()
 setInterval(fetchAgents, POLL_INTERVAL)
 setInterval(updateInfo, 1000)
+scheduleNextWander()
 </script>
 
 </body>
