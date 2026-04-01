@@ -1927,20 +1927,27 @@ function renderRoom(agents) {
   mpEl.style.width = mpPct + '%'
 }
 
-// ── Idle Agent Behavior System ──
-let walkingAgents = {} // member_id -> timeoutId or array of timeoutIds
+// ── Idle Agent Behavior System (requestAnimationFrame driven) ──
+let walkingAgents = {} // member_id -> { cancelAnim, timeouts }
 
 function clearWalking() {
-  Object.values(walkingAgents).forEach(v => {
-    if (Array.isArray(v)) v.forEach(tid => clearTimeout(tid))
-    else clearTimeout(v)
+  Object.values(walkingAgents).forEach(w => {
+    if (w.cancelAnim) w.cancelAnim()
+    if (w.timeouts) w.timeouts.forEach(tid => clearTimeout(tid))
   })
   walkingAgents = {}
   const wl = document.getElementById('walk-layer')
   if (wl) wl.innerHTML = ''
 }
 
-// Activity waypoints (non-slot locations agents can visit)
+function registerWalk(memberId, cancelAnim, timeouts) {
+  walkingAgents[memberId] = { cancelAnim: cancelAnim || null, timeouts: timeouts || [] }
+}
+function finishWalk(memberId) {
+  delete walkingAgents[memberId]
+}
+
+// Activity waypoints
 const ACTIVITY_POINTS = {
   'vending':   {x:74, y:320},
   'bookshelf': {x:850, y:140},
@@ -1951,7 +1958,6 @@ const ACTIVITY_POINTS = {
   'hall-right':{x:920, y:430},
 }
 
-// Stroll routes — sequences of waypoint keys to walk through
 const STROLL_ROUTES = [
   ['center-a', 'center-b'],
   ['center-a', 'entrance', 'center-b'],
@@ -1961,13 +1967,11 @@ const STROLL_ROUTES = [
   ['hall-left', 'center-a', 'center-b', 'hall-right'],
 ]
 
-// Activity thought texts (randomly picked)
 const THOUGHT_TEXTS = {
   'vending':   ['ｼﾞｭｰｽ', 'ｺｰﾋｰ♪', 'ﾎｯﾄ一息', 'ﾌﾞﾚｲｸ!'],
   'bookshelf': ['ﾌﾑﾌﾑ..', 'ﾅﾙﾎﾄﾞ!', 'ﾒﾓﾒﾓ', 'ｲｲ本♪'],
 }
 
-// SVG thought bubble
 function svgThought(text, x, y, durSec) {
   return `
     <g class="thought-anim" style="--thought-dur:${durSec}s;">
@@ -1978,86 +1982,116 @@ function svgThought(text, x, y, durSec) {
     </g>`
 }
 
-// Create walking SVG element, returns { dur (seconds) }
-// Speed: ~100px/s — RPG-style steady walking pace
-function createWalkElement(agent, from, to) {
-  const ck = charColor(agent.member_id)
-  const dist = Math.sqrt((to.x - from.x)**2 + (to.y - from.y)**2)
-  const dur = Math.max(1.2, dist / 100)
+// ── Core: requestAnimationFrame walk along waypoints ──
+// Returns { dur (seconds), cancel (function) }
+// onComplete called when walk finishes naturally
+const WALK_SPEED = 100 // px/s
 
+function startWalk(agent, waypoints, onComplete) {
   const walkLayer = document.getElementById('walk-layer')
-  if (!walkLayer) return { dur: 0 }
+  if (!walkLayer || waypoints.length < 2) { if (onComplete) onComplete(); return { dur: 0, cancel: null } }
+
+  const ck = charColor(agent.member_id)
+  const walkSvg = svgWalking(ck, agent.member_id)
+  const nameLabel = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, 'idle')
+
+  // Build segments
+  let totalDist = 0
+  const segs = []
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const a = waypoints[i], b = waypoints[i + 1]
+    const d = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2)
+    segs.push({ from: a, to: b, dist: d, start: totalDist })
+    totalDist += d
+  }
+  const totalDur = Math.max(1.0, totalDist / WALK_SPEED)
 
   const walkId = 'walk-' + agent.member_id
   const existing = document.getElementById(walkId)
   if (existing) existing.remove()
 
-  const walkSvg = svgWalking(ck, agent.member_id)
-  const nameLabel = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, 'idle')
-
-  // Flip character to face movement direction
-  const facingLeft = to.x < from.x
-  const flipTransform = facingLeft ? `translate(18,0) scale(-1,1) translate(-18,0)` : ''
-
   const walkEl = document.createElementNS('http://www.w3.org/2000/svg', 'g')
   walkEl.id = walkId
   walkEl.innerHTML = `
-    <animateTransform attributeName="transform" type="translate"
-      from="${from.x} ${from.y}" to="${to.x} ${to.y}"
-      dur="${dur}s" fill="freeze" calcMode="linear"/>
     <g class="walk-bounce">
-      <g transform="translate(-18,-44)"><g transform="${flipTransform}">${walkSvg}</g></g>
+      <g transform="translate(-18,-44)"><g id="${walkId}-flip">${walkSvg}</g></g>
     </g>
     ${nameLabel}`
+  walkEl.setAttribute('transform', `translate(${waypoints[0].x},${waypoints[0].y})`)
   walkLayer.appendChild(walkEl)
 
-  return { dur }
+  const flipEl = document.getElementById(walkId + '-flip')
+  let curFacing = null
+  let animId = null
+  let cancelled = false
+  const t0 = performance.now()
+
+  function tick(now) {
+    if (cancelled) return
+    const elapsed = (now - t0) / 1000
+    const progress = Math.min(elapsed / totalDur, 1)
+    const traveled = progress * totalDist
+
+    // Find segment
+    let seg = segs[segs.length - 1]
+    for (let i = 0; i < segs.length; i++) {
+      if (traveled <= segs[i].start + segs[i].dist) { seg = segs[i]; break }
+    }
+    const sp = seg.dist > 0 ? Math.min((traveled - seg.start) / seg.dist, 1) : 1
+    const x = seg.from.x + (seg.to.x - seg.from.x) * sp
+    const y = seg.from.y + (seg.to.y - seg.from.y) * sp
+    walkEl.setAttribute('transform', `translate(${x},${y})`)
+
+    // Facing direction
+    const facing = seg.to.x < seg.from.x ? 'L' : 'R'
+    if (facing !== curFacing && flipEl) {
+      curFacing = facing
+      flipEl.setAttribute('transform', facing === 'L' ? 'translate(36,0) scale(-1,1)' : '')
+    }
+
+    if (progress < 1) {
+      animId = requestAnimationFrame(tick)
+    } else {
+      walkEl.remove()
+      if (onComplete) onComplete()
+    }
+  }
+  animId = requestAnimationFrame(tick)
+
+  return {
+    dur: totalDur,
+    cancel: () => { cancelled = true; if (animId) cancelAnimationFrame(animId); const el = document.getElementById(walkId); if (el) el.remove() }
+  }
 }
 
-// Place agent at an activity point (standing with optional thought bubble)
+// ── Helpers ──
 function placeAtActivity(agent, pos, thoughtText, durSec) {
   const walkLayer = document.getElementById('walk-layer')
   if (!walkLayer) return
-
   const actId = 'act-' + agent.member_id
   const existing = document.getElementById(actId)
   if (existing) existing.remove()
-
   const ck = charColor(agent.member_id)
   const idleSvg = svgIdle(ck, agent.member_id)
   const nameLabel = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, 'idle')
   const thought = thoughtText ? svgThought(thoughtText, 18, -54, durSec) : ''
-
   const actEl = document.createElementNS('http://www.w3.org/2000/svg', 'g')
   actEl.id = actId
   actEl.setAttribute('transform', `translate(${pos.x},${pos.y})`)
-  actEl.innerHTML = `
-    <g class="look-anim">
-      <g transform="translate(-18,-44)">${idleSvg}</g>
-    </g>
-    ${nameLabel}${thought}`
+  actEl.innerHTML = `<g class="look-anim"><g transform="translate(-18,-44)">${idleSvg}</g></g>${nameLabel}${thought}`
   walkLayer.appendChild(actEl)
 }
 
-function removeActivity(memberId) {
-  const el = document.getElementById('act-' + memberId)
-  if (el) el.remove()
-}
+function removeActivity(mid) { const el = document.getElementById('act-' + mid); if (el) el.remove() }
 
-// Place agent at a destination slot
 function placeAtSlot(agent, slotId) {
   const slot = document.getElementById(slotId)
   if (!slot) return
-
   const ck = charColor(agent.member_id)
   if (slotId.startsWith('sofa-')) {
-    const sleepSvg = svgSleeping(ck)
-    const nl = svgNameLabel(agent.name, '#8a8a9a', 32, 50, agent.role, agent.status)
-    slot.innerHTML = `<g transform="translate(-8, 4)">${sleepSvg}</g>${nl}`
+    slot.innerHTML = `<g transform="translate(-8, 4)">${svgSleeping(ck)}</g>${svgNameLabel(agent.name, '#8a8a9a', 32, 50, agent.role, agent.status)}`
   } else {
-    const idleSvg2 = svgIdle(ck, agent.member_id)
-    const nl = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, agent.status)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${idleSvg2}</g>${nl}`
+    slot.innerHTML = `<g transform="translate(-18,-44)">${svgIdle(ck, agent.member_id)}</g>${svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, agent.status)}`
   }
   slot.setAttribute('data-member-id', agent.member_id)
   slot.style.cursor = 'pointer'
@@ -2065,218 +2099,129 @@ function placeAtSlot(agent, slotId) {
   prevSlotMap[agent.member_id] = slotId
 }
 
-// Remove agent from their current slot
-function removeFromSlot(memberId, slotId) {
-  const srcSlot = document.getElementById(slotId)
-  if (srcSlot) {
-    srcSlot.innerHTML = ''
-    srcSlot.removeAttribute('data-member-id')
-  }
-  delete prevSlotMap[memberId]
+function removeFromSlot(mid, slotId) {
+  const el = document.getElementById(slotId)
+  if (el) { el.innerHTML = ''; el.removeAttribute('data-member-id') }
+  delete prevSlotMap[mid]
 }
 
-// Find an available idle slot
 function findAvailableSlot(occupied, preferSofa) {
-  const sofaSlots = ['sofa-slot-0', 'sofa-slot-1']
-  const standSlots = ['stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
-  if (preferSofa) {
-    const avail = sofaSlots.filter(s => !occupied.has(s))
-    if (avail.length > 0) return avail[Math.floor(Math.random() * avail.length)]
-  }
-  const all = [...sofaSlots, ...standSlots].filter(s => !occupied.has(s))
-  return all.length > 0 ? all[Math.floor(Math.random() * all.length)] : null
+  const sofa = ['sofa-slot-0','sofa-slot-1']
+  const stand = ['stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
+  if (preferSofa) { const a = sofa.filter(s => !occupied.has(s)); if (a.length) return a[Math.floor(Math.random() * a.length)] }
+  const all = [...sofa, ...stand].filter(s => !occupied.has(s))
+  return all.length ? all[Math.floor(Math.random() * all.length)] : null
 }
 
-// ── Behavior: Simple Wander (move to another random slot) ──
+// ── Behavior: Wander ──
 function doWander(agent, currentSlotId, occupied) {
-  const idleSlots = ['sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
-  const available = idleSlots.filter(s => s !== currentSlotId && !occupied.has(s))
-  if (available.length === 0) return
-
-  const destSlotId = available[Math.floor(Math.random() * available.length)]
-  const from = SLOT_POSITIONS[currentSlotId]
-  const to = SLOT_POSITIONS[destSlotId]
-
+  const slots = ['sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
+  const avail = slots.filter(s => s !== currentSlotId && !occupied.has(s))
+  if (!avail.length) return
+  const destId = avail[Math.floor(Math.random() * avail.length)]
   removeFromSlot(agent.member_id, currentSlotId)
-  const { dur } = createWalkElement(agent, from, to)
-  if (dur === 0) return
-
-  walkingAgents[agent.member_id] = setTimeout(() => {
-    const el = document.getElementById('walk-' + agent.member_id)
-    if (el) el.remove()
-    delete walkingAgents[agent.member_id]
-    placeAtSlot(agent, destSlotId)
-  }, dur * 1000 + 100)
+  const w = startWalk(agent, [SLOT_POSITIONS[currentSlotId], SLOT_POSITIONS[destId]], () => {
+    finishWalk(agent.member_id)
+    placeAtSlot(agent, destId)
+  })
+  registerWalk(agent.member_id, w.cancel, [])
 }
 
-// ── Behavior: Stroll (walk through multiple waypoints) ──
+// ── Behavior: Stroll (continuous multi-waypoint walk) ──
 function doStroll(agent, currentSlotId, occupied) {
   const route = STROLL_ROUTES[Math.floor(Math.random() * STROLL_ROUTES.length)]
-  const from = SLOT_POSITIONS[currentSlotId]
-
-  const standSlots = ['stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
-  const available = standSlots.filter(s => s !== currentSlotId && !occupied.has(s))
-  if (available.length === 0) { doWander(agent, currentSlotId, occupied); return }
-
-  const destSlotId = available[Math.floor(Math.random() * available.length)]
-  const destPos = SLOT_POSITIONS[destSlotId]
-
-  // Build path: current pos -> waypoints -> destination
-  const points = [from, ...route.map(k => ACTIVITY_POINTS[k]), destPos]
-
+  const stand = ['stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
+  const avail = stand.filter(s => s !== currentSlotId && !occupied.has(s))
+  if (!avail.length) { doWander(agent, currentSlotId, occupied); return }
+  const destId = avail[Math.floor(Math.random() * avail.length)]
+  const points = [SLOT_POSITIONS[currentSlotId], ...route.map(k => ACTIVITY_POINTS[k]), SLOT_POSITIONS[destId]]
   removeFromSlot(agent.member_id, currentSlotId)
-
-  let totalDelay = 0
-  const timeouts = []
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const segFrom = points[i]
-    const segTo = points[i + 1]
-    const dist = Math.sqrt((segTo.x - segFrom.x)**2 + (segTo.y - segFrom.y)**2)
-    const dur = Math.max(1.0, dist / 100)
-
-    const delay = totalDelay
-    timeouts.push(setTimeout(() => {
-      createWalkElement(agent, segFrom, segTo)
-    }, delay))
-
-    totalDelay += dur * 1000 + 50
-  }
-
-  // Place at destination after full stroll
-  timeouts.push(setTimeout(() => {
-    const walkEl = document.getElementById('walk-' + agent.member_id)
-    if (walkEl) walkEl.remove()
-    delete walkingAgents[agent.member_id]
-    placeAtSlot(agent, destSlotId)
-  }, totalDelay + 100))
-
-  walkingAgents[agent.member_id] = timeouts
+  const w = startWalk(agent, points, () => {
+    finishWalk(agent.member_id)
+    placeAtSlot(agent, destId)
+  })
+  registerWalk(agent.member_id, w.cancel, [])
 }
 
-// ── Behavior: Activity Visit (vending machine, bookshelf, etc.) ──
+// ── Behavior: Activity Visit ──
 function doActivityVisit(agent, currentSlotId, occupied, activityKey) {
   const from = SLOT_POSITIONS[currentSlotId]
   const actPos = ACTIVITY_POINTS[activityKey]
   if (!actPos) { doWander(agent, currentSlotId, occupied); return }
-
   const texts = THOUGHT_TEXTS[activityKey] || ['...']
-  const thoughtText = texts[Math.floor(Math.random() * texts.length)]
-  const pauseDur = 3000 + Math.random() * 4000  // 3-7 seconds at activity
+  const thought = texts[Math.floor(Math.random() * texts.length)]
+  const pauseDur = 3000 + Math.random() * 4000
 
   removeFromSlot(agent.member_id, currentSlotId)
 
-  // Step 1: Walk to activity point
-  const { dur: dur1 } = createWalkElement(agent, from, actPos)
-  if (dur1 === 0) return
+  // Phase 1: Walk to activity
+  const w1 = startWalk(agent, [from, actPos], () => {
+    placeAtActivity(agent, actPos, thought, pauseDur / 1000)
 
-  const timeouts = []
-
-  // Step 2: Arrive, stand with thought bubble
-  timeouts.push(setTimeout(() => {
-    const walkEl = document.getElementById('walk-' + agent.member_id)
-    if (walkEl) walkEl.remove()
-    placeAtActivity(agent, actPos, thoughtText, pauseDur / 1000)
-  }, dur1 * 1000 + 100))
-
-  // Step 3: After pause, walk to a random available slot
-  timeouts.push(setTimeout(() => {
-    removeActivity(agent.member_id)
-
-    const currentOccupied = new Set(Object.values(prevSlotMap))
-    const destSlotId = findAvailableSlot(currentOccupied, false)
-    if (!destSlotId) {
-      delete walkingAgents[agent.member_id]
-      return
-    }
-    const destPos = SLOT_POSITIONS[destSlotId]
-    const { dur: dur2 } = createWalkElement(agent, actPos, destPos)
-
-    timeouts.push(setTimeout(() => {
-      const walkEl = document.getElementById('walk-' + agent.member_id)
-      if (walkEl) walkEl.remove()
-      delete walkingAgents[agent.member_id]
-      placeAtSlot(agent, destSlotId)
-    }, dur2 * 1000 + 100))
-  }, dur1 * 1000 + 100 + pauseDur))
-
-  walkingAgents[agent.member_id] = timeouts
+    // Phase 2: Pause, then walk to slot
+    const tid = setTimeout(() => {
+      removeActivity(agent.member_id)
+      const occ = new Set(Object.values(prevSlotMap))
+      const destId = findAvailableSlot(occ, false)
+      if (!destId) { finishWalk(agent.member_id); return }
+      const w2 = startWalk(agent, [actPos, SLOT_POSITIONS[destId]], () => {
+        finishWalk(agent.member_id)
+        placeAtSlot(agent, destId)
+      })
+      registerWalk(agent.member_id, w2.cancel, [])
+    }, pauseDur)
+    registerWalk(agent.member_id, null, [tid])
+  })
+  registerWalk(agent.member_id, w1.cancel, [])
 }
 
-// ── Behavior: Sofa Nap (walk to sofa and sleep) ──
+// ── Behavior: Sofa Nap ──
 function doSofaNap(agent, currentSlotId, occupied) {
   if (currentSlotId.startsWith('sofa-')) { doWander(agent, currentSlotId, occupied); return }
-
-  const sofaSlots = ['sofa-slot-0', 'sofa-slot-1']
-  const availSofa = sofaSlots.filter(s => !occupied.has(s))
-  if (availSofa.length === 0) { doWander(agent, currentSlotId, occupied); return }
-
-  const destSlotId = availSofa[Math.floor(Math.random() * availSofa.length)]
-  const from = SLOT_POSITIONS[currentSlotId]
-  const to = SLOT_POSITIONS[destSlotId]
-
+  const sofa = ['sofa-slot-0','sofa-slot-1'].filter(s => !occupied.has(s))
+  if (!sofa.length) { doWander(agent, currentSlotId, occupied); return }
+  const destId = sofa[Math.floor(Math.random() * sofa.length)]
   removeFromSlot(agent.member_id, currentSlotId)
-  const { dur } = createWalkElement(agent, from, to)
-  if (dur === 0) return
-
-  walkingAgents[agent.member_id] = setTimeout(() => {
-    const walkEl = document.getElementById('walk-' + agent.member_id)
-    if (walkEl) walkEl.remove()
-    delete walkingAgents[agent.member_id]
-    placeAtSlot(agent, destSlotId)
-  }, dur * 1000 + 100)
+  const w = startWalk(agent, [SLOT_POSITIONS[currentSlotId], SLOT_POSITIONS[destId]], () => {
+    finishWalk(agent.member_id)
+    placeAtSlot(agent, destId)
+  })
+  registerWalk(agent.member_id, w.cancel, [])
 }
 
-// ── Main behavior dispatcher ──
+// ── Dispatcher ──
 function pickBehavior() {
-  const behaviors = [
-    { type: 'wander',    weight: 3 },
-    { type: 'stroll',    weight: 2 },
-    { type: 'sofa-nap',  weight: 2 },
-    { type: 'vending',   weight: 1.5 },
-    { type: 'bookshelf', weight: 1.5 },
-  ]
-  const total = behaviors.reduce((s, b) => s + b.weight, 0)
+  const b = [{t:'wander',w:3},{t:'stroll',w:2},{t:'sofa-nap',w:2},{t:'vending',w:1.5},{t:'bookshelf',w:1.5}]
+  const total = b.reduce((s,x) => s + x.w, 0)
   let r = Math.random() * total
-  for (const b of behaviors) {
-    r -= b.weight
-    if (r <= 0) return b.type
-  }
+  for (const x of b) { r -= x.w; if (r <= 0) return x.t }
   return 'wander'
 }
 
-function dispatchBehavior(agent, currentSlotId, occupied) {
-  const picked = pickBehavior()
-  switch (picked) {
-    case 'stroll':    doStroll(agent, currentSlotId, occupied); break
-    case 'sofa-nap':  doSofaNap(agent, currentSlotId, occupied); break
-    case 'vending':   doActivityVisit(agent, currentSlotId, occupied, 'vending'); break
-    case 'bookshelf': doActivityVisit(agent, currentSlotId, occupied, 'bookshelf'); break
-    default:          doWander(agent, currentSlotId, occupied); break
-  }
+function dispatchBehavior(agent, slotId, occupied) {
+  const p = pickBehavior()
+  if (p === 'stroll')    return doStroll(agent, slotId, occupied)
+  if (p === 'sofa-nap')  return doSofaNap(agent, slotId, occupied)
+  if (p === 'vending')   return doActivityVisit(agent, slotId, occupied, 'vending')
+  if (p === 'bookshelf') return doActivityVisit(agent, slotId, occupied, 'bookshelf')
+  doWander(agent, slotId, occupied)
 }
 
 function performIdleBehavior() {
   const data = lastAgentData
-  if (!data || data.length === 0) return
-
-  const idle = data.filter(a => a.status !== 'active' && !walkingAgents[a.member_id])
-  const eligible = idle.filter(a => {
-    const slotId = prevSlotMap[a.member_id]
-    return slotId && SLOT_POSITIONS[slotId] && !slotId.startsWith('desk-')
-  })
-  if (eligible.length < 1) return
-
-  // Pick 2-3 agents at once (or fewer if not enough available)
+  if (!data || !data.length) return
+  const eligible = data.filter(a =>
+    a.status !== 'active' && !walkingAgents[a.member_id] &&
+    prevSlotMap[a.member_id] && SLOT_POSITIONS[prevSlotMap[a.member_id]] &&
+    !prevSlotMap[a.member_id].startsWith('desk-')
+  )
+  if (!eligible.length) return
   const count = Math.min(eligible.length, 2 + Math.floor(Math.random() * 2))
   const shuffled = eligible.sort(() => Math.random() - 0.5)
   const occupied = new Set(Object.values(prevSlotMap))
-
   for (let i = 0; i < count; i++) {
-    const agent = shuffled[i]
-    const currentSlotId = prevSlotMap[agent.member_id]
-    if (!currentSlotId) continue
-    dispatchBehavior(agent, currentSlotId, occupied)
+    const a = shuffled[i], sid = prevSlotMap[a.member_id]
+    if (sid) dispatchBehavior(a, sid, occupied)
   }
 }
 
