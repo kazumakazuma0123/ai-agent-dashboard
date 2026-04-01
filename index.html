@@ -234,6 +234,11 @@ body {
   80% { opacity:.9; transform: translateY(-10px); }
   100% { opacity:0; transform: translateY(-16px); }
 }
+@keyframes walk-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+.walk-bounce { animation: walk-bounce 0.3s ease-in-out infinite; }
 @keyframes walk-a {
   0%, 49.9% { visibility: visible; }
   50%, 100% { visibility: hidden; }
@@ -2000,9 +2005,7 @@ function createWalkElement(agent, from, to) {
     <animateTransform attributeName="transform" type="translate"
       from="${from.x} ${from.y}" to="${to.x} ${to.y}"
       dur="${dur}s" fill="freeze" calcMode="linear"/>
-    <g>
-      <animateTransform attributeName="transform" type="translate"
-        values="0 0;0 -2;0 0" dur="0.3s" repeatCount="indefinite"/>
+    <g class="walk-bounce">
       <g transform="translate(-18,-44)"><g transform="${flipTransform}">${walkSvg}</g></g>
     </g>
     ${nameLabel}`
@@ -2225,21 +2228,7 @@ function doSofaNap(agent, currentSlotId, occupied) {
 }
 
 // ── Main behavior dispatcher ──
-function performIdleBehavior() {
-  const data = lastAgentData
-  if (!data || data.length === 0) return
-
-  const idle = data.filter(a => a.status !== 'active' && !walkingAgents[a.member_id])
-  if (idle.length < 1) return
-
-  const agent = idle[Math.floor(Math.random() * idle.length)]
-  const currentSlotId = prevSlotMap[agent.member_id]
-  if (!currentSlotId || !SLOT_POSITIONS[currentSlotId]) return
-  if (currentSlotId.startsWith('desk-')) return
-
-  const occupied = new Set(Object.values(prevSlotMap))
-
-  // Weighted random behavior selection
+function pickBehavior() {
   const behaviors = [
     { type: 'wander',    weight: 3 },
     { type: 'stroll',    weight: 2 },
@@ -2249,18 +2238,45 @@ function performIdleBehavior() {
   ]
   const total = behaviors.reduce((s, b) => s + b.weight, 0)
   let r = Math.random() * total
-  let picked = 'wander'
   for (const b of behaviors) {
     r -= b.weight
-    if (r <= 0) { picked = b.type; break }
+    if (r <= 0) return b.type
   }
+  return 'wander'
+}
 
+function dispatchBehavior(agent, currentSlotId, occupied) {
+  const picked = pickBehavior()
   switch (picked) {
     case 'stroll':    doStroll(agent, currentSlotId, occupied); break
     case 'sofa-nap':  doSofaNap(agent, currentSlotId, occupied); break
     case 'vending':   doActivityVisit(agent, currentSlotId, occupied, 'vending'); break
     case 'bookshelf': doActivityVisit(agent, currentSlotId, occupied, 'bookshelf'); break
     default:          doWander(agent, currentSlotId, occupied); break
+  }
+}
+
+function performIdleBehavior() {
+  const data = lastAgentData
+  if (!data || data.length === 0) return
+
+  const idle = data.filter(a => a.status !== 'active' && !walkingAgents[a.member_id])
+  const eligible = idle.filter(a => {
+    const slotId = prevSlotMap[a.member_id]
+    return slotId && SLOT_POSITIONS[slotId] && !slotId.startsWith('desk-')
+  })
+  if (eligible.length < 1) return
+
+  // Pick 2-3 agents at once (or fewer if not enough available)
+  const count = Math.min(eligible.length, 2 + Math.floor(Math.random() * 2))
+  const shuffled = eligible.sort(() => Math.random() - 0.5)
+  const occupied = new Set(Object.values(prevSlotMap))
+
+  for (let i = 0; i < count; i++) {
+    const agent = shuffled[i]
+    const currentSlotId = prevSlotMap[agent.member_id]
+    if (!currentSlotId) continue
+    dispatchBehavior(agent, currentSlotId, occupied)
   }
 }
 
