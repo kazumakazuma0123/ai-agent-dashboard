@@ -68,7 +68,7 @@ function describeToolUse(tool, input) {
     case 'WebFetch':  return 'Web取得'
     case 'WebSearch': return 'Web検索'
     case 'TodoWrite': return 'TODOを更新'
-    case 'Agent':     return 'サブエージェント起動'
+    case 'Agent':     return (input?.description || 'サブエージェント起動').slice(0, 40)
     default:          return tool
   }
 }
@@ -145,6 +145,26 @@ const SKILL_MEMBER_MAP = {
   ceo: 'matsumoto', standup: 'matsumoto',
 }
 
+// ── Agentツール委任検知用: 社員キーワード ──
+const MEMBER_KEYWORDS = {
+  kobayashi: ['イーサン', 'kobayashi.md', 'kobayashi', 'エンジニア'],
+  ito:       ['ソフィー', 'ito.md', '集客マネージャー'],
+  takahashi: ['ルカス', 'takahashi.md', '清掃マネージャー'],
+  tanaka:    ['ニコル', 'tanaka.md', 'リサーチャー'],
+  yamada:    ['アレックス', 'yamada.md', 'ライター'],
+  suzuki:    ['エマ', 'suzuki.md', 'エディター'],
+  yoshida:   ['マックス', 'yoshida.md', '自動化エンジニア'],
+  // 部長は別ルートで活性化されるので省略
+}
+
+// 部長→部下の関係
+const DEPARTMENT_MEMBERS = {
+  sato:     ['tanaka', 'yamada', 'suzuki'],
+  nakamura: ['ito', 'takahashi'],
+  watanabe: ['kobayashi'],
+  kato:     ['yoshida'],
+}
+
 // セッションで最初にactiveになった社員を記録（セッション終了時のフォールバック用）
 function autoActivateMember(memberId, sessionId, command, task) {
   const state = memberState.get(memberId)
@@ -194,6 +214,25 @@ app.post('/api/update', (req, res) => {
     if (targetMember) {
       autoActivateMember(targetMember, session_id, '/' + skillName, tool_input.args || null)
       member_id = targetMember
+    }
+  }
+
+  // ── Agentツール検知 → 委任先の社員を自動active化 ──
+  if (tool_name === 'Agent' && session_id) {
+    const text = ((tool_input?.description || '') + ' ' + (tool_input?.prompt || '')).slice(0, 500)
+    // 親セッションの部長を特定
+    const parentMember = sessionMemberMap.get(session_id)
+    const parentState = parentMember ? memberState.get(parentMember) : null
+    const parentCommand = parentState?.command || null
+
+    for (const [mid, keywords] of Object.entries(MEMBER_KEYWORDS)) {
+      if (keywords.some(kw => text.includes(kw))) {
+        // 委任先を見つけた — 別セッションIDで活性化
+        const delegateSessionId = session_id + ':delegate:' + mid
+        const task = (tool_input?.description || '').slice(0, 80) || null
+        autoActivateMember(mid, delegateSessionId, parentCommand, task)
+        break
+      }
     }
   }
 
