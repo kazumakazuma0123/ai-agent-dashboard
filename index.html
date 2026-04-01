@@ -1725,6 +1725,8 @@ function showCharPopup(memberId) {
 }
 
 // ── Render agents into SVG + info panel ──
+let lastStatusKey = ''
+
 function renderRoom(agents) {
   // Use API data if available, else defaults
   const data = (agents.length > 0 && agents[0].member_id) ? agents : MEMBERS_DEFAULT
@@ -1732,79 +1734,96 @@ function renderRoom(agents) {
   const active = data.filter(a => a.status === 'active')
   const nonActive = data.filter(a => a.status !== 'active')
 
-  // Cancel any in-progress idle wandering
-  clearWalking()
+  // Only re-render the SVG room when agent statuses actually change
+  // This prevents periodic polling from killing idle behaviors
+  const statusKey = data.map(a => a.member_id + ':' + a.status).sort().join(',')
+  const statusChanged = statusKey !== lastStatusKey
+  lastStatusKey = statusKey
 
-  // Clear all slots
   const allSlotIds = ['desk-slot-0','desk-slot-1','desk-slot-2','sofa-slot-0','sofa-slot-1','stand-slot-0','stand-slot-1','stand-slot-2','stand-slot-3','stand-slot-4','stand-slot-5','stand-slot-6','stand-slot-7','stand-slot-8']
-  allSlotIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '' })
-  for (let i = 0; i < 3; i++) {
-    const screen = document.getElementById('screen-' + i)
-    if (screen) screen.setAttribute('fill', '#1a2a1a')
-  }
 
-  // Desk slots (active agents, up to 3)
-  for (let i = 0; i < 3 && i < active.length; i++) {
-    const slot = document.getElementById('desk-slot-' + i)
-    const screen = document.getElementById('screen-' + i)
-    const a = active[i], ck = charColor(a.member_id)
-    const label = a.command || taskLabel(a)
-    const charSvg = svgWorking(ck, i, a.member_id)
-    const glowSvg = `<circle cx="18" cy="0" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
-    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
-    const taskBubble = svgBubble(label, '#f8c818', 18, -8)
+  if (statusChanged) {
+    // Cancel any in-progress idle wandering
+    clearWalking()
 
-    // Walk-to-desk animation (from previous idle slot)
-    const deskId = 'desk-slot-' + i
-    const prev = prevSlotMap[a.member_id]
-    let wOpen = '', wClose = ''
-    if (prev && prev !== deskId && SLOT_POSITIONS[prev]) {
-      const dx = SLOT_POSITIONS[prev].x - SLOT_POSITIONS[deskId].x
-      const dy = SLOT_POSITIONS[prev].y - SLOT_POSITIONS[deskId].y
-      wOpen = `<g><animateTransform attributeName="transform" type="translate" from="${dx} ${dy}" to="0 0" dur="0.8s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/><g><animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -6;0 0;0 -3;0 0" dur="0.8s" fill="freeze"/>`
-      wClose = `</g></g>`
+    // Clear all slots
+    allSlotIds.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = '' })
+    for (let i = 0; i < 3; i++) {
+      const screen = document.getElementById('screen-' + i)
+      if (screen) screen.setAttribute('fill', '#1a2a1a')
     }
 
-    // カタカタ typing effect
-    const kataText = `<text x="18" y="-54" text-anchor="middle" font-size="5" fill="#f8c818" class="pixel-font kata-text">カタカタ</text><text x="30" y="-62" text-anchor="middle" font-size="4" fill="#a0d8f0" class="pixel-font kata-text kata-text-delay">カタカタ</text>`
+    // Desk slots (active agents, up to 3)
+    for (let i = 0; i < 3 && i < active.length; i++) {
+      const slot = document.getElementById('desk-slot-' + i)
+      const screen = document.getElementById('screen-' + i)
+      const a = active[i], ck = charColor(a.member_id)
+      const label = a.command || taskLabel(a)
+      const charSvg = svgWorking(ck, i, a.member_id)
+      const glowSvg = `<circle cx="18" cy="0" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
+      const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
+      const taskBubble = svgBubble(label, '#f8c818', 18, -8)
 
-    slot.innerHTML = `${wOpen}${glowSvg}<g class="kata-body" transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}${kataText}${wClose}`
-    slot.setAttribute('data-member-id', a.member_id)
-    slot.style.cursor = 'pointer'
-    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
-    if (screen) screen.setAttribute('fill', '#0a1a0a')
+      // Walk-to-desk animation (from previous idle slot)
+      const deskId = 'desk-slot-' + i
+      const prev = prevSlotMap[a.member_id]
+      let wOpen = '', wClose = ''
+      if (prev && prev !== deskId && SLOT_POSITIONS[prev]) {
+        const dx = SLOT_POSITIONS[prev].x - SLOT_POSITIONS[deskId].x
+        const dy = SLOT_POSITIONS[prev].y - SLOT_POSITIONS[deskId].y
+        wOpen = `<g><animateTransform attributeName="transform" type="translate" from="${dx} ${dy}" to="0 0" dur="0.8s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/><g><animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -6;0 0;0 -3;0 0" dur="0.8s" fill="freeze"/>`
+        wClose = `</g></g>`
+      }
+
+      // カタカタ typing effect
+      const kataText = `<text x="18" y="-54" text-anchor="middle" font-size="5" fill="#f8c818" class="pixel-font kata-text">カタカタ</text><text x="30" y="-62" text-anchor="middle" font-size="4" fill="#a0d8f0" class="pixel-font kata-text kata-text-delay">カタカタ</text>`
+
+      slot.innerHTML = `${wOpen}${glowSvg}<g class="kata-body" transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}${kataText}${wClose}`
+      slot.setAttribute('data-member-id', a.member_id)
+      slot.style.cursor = 'pointer'
+      slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
+      if (screen) screen.setAttribute('fill', '#0a1a0a')
+    }
+
+    // Non-active: idle on sofa/stand
+    let idleIdx = 0
+
+    // Sofa (up to 2 sleeping-style)
+    for (let i = 0; i < 2 && idleIdx < nonActive.length; i++, idleIdx++) {
+      const slot = document.getElementById('sofa-slot-' + i)
+      const a = nonActive[idleIdx], ck = charColor(a.member_id)
+      const charSvg = svgSleeping(ck)
+      const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 50, a.role, a.status)
+      slot.innerHTML = `<g transform="translate(-8, 4)">${charSvg}</g>${nameLabel}`
+      slot.setAttribute('data-member-id', a.member_id)
+      slot.style.cursor = 'pointer'
+      slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
+    }
+
+    // Standing (up to 9)
+    for (let i = 0; i < 9 && idleIdx < nonActive.length; i++, idleIdx++) {
+      const slot = document.getElementById('stand-slot-' + i)
+      const a = nonActive[idleIdx], ck = charColor(a.member_id)
+      const charSvg = svgIdle(ck, a.member_id)
+      const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
+      slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
+      slot.setAttribute('data-member-id', a.member_id)
+      slot.style.cursor = 'pointer'
+      slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
+    }
+
+    // Update slot map for next render's walk animations
+    prevSlotMap = {}
+    allSlotIds.forEach(id => {
+      const el = document.getElementById(id)
+      if (el) {
+        const mid = el.getAttribute('data-member-id')
+        if (mid) prevSlotMap[mid] = id
+      }
+    })
   }
 
-  // Non-active: idle on sofa/stand/desk
-  let idleIdx = 0
-
-  // Sofa (up to 2 sleeping-style)
-  for (let i = 0; i < 2 && idleIdx < nonActive.length; i++, idleIdx++) {
-    const slot = document.getElementById('sofa-slot-' + i)
-    const a = nonActive[idleIdx], ck = charColor(a.member_id)
-    const charSvg = svgSleeping(ck)
-    const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 50, a.role, a.status)
-    slot.innerHTML = `<g transform="translate(-8, 4)">${charSvg}</g>${nameLabel}`
-    slot.setAttribute('data-member-id', a.member_id)
-    slot.style.cursor = 'pointer'
-    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
-  }
-
-  // Standing (up to 9)
-  for (let i = 0; i < 9 && idleIdx < nonActive.length; i++, idleIdx++) {
-    const slot = document.getElementById('stand-slot-' + i)
-    const a = nonActive[idleIdx], ck = charColor(a.member_id)
-    const charSvg = svgIdle(ck, a.member_id)
-    const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
-    slot.innerHTML = `<g transform="translate(-18,-44)">${charSvg}</g>${nameLabel}`
-    slot.setAttribute('data-member-id', a.member_id)
-    slot.style.cursor = 'pointer'
-    slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
-  }
-
-  // (idle agents no longer placed at empty desks — only active agents sit at desks)
-
-  // Info panel — split into active and idle sections
+  // Info panel — always update (even when SVG room is unchanged)
   const panel = document.getElementById('agent-panel')
 
   // Active section
@@ -1867,16 +1886,6 @@ function renderRoom(agents) {
   hpEl.style.width = hpPct + '%'
   hpEl.style.background = hpPct > 60 ? 'var(--active-green)' : hpPct > 30 ? 'var(--idle-yellow)' : '#ef4444'
   mpEl.style.width = mpPct + '%'
-
-  // Update slot map for next render's walk animations
-  prevSlotMap = {}
-  allSlotIds.forEach(id => {
-    const el = document.getElementById(id)
-    if (el) {
-      const mid = el.getAttribute('data-member-id')
-      if (mid) prevSlotMap[mid] = id
-    }
-  })
 }
 
 // ── Idle Agent Behavior System ──
@@ -2219,7 +2228,7 @@ function performIdleBehavior() {
 function scheduleNextWander() {
   const delay = 3000 + Math.floor(Math.random() * 5000)
   setTimeout(() => {
-    performIdleBehavior()
+    try { performIdleBehavior() } catch(e) { console.warn('idle behavior error:', e) }
     scheduleNextWander()
   }, delay)
 }
