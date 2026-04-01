@@ -138,6 +138,39 @@ app.post('/api/command', (req, res) => {
   res.json({ ok: true })
 })
 
+// ── スキル名→社員マッピング ──
+const SKILL_MEMBER_MAP = {
+  article: 'sato', research: 'tanaka', write: 'yamada', direct: 'suzuki',
+  hotel: 'nakamura', dev: 'watanabe', infra: 'kato',
+  ceo: 'matsumoto', standup: 'matsumoto',
+}
+
+// セッションで最初にactiveになった社員を記録（セッション終了時のフォールバック用）
+function autoActivateMember(memberId, sessionId, command, task) {
+  const state = memberState.get(memberId)
+  if (!state) return false
+  // 既にこのセッションに紐付いていれば何もしない
+  if (sessionMemberMap.get(sessionId) === memberId) return true
+  // 他のセッションでactive中なら別の社員を探す
+  if (state.status === 'active' && memberSessionMap.has(memberId)) return false
+
+  sessionMemberMap.set(sessionId, memberId)
+  memberSessionMap.set(memberId, sessionId)
+  memberState.set(memberId, {
+    ...state,
+    status: 'active',
+    command: command || state.command,
+    task: task || state.task,
+    started_at: new Date().toISOString(),
+    last_seen: new Date().toISOString(),
+    tool_count: 0,
+    last_tool: null,
+    last_desc: null,
+    history: [],
+  })
+  return true
+}
+
 // ── POST /api/update — PostToolUseフックから受信 ──
 const sessions = new Map()
 
@@ -154,29 +187,50 @@ app.post('/api/update', (req, res) => {
     time: new Date().toISOString()
   }
 
+  // ── Skillツール検知 → 該当エージェントを自動active化 ──
+  if (tool_name === 'Skill' && tool_input?.skill && session_id) {
+    const skillName = tool_input.skill
+    const targetMember = SKILL_MEMBER_MAP[skillName]
+    if (targetMember) {
+      autoActivateMember(targetMember, session_id, '/' + skillName, tool_input.args || null)
+      member_id = targetMember
+    }
+  }
+
   // member_id が未指定の場合、セッション→社員マッピングから自動解決
   if (!member_id && session_id) {
     member_id = sessionMemberMap.get(session_id) || null
   }
 
-  // まだ不明なら、アクティブな社員の中から最も最近 start した部長を探す
-  // （フックからの初回updateで、まだマッピングがない場合のフォールバック）
+  // ── 初回ツール使用: まだどの社員にも紐付いていないセッション ──
   if (!member_id && session_id) {
+    // アクティブだがセッション未紐付けの社員を探す
     let bestMatch = null
     let bestTime = 0
     for (const [mid, state] of memberState) {
       if (state.status === 'active' && !memberSessionMap.has(mid)) {
         const t = new Date(state.started_at).getTime()
-        if (t > bestTime) {
-          bestTime = t
-          bestMatch = mid
-        }
+        if (t > bestTime) { bestTime = t; bestMatch = mid }
       }
     }
     if (bestMatch && (Date.now() - bestTime) < 60000) {
       member_id = bestMatch
       sessionMemberMap.set(session_id, member_id)
       memberSessionMap.set(member_id, session_id)
+    }
+
+    // それでも見つからなければ、idle社員を自動active化
+    if (!member_id) {
+      // cwdからプロジェクトを推測して適切な社員を選ぶ
+      const cwdLower = (cwd || '').toLowerCase()
+      let candidate = null
+      if (cwdLower.includes('hotel') || cwdLower.includes('sui')) candidate = 'nakamura'
+      else if (cwdLower.includes('lp-kaigo') || cwdLower.includes('cases')) candidate = 'sato'
+      else candidate = 'watanabe' // デフォルト: 開発部長
+
+      if (autoActivateMember(candidate, session_id, null, null)) {
+        member_id = candidate
+      }
     }
   }
 
@@ -211,7 +265,7 @@ app.post('/api/update', (req, res) => {
     })
   }
 
-  res.json({ ok: true })
+  res.json({ ok: true, member_id: member_id || null })
 })
 
 // ── GET /api/agents — ダッシュボード用 ──
