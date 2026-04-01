@@ -1974,10 +1974,11 @@ function svgThought(text, x, y, durSec) {
 }
 
 // Create walking SVG element, returns { dur (seconds) }
+// Speed: ~100px/s — RPG-style steady walking pace
 function createWalkElement(agent, from, to) {
   const ck = charColor(agent.member_id)
   const dist = Math.sqrt((to.x - from.x)**2 + (to.y - from.y)**2)
-  const dur = Math.max(0.8, Math.min(2.5, dist / 250))
+  const dur = Math.max(1.2, dist / 100)
 
   const walkLayer = document.getElementById('walk-layer')
   if (!walkLayer) return { dur: 0 }
@@ -1998,10 +1999,10 @@ function createWalkElement(agent, from, to) {
   walkEl.innerHTML = `
     <animateTransform attributeName="transform" type="translate"
       from="${from.x} ${from.y}" to="${to.x} ${to.y}"
-      dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+      dur="${dur}s" fill="freeze" calcMode="linear"/>
     <g>
       <animateTransform attributeName="transform" type="translate"
-        values="0 0;0 -3;0 0;0 -3;0 0" dur="0.35s" repeatCount="${Math.ceil(dur / 0.35)}"/>
+        values="0 0;0 -2;0 0" dur="0.3s" repeatCount="indefinite"/>
       <g transform="translate(-18,-44)"><g transform="${flipTransform}">${walkSvg}</g></g>
     </g>
     ${nameLabel}`
@@ -2129,7 +2130,7 @@ function doStroll(agent, currentSlotId, occupied) {
     const segFrom = points[i]
     const segTo = points[i + 1]
     const dist = Math.sqrt((segTo.x - segFrom.x)**2 + (segTo.y - segFrom.y)**2)
-    const dur = Math.max(0.6, Math.min(2.0, dist / 250))
+    const dur = Math.max(1.0, dist / 100)
 
     const delay = totalDelay
     timeouts.push(setTimeout(() => {
