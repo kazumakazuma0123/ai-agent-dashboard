@@ -234,6 +234,16 @@ body {
   80% { opacity:.9; transform: translateY(-10px); }
   100% { opacity:0; transform: translateY(-16px); }
 }
+@keyframes walk-a {
+  0%, 49.9% { visibility: visible; }
+  50%, 100% { visibility: hidden; }
+}
+@keyframes walk-b {
+  0%, 49.9% { visibility: hidden; }
+  50%, 100% { visibility: visible; }
+}
+.walk-frame-a { animation: walk-a 0.35s steps(1) infinite; }
+.walk-frame-b { visibility: hidden; animation: walk-b 0.35s steps(1) infinite; }
 @keyframes thought-pop {
   0% { opacity:0; transform: translateY(4px) scale(0.6); }
   12% { opacity:1; transform: translateY(0) scale(1); }
@@ -1486,6 +1496,30 @@ function svgWorking(ck, uniqueId, memberId) {
   </g>`
 }
 
+// Generate 2 walk frames from an idle sprite by shifting the bottom 3 rows
+function makeWalkFrames(sprite) {
+  const h = sprite.length, w = sprite[0].length
+  const f1 = sprite.map(r => [...r])
+  const f2 = sprite.map(r => [...r])
+  for (let r = h - 3; r < h; r++) {
+    f1[r] = new Array(w).fill(null)
+    f2[r] = new Array(w).fill(null)
+    for (let c = 0; c < w - 1; c++) f1[r][c] = sprite[r][c + 1]  // shift left
+    for (let c = 1; c < w; c++)     f2[r][c] = sprite[r][c - 1]  // shift right
+  }
+  return [f1, f2]
+}
+
+function svgWalking(ck, memberId) {
+  const c = COLORS[ck]
+  const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060', g:'#404060', c:'#f0f0f8', k:c.shirt, n:'#d02020', a:'#483068', b:c.hair }
+  const spriteData = (memberId && MEMBER_SPRITES[memberId]) ? MEMBER_SPRITES[memberId].idle : SPRITE_IDLE
+  const [walk1, walk2] = makeWalkFrames(spriteData)
+  const frame1 = renderSprite(walk1, 0, 0, colorMap)
+  const frame2 = renderSprite(walk2, 0, 0, colorMap)
+  return `<g class="walk-frame-a">${frame1}</g><g class="walk-frame-b">${frame2}</g>`
+}
+
 function svgIdle(ck, memberId) {
   const c = COLORS[ck]
   const colorMap = { h:c.hair, s:c.skin, e:c.eye, t:c.shirt, p:c.pants, o:c.shoes, m:'#e07060', g:'#404060', c:'#f0f0f8', k:c.shirt, n:'#d02020', a:'#483068', b:c.hair }
@@ -1952,8 +1986,12 @@ function createWalkElement(agent, from, to) {
   const existing = document.getElementById(walkId)
   if (existing) existing.remove()
 
-  const idleSvg = svgIdle(ck, agent.member_id)
+  const walkSvg = svgWalking(ck, agent.member_id)
   const nameLabel = svgNameLabel(agent.name, accentForType(ck), 18, 24, agent.role, 'idle')
+
+  // Flip character to face movement direction
+  const facingLeft = to.x < from.x
+  const flipTransform = facingLeft ? `translate(18,0) scale(-1,1) translate(-18,0)` : ''
 
   const walkEl = document.createElementNS('http://www.w3.org/2000/svg', 'g')
   walkEl.id = walkId
@@ -1963,8 +2001,8 @@ function createWalkElement(agent, from, to) {
       dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
     <g>
       <animateTransform attributeName="transform" type="translate"
-        values="0 0;0 -5;0 0;0 -5;0 0" dur="0.5s" repeatCount="${Math.ceil(dur / 0.5)}"/>
-      <g transform="translate(-18,-44)">${idleSvg}</g>
+        values="0 0;0 -3;0 0;0 -3;0 0" dur="0.35s" repeatCount="${Math.ceil(dur / 0.35)}"/>
+      <g transform="translate(-18,-44)"><g transform="${flipTransform}">${walkSvg}</g></g>
     </g>
     ${nameLabel}`
   walkLayer.appendChild(walkEl)
