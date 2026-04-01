@@ -258,19 +258,8 @@ app.post('/api/update', (req, res) => {
       memberSessionMap.set(member_id, session_id)
     }
 
-    // それでも見つからなければ、idle社員を自動active化
-    if (!member_id) {
-      // cwdからプロジェクトを推測して適切な社員を選ぶ
-      const cwdLower = (cwd || '').toLowerCase()
-      let candidate = null
-      if (cwdLower.includes('hotel') || cwdLower.includes('sui')) candidate = 'nakamura'
-      else if (cwdLower.includes('lp-kaigo') || cwdLower.includes('cases')) candidate = 'sato'
-      else candidate = 'watanabe' // デフォルト: 開発部長
-
-      if (autoActivateMember(candidate, session_id, null, null)) {
-        member_id = candidate
-      }
-    }
+    // Skill/Agentツール以外の通常会話ではactive化しない
+    // エージェントは明示的なSkill起動またはAgent委任でのみ活性化される
   }
 
   // 社員ステートを更新
