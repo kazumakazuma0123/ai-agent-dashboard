@@ -863,15 +863,15 @@ body {
       <g id="sofa-slot-0" transform="translate(80,190)"></g>
       <g id="sofa-slot-1" transform="translate(140,190)"></g>
       <!-- standing slots (spread across the floor) -->
-      <g id="stand-slot-0" transform="translate(80,350)"></g>
-      <g id="stand-slot-1" transform="translate(140,370)"></g>
-      <g id="stand-slot-2" transform="translate(200,350)"></g>
-      <g id="stand-slot-3" transform="translate(320,380)"></g>
-      <g id="stand-slot-4" transform="translate(420,360)"></g>
-      <g id="stand-slot-5" transform="translate(540,380)"></g>
-      <g id="stand-slot-6" transform="translate(660,370)"></g>
-      <g id="stand-slot-7" transform="translate(780,360)"></g>
-      <g id="stand-slot-8" transform="translate(860,380)"></g>
+      <g id="stand-slot-0" transform="translate(70,345)"></g>
+      <g id="stand-slot-1" transform="translate(170,375)"></g>
+      <g id="stand-slot-2" transform="translate(270,350)"></g>
+      <g id="stand-slot-3" transform="translate(370,380)"></g>
+      <g id="stand-slot-4" transform="translate(470,355)"></g>
+      <g id="stand-slot-5" transform="translate(570,380)"></g>
+      <g id="stand-slot-6" transform="translate(670,365)"></g>
+      <g id="stand-slot-7" transform="translate(770,355)"></g>
+      <g id="stand-slot-8" transform="translate(870,375)"></g>
 
       <!-- walk animation layer for idle wandering -->
       <g id="walk-layer"></g>
@@ -1643,9 +1643,9 @@ const MEMBERS_DEFAULT = [
 const SLOT_POSITIONS = {
   'desk-slot-0': {x:326,y:254}, 'desk-slot-1': {x:536,y:254}, 'desk-slot-2': {x:746,y:254},
   'sofa-slot-0': {x:80,y:190}, 'sofa-slot-1': {x:140,y:190},
-  'stand-slot-0': {x:80,y:350}, 'stand-slot-1': {x:140,y:370}, 'stand-slot-2': {x:200,y:350},
-  'stand-slot-3': {x:320,y:380}, 'stand-slot-4': {x:420,y:360}, 'stand-slot-5': {x:540,y:380},
-  'stand-slot-6': {x:660,y:370}, 'stand-slot-7': {x:780,y:360}, 'stand-slot-8': {x:860,y:380},
+  'stand-slot-0': {x:70,y:345}, 'stand-slot-1': {x:170,y:375}, 'stand-slot-2': {x:270,y:350},
+  'stand-slot-3': {x:370,y:380}, 'stand-slot-4': {x:470,y:355}, 'stand-slot-5': {x:570,y:380},
+  'stand-slot-6': {x:670,y:365}, 'stand-slot-7': {x:770,y:355}, 'stand-slot-8': {x:870,y:375},
 }
 let prevSlotMap = {} // member_id -> previous slot id
 
@@ -1990,6 +1990,21 @@ function svgThought(text, x, y, durSec) {
     </g>`
 }
 
+// ── Member-specific position offset (prevents exact overlap) ──
+function memberOffset(memberId) {
+  const ids = Object.keys(MEMBER_COLORS)
+  const idx = ids.indexOf(memberId)
+  const i = idx >= 0 ? idx : Math.abs([...memberId].reduce((h,c) => (h*31+c.charCodeAt(0))&0xfff, 0)) % 12
+  // Spread offsets in a circle-like pattern so no two members land on the same spot
+  const angle = (i / 12) * Math.PI * 2
+  return { dx: Math.round(Math.cos(angle) * 15), dy: Math.round(Math.sin(angle) * 10) }
+}
+
+function offsetWaypoints(waypoints, memberId) {
+  const { dx, dy } = memberOffset(memberId)
+  return waypoints.map(p => ({ x: p.x + dx, y: p.y + dy }))
+}
+
 // ── Core: requestAnimationFrame walk along waypoints ──
 // Returns { dur (seconds), cancel (function) }
 // onComplete called when walk finishes naturally
@@ -2128,7 +2143,8 @@ function doWander(agent, currentSlotId, occupied) {
   if (!avail.length) return
   const destId = avail[Math.floor(Math.random() * avail.length)]
   removeFromSlot(agent.member_id, currentSlotId)
-  const w = startWalk(agent, [SLOT_POSITIONS[currentSlotId], SLOT_POSITIONS[destId]], () => {
+  const pts = offsetWaypoints([SLOT_POSITIONS[currentSlotId], SLOT_POSITIONS[destId]], agent.member_id)
+  const w = startWalk(agent, pts, () => {
     finishWalk(agent.member_id)
     placeAtSlot(agent, destId)
   })
@@ -2144,7 +2160,8 @@ function doStroll(agent, currentSlotId, occupied) {
   const destId = avail[Math.floor(Math.random() * avail.length)]
   const points = [SLOT_POSITIONS[currentSlotId], ...route.map(k => ACTIVITY_POINTS[k]), SLOT_POSITIONS[destId]]
   removeFromSlot(agent.member_id, currentSlotId)
-  const w = startWalk(agent, points, () => {
+  const pts = offsetWaypoints(points, agent.member_id)
+  const w = startWalk(agent, pts, () => {
     finishWalk(agent.member_id)
     placeAtSlot(agent, destId)
   })
@@ -2159,12 +2176,15 @@ function doActivityVisit(agent, currentSlotId, occupied, activityKey) {
   const texts = THOUGHT_TEXTS[activityKey] || ['...']
   const thought = texts[Math.floor(Math.random() * texts.length)]
   const pauseDur = 3000 + Math.random() * 4000
+  const { dx, dy } = memberOffset(agent.member_id)
+  const offsetActPos = { x: actPos.x + dx, y: actPos.y + dy }
 
   removeFromSlot(agent.member_id, currentSlotId)
 
-  // Phase 1: Walk to activity
-  const w1 = startWalk(agent, [from, actPos], () => {
-    placeAtActivity(agent, actPos, thought, pauseDur / 1000)
+  // Phase 1: Walk to activity (with member offset)
+  const pts1 = offsetWaypoints([from, actPos], agent.member_id)
+  const w1 = startWalk(agent, pts1, () => {
+    placeAtActivity(agent, offsetActPos, thought, pauseDur / 1000)
 
     // Phase 2: Pause, then walk to slot
     const tid = setTimeout(() => {
@@ -2172,7 +2192,8 @@ function doActivityVisit(agent, currentSlotId, occupied, activityKey) {
       const occ = new Set(Object.values(prevSlotMap))
       const destId = findAvailableSlot(occ, false)
       if (!destId) { finishWalk(agent.member_id); return }
-      const w2 = startWalk(agent, [actPos, SLOT_POSITIONS[destId]], () => {
+      const pts2 = offsetWaypoints([actPos, SLOT_POSITIONS[destId]], agent.member_id)
+      const w2 = startWalk(agent, pts2, () => {
         finishWalk(agent.member_id)
         placeAtSlot(agent, destId)
       })
@@ -2190,7 +2211,8 @@ function doSofaNap(agent, currentSlotId, occupied) {
   if (!sofa.length) { doWander(agent, currentSlotId, occupied); return }
   const destId = sofa[Math.floor(Math.random() * sofa.length)]
   removeFromSlot(agent.member_id, currentSlotId)
-  const w = startWalk(agent, [SLOT_POSITIONS[currentSlotId], SLOT_POSITIONS[destId]], () => {
+  const pts = offsetWaypoints([SLOT_POSITIONS[currentSlotId], SLOT_POSITIONS[destId]], agent.member_id)
+  const w = startWalk(agent, pts, () => {
     finishWalk(agent.member_id)
     placeAtSlot(agent, destId)
   })
@@ -2229,7 +2251,19 @@ function performIdleBehavior() {
   const occupied = new Set(Object.values(prevSlotMap))
   for (let i = 0; i < count; i++) {
     const a = shuffled[i], sid = prevSlotMap[a.member_id]
-    if (sid) dispatchBehavior(a, sid, occupied)
+    // Stagger dispatch by 400-1200ms per agent to prevent simultaneous departures
+    if (sid) {
+      const staggerDelay = i * (400 + Math.floor(Math.random() * 800))
+      if (staggerDelay === 0) {
+        dispatchBehavior(a, sid, occupied)
+      } else {
+        setTimeout(() => {
+          if (!walkingAgents[a.member_id] && prevSlotMap[a.member_id] === sid) {
+            dispatchBehavior(a, sid, occupied)
+          }
+        }, staggerDelay)
+      }
+    }
   }
 }
 
@@ -2239,6 +2273,27 @@ function scheduleNextWander() {
     try { performIdleBehavior() } catch(e) { console.warn('idle behavior error:', e) }
     scheduleNextWander()
   }, delay)
+}
+
+// ── 未紐付けセッション警告 ──
+function showUnmappedWarning(details) {
+  let el = document.getElementById('unmapped-warning')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'unmapped-warning'
+    el.style.cssText = 'position:fixed;top:12px;right:12px;background:#2a1a0a;border:1px solid #f59e0b;color:#fbbf24;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;max-width:360px;box-shadow:0 4px 12px rgba(0,0,0,0.4)'
+    document.body.appendChild(el)
+  }
+  const lines = details.map(d =>
+    `<div style="margin-top:4px;font-size:11px;color:#d4a">${d.session_id.slice(0,8)}… — ${d.tool_count}tools — ${d.last_desc || d.last_tool || '?'}</div>`
+  ).join('')
+  el.innerHTML = `<div style="font-weight:bold">⚠ 未紐付けセッション ${details.length}件</div><div style="font-size:11px;color:#fbbf24cc;margin-top:2px">スキル未使用のセッションが稼働中</div>${lines}`
+  el.style.display = 'block'
+}
+
+function hideUnmappedWarning() {
+  const el = document.getElementById('unmapped-warning')
+  if (el) el.style.display = 'none'
 }
 
 // ── Polling ──
@@ -2253,7 +2308,15 @@ async function fetchAgents() {
   try {
     const res = await fetch(`${VPS_URL}/api/agents`)
     const data = await res.json()
-    renderRoom(data)
+    // 新形式: { agents: [...], unmapped_sessions, unmapped_details }
+    const agents = Array.isArray(data) ? data : (data.agents || [])
+    renderRoom(agents)
+    // 未紐付けセッション警告
+    if (data.unmapped_sessions > 0) {
+      showUnmappedWarning(data.unmapped_details || [])
+    } else {
+      hideUnmappedWarning()
+    }
     lastFetch = new Date()
     updateInfo()
   } catch (e) {

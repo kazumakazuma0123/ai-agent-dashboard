@@ -350,7 +350,25 @@ app.get('/api/agents', (req, res) => {
     }
   })
 
-  res.json(result)
+  // 未紐付けアクティブセッション検知
+  const now2 = Date.now()
+  const unmappedSessions = [...sessions.values()].filter(s => {
+    const elapsed = now2 - new Date(s.last_seen).getTime()
+    return !s.member_id && elapsed < 300000 && s.tool_count >= 2
+  })
+
+  res.json({
+    agents: result,
+    unmapped_sessions: unmappedSessions.length,
+    unmapped_details: unmappedSessions.map(s => ({
+      session_id: s.session_id,
+      project: s.project,
+      tool_count: s.tool_count,
+      last_tool: s.last_tool,
+      last_desc: s.last_desc,
+      last_seen: s.last_seen,
+    })),
+  })
 })
 
 // ── GET /api/sessions — セッション一覧（デバッグ用） ──
@@ -451,8 +469,30 @@ app.post('/api/vps-file', (req, res) => {
   return res.status(400).json({ error: 'unknown action. use: write, start-proxy, status' })
 })
 
-// ヘルスチェック
-app.get('/health', (_, res) => res.json({ ok: true, members: MEMBERS.length }))
+// ヘルスチェック（異常検知付き）
+app.get('/health', (_, res) => {
+  const now = Date.now()
+  const activeMembers = [...memberState.values()].filter(s => s.status === 'active').length
+  const recentSessions = [...sessions.values()].filter(s => now - new Date(s.last_seen).getTime() < 300000)
+  const unmappedActive = recentSessions.filter(s => !s.member_id && s.tool_count >= 2)
+
+  const warnings = []
+  if (unmappedActive.length > 0 && activeMembers === 0) {
+    warnings.push(`${unmappedActive.length}件のアクティブセッションがエージェントに未紐付け`)
+  }
+  if (unmappedActive.length > 0) {
+    warnings.push(`未紐付けセッション: ${unmappedActive.map(s => s.session_id.slice(0, 8) + '(' + s.tool_count + 'tools)').join(', ')}`)
+  }
+
+  res.json({
+    ok: warnings.length === 0,
+    members: MEMBERS.length,
+    active_members: activeMembers,
+    active_sessions: recentSessions.length,
+    unmapped_sessions: unmappedActive.length,
+    warnings,
+  })
+})
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => console.log(`Agent monitor server running on :${PORT}`))
