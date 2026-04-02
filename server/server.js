@@ -257,6 +257,17 @@ app.post('/api/update', (req, res) => {
   // member_id が未指定の場合、セッション→社員マッピングから自動解決
   if (!member_id && session_id) {
     member_id = sessionMemberMap.get(session_id) || null
+    // タイムアウトでidleになっていたら即復帰
+    if (member_id) {
+      const state = memberState.get(member_id)
+      if (state && state.status === 'idle') {
+        memberState.set(member_id, {
+          ...state,
+          status: 'active',
+          last_seen: new Date().toISOString(),
+        })
+      }
+    }
   }
 
   // ── 初回ツール使用: まだどの社員にも紐付いていないセッション ──
@@ -277,13 +288,19 @@ app.post('/api/update', (req, res) => {
     }
 
     // 2) cwd/ファイルパスから部門長を自動判定して活性化
+    //    ただし実作業と判断できる場合のみ（同セッション3ツール以上 or Write/Edit操作）
     if (!member_id) {
-      const filePath = tool_input?.file_path || ''
-      const detected = detectMemberFromPath(cwd, filePath)
-      if (detected) {
-        const activated = autoActivateMember(detected.member, session_id, detected.label, null)
-        if (activated) {
-          member_id = detected.member
+      const sessionData = sessions.get(session_id)
+      const toolCount = sessionData ? sessionData.tool_count : 0
+      const isWriteOp = tool_name === 'Write' || tool_name === 'Edit'
+      if (toolCount >= 3 || isWriteOp) {
+        const filePath = tool_input?.file_path || ''
+        const detected = detectMemberFromPath(cwd, filePath)
+        if (detected) {
+          const activated = autoActivateMember(detected.member, session_id, detected.label, null)
+          if (activated) {
+            member_id = detected.member
+          }
         }
       }
     }
@@ -330,21 +347,16 @@ app.get('/api/agents', (req, res) => {
     const state = memberState.get(m.id)
 
     // activeステータスの自動タイムアウト（5分操作なし → idle）
+    // ※セッション紐付けは維持する（次のツール使用で即復帰できるように）
     let status = state.status
     if (status === 'active' && state.last_seen) {
       const diffSec = (now - new Date(state.last_seen).getTime()) / 1000
       if (diffSec > 300) {
         status = 'idle'
-        const sid = memberSessionMap.get(m.id)
-        if (sid) {
-          sessionMemberMap.delete(sid)
-          memberSessionMap.delete(m.id)
-        }
         memberState.set(m.id, {
           ...state,
           status: 'idle',
-          command: null,
-          task: null,
+          // command/taskは維持（復帰時に表示するため）
           last_task: {
             command: state.command,
             task: state.task,
