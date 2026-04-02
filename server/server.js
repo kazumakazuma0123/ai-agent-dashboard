@@ -165,6 +165,24 @@ const DEPARTMENT_MEMBERS = {
   kato:     ['yoshida'],
 }
 
+// ── cwd/ファイルパスから部門長を自動判定 ──
+const PATH_MEMBER_RULES = [
+  { pattern: /lp-kaigo|cases\/.*research|drafts\//,       member: 'sato',     label: 'コンテンツ制作' },
+  { pattern: /hotel-sui|sui-room-cre/,                     member: 'watanabe', label: '開発（SUI関連）' },
+  { pattern: /new-project/,                                member: 'watanabe', label: '開発（ダッシュボード）' },
+  { pattern: /\.claude\/org|\.claude\/commands/,            member: 'kato',     label: 'インフラ・設定' },
+]
+
+function detectMemberFromPath(cwd, filePath) {
+  const target = (filePath || '') + ' ' + (cwd || '')
+  for (const rule of PATH_MEMBER_RULES) {
+    if (rule.pattern.test(target)) {
+      return { member: rule.member, label: rule.label }
+    }
+  }
+  return null
+}
+
 // セッションで最初にactiveになった社員を記録（セッション終了時のフォールバック用）
 function autoActivateMember(memberId, sessionId, command, task) {
   const state = memberState.get(memberId)
@@ -243,7 +261,7 @@ app.post('/api/update', (req, res) => {
 
   // ── 初回ツール使用: まだどの社員にも紐付いていないセッション ──
   if (!member_id && session_id) {
-    // アクティブだがセッション未紐付けの社員を探す
+    // 1) アクティブだがセッション未紐付けの社員を探す（/api/command start 直後）
     let bestMatch = null
     let bestTime = 0
     for (const [mid, state] of memberState) {
@@ -258,8 +276,17 @@ app.post('/api/update', (req, res) => {
       memberSessionMap.set(member_id, session_id)
     }
 
-    // Skill/Agentツール以外の通常会話ではactive化しない
-    // エージェントは明示的なSkill起動またはAgent委任でのみ活性化される
+    // 2) cwd/ファイルパスから部門長を自動判定して活性化
+    if (!member_id) {
+      const filePath = tool_input?.file_path || ''
+      const detected = detectMemberFromPath(cwd, filePath)
+      if (detected) {
+        const activated = autoActivateMember(detected.member, session_id, detected.label, null)
+        if (activated) {
+          member_id = detected.member
+        }
+      }
+    }
   }
 
   // 社員ステートを更新
