@@ -1807,9 +1807,9 @@ function renderRoom(agents) {
       const a = active[i], ck = charColor(a.member_id)
       const label = a.command || taskLabel(a)
       const charSvg = svgWorking(ck, i, a.member_id)
-      const glowSvg = `<circle cx="18" cy="0" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
-      const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 24, a.role, a.status)
-      const taskBubble = svgBubble(label, '#f8c818', 18, -8)
+      const glowSvg = `<circle cx="18" cy="-20" r="30" fill="${accentForType(ck)}" opacity=".3" style="animation:active-glow 2s ease-in-out infinite;"/>`
+      const nameLabel = svgNameLabel(a.name, accentForType(ck), 18, 38, a.role, a.status)
+      const taskBubble = svgBubble(label, '#f8c818', 18, -28)
 
       // Walk-to-desk animation (from previous idle slot)
       const deskId = 'desk-slot-' + i
@@ -1823,9 +1823,9 @@ function renderRoom(agents) {
       }
 
       // カタカタ typing effect
-      const kataText = `<text x="18" y="-54" text-anchor="middle" font-size="5" fill="#f8c818" class="pixel-font kata-text">カタカタ</text><text x="30" y="-62" text-anchor="middle" font-size="4" fill="#a0d8f0" class="pixel-font kata-text kata-text-delay">カタカタ</text>`
+      const kataText = `<text x="18" y="-74" text-anchor="middle" font-size="5" fill="#f8c818" class="pixel-font kata-text">カタカタ</text><text x="30" y="-82" text-anchor="middle" font-size="4" fill="#a0d8f0" class="pixel-font kata-text kata-text-delay">カタカタ</text>`
 
-      slot.innerHTML = `${wOpen}${glowSvg}<g class="kata-body" transform="translate(-18,-44)">${charSvg}</g>${nameLabel}${taskBubble}${kataText}${wClose}`
+      slot.innerHTML = `${wOpen}${glowSvg}<g class="kata-body" transform="translate(-18,-64)">${charSvg}</g>${nameLabel}${taskBubble}${kataText}${wClose}`
       slot.setAttribute('data-member-id', a.member_id)
       slot.style.cursor = 'pointer'
       slot.onclick = ((mid) => () => showCharPopup(mid))(a.member_id)
