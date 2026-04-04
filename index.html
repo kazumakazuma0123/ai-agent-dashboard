@@ -249,29 +249,6 @@ body {
 }
 .walk-frame-a { animation: walk-a 0.35s steps(1) infinite; }
 .walk-frame-b { visibility: hidden; animation: walk-b 0.35s steps(1) infinite; }
-@keyframes dive-to-bed {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  30% { transform: translate(0, -20px) rotate(0deg); }
-  50% { transform: translate(0, -28px) rotate(-30deg); }
-  70% { transform: translate(0, -12px) rotate(-70deg); }
-  85% { transform: translate(0, 4px) rotate(-90deg); }
-  92% { transform: translate(0, -2px) rotate(-90deg); }
-  100% { transform: translate(0, 0) rotate(-90deg); }
-}
-@keyframes dive-squash {
-  0%, 84% { transform: scaleX(1) scaleY(1); }
-  88% { transform: scaleX(1.15) scaleY(0.85); }
-  94% { transform: scaleX(0.95) scaleY(1.05); }
-  100% { transform: scaleX(1) scaleY(1); }
-}
-@keyframes dive-fade-to-sleep {
-  0%, 65% { opacity: 1; }
-  100% { opacity: 0; }
-}
-@keyframes sleep-fade-in {
-  0%, 70% { opacity: 0; }
-  100% { opacity: 1; }
-}
 @keyframes thought-pop {
   0% { opacity:0; transform: translateY(4px) scale(0.6); }
   12% { opacity:1; transform: translateY(0) scale(1); }
@@ -1796,6 +1773,7 @@ function showCharPopup(memberId) {
 
 // ── Render agents into SVG + info panel ──
 let lastStatusKey = ''
+let prevMemberStatus = {} // member_id -> previous status ('active'/'idle')
 
 function renderRoom(agents) {
   // Use API data if available, else defaults
@@ -1864,35 +1842,41 @@ function renderRoom(agents) {
       const a = nonActive[idleIdx], ck = charColor(a.member_id)
       const sofaId = 'sofa-slot-' + i
       const prev = prevSlotMap[a.member_id]
-      const cameFromDesk = prev && prev.startsWith('desk-slot-') && SLOT_POSITIONS[prev]
+      const wasActive = prevMemberStatus[a.member_id] === 'active'
+      const cameFromDesk = wasActive || (prev && prev.startsWith('desk-slot-') && SLOT_POSITIONS[prev])
 
       if (cameFromDesk) {
-        // ── 歩行→飛び込み→寝姿の連続アニメーション ──
-        const dx = SLOT_POSITIONS[prev].x - SLOT_POSITIONS[sofaId].x
-        const dy = SLOT_POSITIONS[prev].y - SLOT_POSITIONS[sofaId].y
-        const walkDur = 0.7
-        const diveDur = 0.8
+        // ── 歩行→飛び込み→寝姿の連続アニメーション（純SVGアニメーション） ──
+        const fromPos = (prev && SLOT_POSITIONS[prev]) ? SLOT_POSITIONS[prev] : SLOT_POSITIONS['desk-slot-0']
+        const dx = fromPos.x - SLOT_POSITIONS[sofaId].x
+        const dy = fromPos.y - SLOT_POSITIONS[sofaId].y
+        const walkDur = 0.8
+        const diveDur = 0.9
         const totalDur = walkDur + diveDur
 
-        // Phase 1: 歩行キャラ（前の位置からソファまで移動、途中でフェードアウト）
+        // Phase 1: 歩行キャラ（前の位置からソファまで移動→フェードアウト）
         const walkSvg = svgWalking(ck, a.member_id)
-        const walkPhase = `<g style="animation: dive-fade-to-sleep ${totalDur}s ease forwards;">
-          <g><animateTransform attributeName="transform" type="translate" from="${dx} ${dy}" to="0 0" dur="${walkDur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
-          <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -6;0 0" dur="${walkDur}s" fill="freeze"/>
+        const walkPhase = `<g>
+          <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.6;1" dur="${totalDur}s" fill="freeze"/>
+          <animateTransform attributeName="transform" type="translate" from="${dx} ${dy}" to="0 0" dur="${walkDur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+          <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -6;0 0;0 -6;0 0;0 -3;0 0" dur="${walkDur}s" fill="freeze"/>
           <g transform="translate(-18,-44)">${walkSvg}</g>
-          </g></g></g>`
+          </g></g>`
 
-        // Phase 2: 飛び込みキャラ（歩行終了後にジャンプ→回転→着地）
+        // Phase 2: 飛び込みキャラ（歩行後にジャンプ→回転→着地）
         const idleSvg = svgIdle(ck, a.member_id)
-        const divePhase = `<g style="opacity:0; animation: sleep-fade-in ${totalDur * 0.6}s ease ${walkDur * 0.7}s forwards;">
-          <g style="animation: dive-to-bed ${diveDur}s ease ${walkDur * 0.8}s both;">
-          <g style="animation: dive-squash ${diveDur}s ease ${walkDur * 0.8}s both; transform-origin: 18px 0px;">
+        const divePhase = `<g opacity="0">
+          <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;${(walkDur*0.7/totalDur).toFixed(3)};${(walkDur*0.85/totalDur).toFixed(3)};1" dur="${totalDur}s" fill="freeze"/>
+          <animateTransform attributeName="transform" type="translate" values="0 0;0 -20;0 -28;0 -12;0 4;0 -2;0 0" keyTimes="0;0.3;0.5;0.7;0.85;0.92;1" dur="${diveDur}s" begin="${walkDur * 0.8}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"/>
+          <g>
+          <animateTransform attributeName="transform" type="rotate" values="0 18 0;0 18 0;-30 18 0;-70 18 0;-90 18 0;-90 18 0;-90 18 0" keyTimes="0;0.3;0.5;0.7;0.85;0.92;1" dur="${diveDur}s" begin="${walkDur * 0.8}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1" additive="sum"/>
           <g transform="translate(-18,-44)">${idleSvg}</g>
-          </g></g></g>`
+          </g></g>`
 
-        // Phase 3: 寝姿（最終状態、遅延で表示）
+        // Phase 3: 寝姿（最終状態、アニメーション後にフェードイン）
         const charSvg = svgSleeping(ck)
-        const sleepPhase = `<g style="opacity:0; animation: sleep-fade-in 0.3s ease ${totalDur}s forwards;">
+        const sleepPhase = `<g opacity="0">
+          <animate attributeName="opacity" values="0;0;1" keyTimes="0;${((totalDur - 0.3)/totalDur).toFixed(3)};1" dur="${totalDur}s" fill="freeze"/>
           <g transform="translate(-8, 4)">${charSvg}</g></g>`
 
         const nameLabel = svgNameLabel(a.name, '#8a8a9a', 32, 50, a.role, a.status)
@@ -1929,6 +1913,10 @@ function renderRoom(agents) {
         if (mid) prevSlotMap[mid] = id
       }
     })
+
+    // Update previous status for next render's transition detection
+    prevMemberStatus = {}
+    data.forEach(a => { prevMemberStatus[a.member_id] = a.status })
   }
 
   // Info panel — always update (even when SVG room is unchanged)
