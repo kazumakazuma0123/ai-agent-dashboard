@@ -108,6 +108,9 @@ app.post('/api/command', (req, res) => {
       last_desc: null,
       history: [],
     })
+
+    // 部下も連動で稼働
+    activateSubordinates(member_id, session_id || member_id, command)
   } else if (action === 'end') {
     // セッションマッピングをクリア
     const sid = memberSessionMap.get(member_id)
@@ -133,6 +136,9 @@ app.post('/api/command', (req, res) => {
         history: state.history,
       },
     })
+
+    // 部長終了 → 部下も連動で idle
+    deactivateSubordinates(member_id)
   }
 
   res.json({ ok: true })
@@ -183,6 +189,41 @@ function detectMemberFromPath(cwd, filePath) {
   return null
 }
 
+// ── デフォルト受付担当（経営企画・ノア） ──
+const DEFAULT_RECEIVER = 'matsumoto'
+
+// ── ノアが代表で持っているセッションを適切な社員に引き継ぐ ──
+function rerouteFromDefault(sessionId, newMemberId, command, task) {
+  const currentMember = sessionMemberMap.get(sessionId)
+  if (currentMember !== DEFAULT_RECEIVER) return false
+  if (currentMember === newMemberId) return false
+
+  // ノアのセッションを終了
+  const defaultState = memberState.get(DEFAULT_RECEIVER)
+  sessionMemberMap.delete(sessionId)
+  memberSessionMap.delete(DEFAULT_RECEIVER)
+  memberState.set(DEFAULT_RECEIVER, {
+    ...defaultState,
+    status: 'idle',
+    command: null,
+    task: null,
+    last_seen: new Date().toISOString(),
+    last_task: {
+      command: defaultState.command,
+      task: defaultState.task,
+      tool_count: defaultState.tool_count,
+      started_at: defaultState.started_at,
+      ended_at: new Date().toISOString(),
+      last_tool: defaultState.last_tool,
+      last_desc: defaultState.last_desc,
+      history: defaultState.history,
+    },
+  })
+
+  // 新しい社員にセッションを引き継ぐ
+  return autoActivateMember(newMemberId, sessionId, command, task)
+}
+
 // セッションで最初にactiveになった社員を記録（セッション終了時のフォールバック用）
 function autoActivateMember(memberId, sessionId, command, task) {
   const state = memberState.get(memberId)
@@ -206,7 +247,71 @@ function autoActivateMember(memberId, sessionId, command, task) {
     last_desc: null,
     history: [],
   })
+
+  // 部下も連動で稼働させる
+  activateSubordinates(memberId, sessionId, command)
+
   return true
+}
+
+// ── 部長稼働時に部下も連動で active にする ──
+function activateSubordinates(memberId, sessionId, command) {
+  const subordinates = DEPARTMENT_MEMBERS[memberId]
+  if (!subordinates) return
+  for (const subId of subordinates) {
+    const subState = memberState.get(subId)
+    if (!subState) continue
+    // 既に他セッションでactive中の部下はスキップ
+    if (subState.status === 'active' && memberSessionMap.has(subId)) continue
+    const subSessionId = sessionId + ':dept:' + subId
+    sessionMemberMap.set(subSessionId, subId)
+    memberSessionMap.set(subId, subSessionId)
+    memberState.set(subId, {
+      ...subState,
+      status: 'active',
+      command: command || null,
+      task: null,
+      started_at: new Date().toISOString(),
+      last_seen: new Date().toISOString(),
+      tool_count: 0,
+      last_tool: null,
+      last_desc: null,
+      history: [],
+    })
+  }
+}
+
+// ── 部長終了時に部下も連動で idle にする ──
+function deactivateSubordinates(memberId) {
+  const subordinates = DEPARTMENT_MEMBERS[memberId]
+  if (!subordinates) return
+  for (const subId of subordinates) {
+    const subState = memberState.get(subId)
+    if (!subState || subState.status !== 'active') continue
+    // 部下のセッションマッピングをクリア
+    const subSid = memberSessionMap.get(subId)
+    if (subSid) {
+      sessionMemberMap.delete(subSid)
+      memberSessionMap.delete(subId)
+    }
+    memberState.set(subId, {
+      ...subState,
+      status: 'idle',
+      command: null,
+      task: null,
+      last_seen: new Date().toISOString(),
+      last_task: {
+        command: subState.command,
+        task: subState.task,
+        tool_count: subState.tool_count,
+        started_at: subState.started_at,
+        ended_at: new Date().toISOString(),
+        last_tool: subState.last_tool,
+        last_desc: subState.last_desc,
+        history: subState.history,
+      },
+    })
+  }
 }
 
 // ── POST /api/update — PostToolUseフックから受信 ──
@@ -230,6 +335,8 @@ app.post('/api/update', (req, res) => {
     const skillName = tool_input.skill
     const targetMember = SKILL_MEMBER_MAP[skillName]
     if (targetMember) {
+      // ノアが代表で持っている場合はリルート、そうでなければ通常の活性化
+      rerouteFromDefault(session_id, targetMember, '/' + skillName, tool_input.args || null)
       autoActivateMember(targetMember, session_id, '/' + skillName, tool_input.args || null)
       member_id = targetMember
     }
@@ -242,6 +349,18 @@ app.post('/api/update', (req, res) => {
     const parentMember = sessionMemberMap.get(session_id)
     const parentState = parentMember ? memberState.get(parentMember) : null
     const parentCommand = parentState?.command || null
+
+    // Agentの内容からSkillコマンドを検出 → ノアからリルート
+    for (const [skillName, targetMember] of Object.entries(SKILL_MEMBER_MAP)) {
+      if (text.includes('/' + skillName) || text.includes(skillName)) {
+        rerouteFromDefault(session_id, targetMember, '/' + skillName, null)
+        if (!sessionMemberMap.has(session_id)) {
+          autoActivateMember(targetMember, session_id, '/' + skillName, null)
+          member_id = targetMember
+        }
+        break
+      }
+    }
 
     for (const [mid, keywords] of Object.entries(MEMBER_KEYWORDS)) {
       if (keywords.some(kw => text.includes(kw))) {
@@ -266,6 +385,8 @@ app.post('/api/update', (req, res) => {
           status: 'active',
           last_seen: new Date().toISOString(),
         })
+        // 部下も連動で復帰
+        activateSubordinates(member_id, session_id, state.command)
       }
     }
   }
@@ -285,6 +406,9 @@ app.post('/api/update', (req, res) => {
       member_id = bestMatch
       sessionMemberMap.set(session_id, member_id)
       memberSessionMap.set(member_id, session_id)
+      // 部下も連動で稼働
+      const bestState = memberState.get(member_id)
+      activateSubordinates(member_id, session_id, bestState?.command)
     }
 
     // 2) cwd/ファイルパスから部門長を自動判定して活性化
@@ -304,6 +428,28 @@ app.post('/api/update', (req, res) => {
         }
       }
     }
+
+    // 3) フォールバック: ノア（経営企画）が代表で引き受ける
+    //    担当が判明次第、rerouteFromDefault で適切な社員に引き継ぐ
+    if (!member_id) {
+      const activated = autoActivateMember(DEFAULT_RECEIVER, session_id, '受付中（自動振分待ち）', null)
+      if (activated) {
+        member_id = DEFAULT_RECEIVER
+      }
+    }
+  }
+
+  // ── ノアが代表で持っているセッションのリルート判定 ──
+  // パス情報から担当部門が判明したら即引き継ぎ
+  if (member_id === DEFAULT_RECEIVER && session_id) {
+    const filePath = tool_input?.file_path || ''
+    const detected = detectMemberFromPath(cwd, filePath)
+    if (detected) {
+      const rerouted = rerouteFromDefault(session_id, detected.member, detected.label, null)
+      if (rerouted) {
+        member_id = detected.member
+      }
+    }
   }
 
   // 社員ステートを更新
@@ -317,6 +463,12 @@ app.post('/api/update', (req, res) => {
       last_seen: new Date().toISOString(),
       history: [entry, ...state.history].slice(0, 8),
     })
+
+    // 部長がactiveなのに部下がidleなら連動で起動（デプロイ直後等のリカバリ）
+    const subs = DEPARTMENT_MEMBERS[member_id]
+    if (subs && session_id && subs.some(s => memberState.get(s)?.status !== 'active')) {
+      activateSubordinates(member_id, session_id, state.command)
+    }
   }
 
   // セッション追跡（後方互換）
@@ -368,6 +520,8 @@ app.get('/api/agents', (req, res) => {
             history: state.history,
           },
         })
+        // タイムアウト時も部下を連動で idle
+        deactivateSubordinates(m.id)
       }
     }
 
