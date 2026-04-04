@@ -297,15 +297,15 @@ body {
 /* ── Character Popup ── */
 .char-popup-overlay {
   position: fixed; top:0; left:0; right:0; bottom:0;
-  background: rgba(0,0,0,.5); z-index:300;
+  background: rgba(0,0,0,.6); z-index:300;
   display:flex; align-items:center; justify-content:center;
   cursor:pointer;
 }
 .char-popup {
   background: var(--panel-bg);
   border: 4px solid var(--panel-border);
-  padding: 16px 20px;
-  max-width: 420px; width: 90%;
+  padding: 18px 22px;
+  max-width: 440px; width: 92%;
   font-size: 8px;
   font-family: 'Press Start 2P', monospace;
   position: relative;
@@ -317,38 +317,103 @@ body {
   border:2px solid rgba(184,168,120,.3);
   pointer-events:none;
 }
-.char-popup-title {
-  font-size:10px; color:#f8c818;
+.popup-header {
+  display:flex; align-items:center; gap:10px; margin-bottom:10px;
+}
+.popup-dot {
+  width:10px; height:10px; flex-shrink:0;
+  border:2px solid rgba(255,255,255,.2);
+}
+.popup-name {
+  font-size:11px; color:#f8c818;
   text-shadow:1px 1px 0 #706028;
+}
+.popup-role {
+  font-size:7px; color:var(--text-dim); margin-top:2px;
+}
+.popup-quest {
+  background: rgba(248,200,24,.06);
+  border: 2px solid rgba(184,168,120,.25);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.popup-quest-label {
+  font-size:6px; color:var(--text-dim); margin-bottom:4px; letter-spacing:1px;
+}
+.popup-quest-text {
+  font-size:11px; color:#f8f0d8; line-height:1.5;
+}
+.popup-now {
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  border-left: 3px solid;
+}
+.popup-now-label {
+  font-size:6px; color:var(--text-dim); margin-bottom:3px; letter-spacing:1px;
+}
+.popup-now-text {
+  font-size:10px; line-height:1.4; word-break:break-all;
+}
+.popup-stats {
+  display:flex; gap:12px; margin-bottom:10px;
+  flex-wrap:wrap;
+}
+.popup-stat {
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(184,168,120,.2);
+  padding:5px 8px;
+  text-align:center; flex:1; min-width:60px;
+}
+.popup-stat-val {
+  font-size:10px; color:#f8c818; display:block; margin-bottom:2px;
+}
+.popup-stat-label {
+  font-size:5px; color:var(--text-dim); letter-spacing:0.5px;
+}
+.popup-files {
+  margin-bottom:10px;
+}
+.popup-files-label {
+  font-size:6px; color:var(--text-dim); margin-bottom:4px; letter-spacing:1px;
+}
+.popup-file-item {
+  font-size:7px; color:#a0d8f0; padding:2px 0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.popup-timeline {
   margin-bottom:8px;
 }
-.char-popup-status {
-  font-size:8px; color:var(--text-dim);
-  margin-bottom:6px;
+.popup-timeline-label {
+  font-size:6px; color:var(--text-dim); margin-bottom:4px; letter-spacing:1px;
 }
-.char-popup-task {
-  font-size:9px; color:var(--text);
-  margin-bottom:8px;
-  line-height:1.6;
+.popup-tl-item {
+  display:flex; align-items:flex-start; gap:6px;
+  padding:3px 0; border-bottom:1px solid rgba(184,168,120,.1);
+  font-size:7px;
 }
-.char-popup-history {
-  font-size:7px; color:var(--text-dim);
-  line-height:1.8;
+.popup-tl-time {
+  color:var(--text-dim); flex-shrink:0; width:36px;
 }
-.char-popup-history .hist-item {
-  display:flex; justify-content:space-between; gap:8px;
-  border-bottom:1px solid rgba(184,168,120,.15);
-  padding:2px 0;
+.popup-tl-icon {
+  flex-shrink:0; width:8px; text-align:center;
 }
-.char-popup-close {
+.popup-tl-desc {
+  color:var(--text); flex:1;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.popup-close {
   font-size:7px; color:var(--text-dim);
   text-align:center; margin-top:10px;
 }
+.popup-sep {
+  color:var(--panel-border); font-size:7px; margin:6px 0;
+}
 @media (max-width:600px) {
   .char-popup { max-width: 95%; padding: 14px 12px; }
-  .char-popup-title { font-size: 12px; }
-  .char-popup-task { font-size: 10px; }
-  .char-popup-history { font-size: 8px; }
+  .popup-name { font-size: 12px; }
+  .popup-quest-text { font-size: 12px; }
+  .popup-now-text { font-size: 11px; }
+  .popup-tl-item { font-size: 8px; }
 }
 
 /* ── Active names in status bar ── */
@@ -1685,94 +1750,140 @@ setInterval(spawnParticle, 3000)
 // ── Character Popup ──
 let lastAgentData = []
 
+function toolIcon(toolName) {
+  const icons = { Read:'📖', Write:'✏️', Edit:'🔧', Bash:'⚡', Grep:'🔍', Glob:'📂', WebFetch:'🌐', WebSearch:'🔎', Agent:'🤖', Skill:'🎯', TodoWrite:'📋' }
+  return icons[toolName] || '▸'
+}
+
+function extractFiles(history) {
+  const files = []
+  for (const h of history) {
+    const desc = h.desc || ''
+    // Extract file paths from descriptions like "server/server.js を編集"
+    const match = desc.match(/^(.+?\.\w+)\s/)
+    if (match && !files.includes(match[1])) files.push(match[1])
+  }
+  return files.slice(0, 5)
+}
+
 function showCharPopup(memberId) {
   const agent = lastAgentData.find(a => a.member_id === memberId)
   if (!agent) return
 
-  // Remove existing popup if any
   const existing = document.querySelector('.char-popup-overlay')
   if (existing) existing.remove()
 
   const isActive = agent.status === 'active'
-  const statusText = isActive ? '稼働中' : '待機中'
-  const statusColor = isActive ? 'var(--active-green)' : 'var(--idle-yellow)'
+  const dotColor = isActive ? 'var(--active-green)' : 'var(--idle-yellow)'
+  const statusLabel = isActive ? '⚔️ 稼働中' : '💤 待機中'
 
-  // Determine task info to display
-  let taskSection = ''
-  if (isActive) {
-    // Currently active: show current task with prominent "doing what" display
-    const toolCount = agent.tool_count || 0
-    const elapsedTime = agent.started_at ? elapsed(agent.started_at) : '-'
-    const currentAction = agent.last_desc || agent.task || agent.command || '処理中...'
-    taskSection = `
-      <div class="char-popup-task" style="background:rgba(72,192,72,.1);border-left:3px solid var(--active-green);padding:6px 8px;margin-bottom:10px;">
-        ◆ 今やっていること<br>
-        <span style="font-size:10px;color:#f8c818;">${currentAction}</span>
-      </div>
-      <div class="char-popup-task">
-        コマンド: ${agent.command || '-'}<br>
-        ${agent.task ? 'タスク: ' + agent.task + '<br>' : ''}
-        ツール使用: ${toolCount}回 | 経過: ${elapsedTime}
-      </div>`
-  } else if (agent.last_task) {
-    // Has previous task
-    const lt = agent.last_task
-    const toolCount = lt.tool_count || 0
-    const startedAt = lt.started_at ? new Date(lt.started_at) : null
-    const endedAt = lt.ended_at ? new Date(lt.ended_at) : null
-    let duration = '-'
-    if (startedAt && endedAt) {
-      const diffSec = Math.floor((endedAt - startedAt) / 1000)
-      const m = Math.floor(diffSec / 60), s = diffSec % 60
-      duration = m > 0 ? `${m}m ${s}s` : `${s}s`
-    }
-    const endedAgo = lt.ended_at ? timeAgo(lt.ended_at) : '-'
-    const lastAction = lt.last_desc || lt.task || lt.command || '-'
-    taskSection = `
-      <div class="char-popup-task" style="background:rgba(248,200,24,.08);border-left:3px solid var(--idle-yellow);padding:6px 8px;margin-bottom:10px;">
-        ◆ 最後にやっていたこと<br>
-        <span style="font-size:10px;color:var(--idle-yellow);">${lastAction}</span>
-      </div>
-      <div class="char-popup-task">
-        コマンド: ${lt.command || '-'}<br>
-        ${lt.task ? 'タスク: ' + lt.task + '<br>' : ''}
-        ツール: ${toolCount}回 | 実行時間: ${duration} | 終了: ${endedAgo}
-      </div>`
+  // ── Header ──
+  const header = `<div class="popup-header">
+    <div class="popup-dot" style="background:${dotColor};box-shadow:0 0 6px ${dotColor};"></div>
+    <div><div class="popup-name">${agent.name}</div><div class="popup-role">${agent.role} ${statusLabel}</div></div>
+  </div>`
+
+  // ── Quest (mission) ──
+  let questSection = ''
+  const taskData = isActive ? agent : agent.last_task
+  if (taskData) {
+    const cmd = taskData.command || ''
+    const task = taskData.task || ''
+    const questText = task || cmd || (agent.commands || []).join(' ') + ' 待機'
+    const questLabel = isActive ? '⚔ CURRENT QUEST' : '📜 LAST QUEST'
+    questSection = `<div class="popup-quest">
+      <div class="popup-quest-label">${questLabel}</div>
+      <div class="popup-quest-text">${cmd ? '<span style="color:#a0d8f0;">' + cmd + '</span> ' : ''}${task || ''}</div>
+    </div>`
   } else {
-    const cmdText = agent.commands ? agent.commands.join(', ') : '-'
-    taskSection = `<div class="char-popup-task" style="border-left:3px solid var(--stopped-gray);padding:6px 8px;">◆ 待機中（担当: ${cmdText}）</div>`
+    const cmdText = (agent.commands || []).join(', ')
+    questSection = `<div class="popup-quest">
+      <div class="popup-quest-label">📜 ASSIGNMENT</div>
+      <div class="popup-quest-text" style="color:var(--text-dim);">担当: ${cmdText}</div>
+    </div>`
   }
 
-  // Tool history
+  // ── Now doing / Last action ──
+  let nowSection = ''
+  if (isActive && agent.last_desc) {
+    nowSection = `<div class="popup-now" style="border-color:var(--active-green);background:rgba(72,192,72,.08);">
+      <div class="popup-now-label">▶ NOW</div>
+      <div class="popup-now-text" style="color:var(--active-green);">${agent.last_desc}</div>
+    </div>`
+  } else if (!isActive && agent.last_task?.last_desc) {
+    nowSection = `<div class="popup-now" style="border-color:var(--idle-yellow);background:rgba(248,200,24,.05);">
+      <div class="popup-now-label">▶ LAST ACTION</div>
+      <div class="popup-now-text" style="color:var(--idle-yellow);">${agent.last_task.last_desc}</div>
+    </div>`
+  }
+
+  // ── Stats ──
+  let statsSection = ''
+  if (taskData) {
+    const toolCount = (isActive ? agent.tool_count : taskData.tool_count) || 0
+    let timeText = '-'
+    if (isActive && agent.started_at) {
+      timeText = elapsed(agent.started_at)
+    } else if (taskData.started_at && taskData.ended_at) {
+      const diffSec = Math.floor((new Date(taskData.ended_at) - new Date(taskData.started_at)) / 1000)
+      const m = Math.floor(diffSec / 60), s = diffSec % 60
+      timeText = m > 0 ? m + 'm ' + s + 's' : s + 's'
+    }
+    const lastTool = (isActive ? agent.last_tool : taskData.last_tool) || '-'
+    statsSection = `<div class="popup-stats">
+      <div class="popup-stat"><span class="popup-stat-val">${toolCount}</span><span class="popup-stat-label">TOOLS</span></div>
+      <div class="popup-stat"><span class="popup-stat-val">${timeText}</span><span class="popup-stat-label">${isActive ? 'ELAPSED' : 'DURATION'}</span></div>
+      <div class="popup-stat"><span class="popup-stat-val">${lastTool}</span><span class="popup-stat-label">LAST TOOL</span></div>
+    </div>`
+  }
+
+  // ── Files touched ──
   const historyData = isActive ? (agent.history || []) : (agent.last_task?.history || [])
-  let historySection = ''
-  if (historyData.length > 0) {
-    const items = historyData.map(h => {
-      const t = h.time ? new Date(h.time) : null
-      const timeStr = t ? `${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}` : ''
-      return `<div class="hist-item"><span>${h.tool} — ${h.desc}</span><span>${timeStr}</span></div>`
+  const files = extractFiles(historyData)
+  let filesSection = ''
+  if (files.length > 0) {
+    const fileItems = files.map(f => {
+      const name = f.split('/').pop()
+      return `<div class="popup-file-item">📄 ${name} <span style="color:var(--text-dim);">${f}</span></div>`
     }).join('')
-    historySection = `
-      <div class="char-popup-history">
-        ◆ ツール履歴<br>
-        ${items}
-      </div>`
+    filesSection = `<div class="popup-files">
+      <div class="popup-files-label">📁 WORKING FILES</div>
+      ${fileItems}
+    </div>`
   }
 
-  const separator = `<div style="color:var(--panel-border);font-size:7px;margin:4px 0;">─────────────</div>`
+  // ── Timeline ──
+  let timelineSection = ''
+  if (historyData.length > 0) {
+    const items = historyData.slice(0, 6).map(h => {
+      const t = h.time ? new Date(h.time) : null
+      const timeStr = t ? String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0') : ''
+      return `<div class="popup-tl-item">
+        <span class="popup-tl-time">${timeStr}</span>
+        <span class="popup-tl-icon">${toolIcon(h.tool)}</span>
+        <span class="popup-tl-desc">${h.desc}</span>
+      </div>`
+    }).join('')
+    timelineSection = `<div class="popup-timeline">
+      <div class="popup-timeline-label">📋 ACTIVITY LOG</div>
+      ${items}
+    </div>`
+  }
 
   const overlay = document.createElement('div')
   overlay.className = 'char-popup-overlay'
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove() }
   overlay.innerHTML = `
     <div class="char-popup" onclick="event.stopPropagation()">
-      <div class="char-popup-title">▶ ${agent.name} — ${agent.role}</div>
-      ${separator}
-      <div class="char-popup-status" style="color:${statusColor};">現在のステータス: ${statusText}</div>
-      ${taskSection}
-      ${historySection}
-      ${separator}
-      <div class="char-popup-close">▶ タップで閉じる</div>
+      ${header}
+      <div class="popup-sep">─────────────────</div>
+      ${questSection}
+      ${nowSection}
+      ${statsSection}
+      ${filesSection}
+      ${timelineSection}
+      <div class="popup-sep">─────────────────</div>
+      <div class="popup-close">▶ タップで閉じる</div>
     </div>`
   document.body.appendChild(overlay)
 }
