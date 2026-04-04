@@ -1700,16 +1700,19 @@ function showCharPopup(memberId) {
   // Determine task info to display
   let taskSection = ''
   if (isActive) {
-    // Currently active: show current task
+    // Currently active: show current task with prominent "doing what" display
     const toolCount = agent.tool_count || 0
     const elapsedTime = agent.started_at ? elapsed(agent.started_at) : '-'
+    const currentAction = agent.last_desc || agent.task || agent.command || '処理中...'
     taskSection = `
+      <div class="char-popup-task" style="background:rgba(72,192,72,.1);border-left:3px solid var(--active-green);padding:6px 8px;margin-bottom:10px;">
+        ◆ 今やっていること<br>
+        <span style="font-size:10px;color:#f8c818;">${currentAction}</span>
+      </div>
       <div class="char-popup-task">
-        ◆ 現在のタスク<br>
         コマンド: ${agent.command || '-'}<br>
-        タスク: ${agent.task || '-'}<br>
-        ツール使用: ${toolCount}回<br>
-        経過時間: ${elapsedTime}
+        ${agent.task ? 'タスク: ' + agent.task + '<br>' : ''}
+        ツール使用: ${toolCount}回 | 経過: ${elapsedTime}
       </div>`
   } else if (agent.last_task) {
     // Has previous task
@@ -1724,17 +1727,20 @@ function showCharPopup(memberId) {
       duration = m > 0 ? `${m}m ${s}s` : `${s}s`
     }
     const endedAgo = lt.ended_at ? timeAgo(lt.ended_at) : '-'
+    const lastAction = lt.last_desc || lt.task || lt.command || '-'
     taskSection = `
+      <div class="char-popup-task" style="background:rgba(248,200,24,.08);border-left:3px solid var(--idle-yellow);padding:6px 8px;margin-bottom:10px;">
+        ◆ 最後にやっていたこと<br>
+        <span style="font-size:10px;color:var(--idle-yellow);">${lastAction}</span>
+      </div>
       <div class="char-popup-task">
-        ◆ 前回のタスク<br>
         コマンド: ${lt.command || '-'}<br>
-        タスク: ${lt.task || '-'}<br>
-        ツール使用: ${toolCount}回<br>
-        実行時間: ${duration}<br>
-        終了: ${endedAgo}
+        ${lt.task ? 'タスク: ' + lt.task + '<br>' : ''}
+        ツール: ${toolCount}回 | 実行時間: ${duration} | 終了: ${endedAgo}
       </div>`
   } else {
-    taskSection = `<div class="char-popup-task">◆ タスク履歴なし</div>`
+    const cmdText = agent.commands ? agent.commands.join(', ') : '-'
+    taskSection = `<div class="char-popup-task" style="border-left:3px solid var(--stopped-gray);padding:6px 8px;">◆ 待機中（担当: ${cmdText}）</div>`
   }
 
   // Tool history
