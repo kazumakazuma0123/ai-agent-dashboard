@@ -53,22 +53,50 @@ initMemberState()
 const sessionMemberMap = new Map()   // session_id → member_id
 const memberSessionMap = new Map()   // member_id → session_id
 
+// ── ファイルパスから案件名・作業種別を抽出 ──
+function describeFilePath(fp) {
+  if (!fp) return null
+  // 案件名を抽出 (cases/案件名/, lp-案件名 等)
+  const caseMatch = fp.match(/cases\/([^/]+)/)
+  const lpMatch = fp.match(/lp-([^/]+)/)
+  const draftMatch = fp.match(/drafts\/([^/]+)/)
+  const caseName = caseMatch ? caseMatch[1] : lpMatch ? lpMatch[1] : draftMatch ? draftMatch[1] : null
+
+  // 作業種別を判定
+  const fileName = fp.split('/').pop()
+  let action = ''
+  if (/research|リサーチ|レギュレーション/.test(fp)) action = 'リサーチ'
+  else if (/draft|ドラフト/.test(fp)) action = 'ドラフト'
+  else if (/regulation|レギュレーション/.test(fp)) action = 'レギュレーション確認'
+  else if (/\.html$/.test(fp)) action = 'LP編集'
+  else if (/\.css$/.test(fp)) action = 'スタイル調整'
+  else if (/\.js$/.test(fp)) action = 'スクリプト編集'
+  else if (/\.md$/.test(fp)) action = 'ドキュメント編集'
+  else action = fileName
+
+  if (caseName) return `${caseName} / ${action}`
+  return null
+}
+
 // ── ツール名の日本語表示 ──
 function describeToolUse(tool, input) {
   const fp = input?.file_path || ''
   const cmd = (input?.command || '').slice(0, 60)
   const pat = (input?.pattern || '').slice(0, 40)
+  const rich = describeFilePath(fp)
+
   switch (tool) {
-    case 'Write':     return `${fp} を作成`
-    case 'Edit':      return `${fp} を編集`
-    case 'Read':      return `${fp} を読み込み`
+    case 'Write':     return rich ? `${rich} を作成` : `${fp.split('/').pop() || 'ファイル'} を作成`
+    case 'Edit':      return rich ? `${rich} を編集` : `${fp.split('/').pop() || 'ファイル'} を編集`
+    case 'Read':      return rich ? `${rich} を読み込み` : `${fp.split('/').pop() || 'ファイル'} を読み込み`
     case 'Bash':      return cmd || 'コマンド実行'
     case 'Glob':      return `${pat} を検索`
     case 'Grep':      return `"${pat}" を検索`
-    case 'WebFetch':  return 'Web取得'
-    case 'WebSearch': return 'Web検索'
-    case 'TodoWrite': return 'TODOを更新'
-    case 'Agent':     return (input?.description || 'サブエージェント起動').slice(0, 40)
+    case 'WebFetch':  return input?.url ? `Web取得: ${input.url.slice(0, 50)}` : 'Web取得'
+    case 'WebSearch':  return input?.query ? `"${input.query}" を検索` : 'Web検索'
+    case 'TodoWrite': return input?.content ? `TODO: ${input.content.slice(0, 40)}` : 'TODOを更新'
+    case 'Skill':     return input?.skill ? `/${input.skill}${input.args ? ' ' + input.args.slice(0, 40) : ''} を実行` : 'スキル実行'
+    case 'Agent':     return (input?.description || 'サブエージェント起動').slice(0, 60)
     default:          return tool
   }
 }
@@ -151,6 +179,19 @@ const SKILL_MEMBER_MAP = {
   ceo: 'matsumoto', standup: 'matsumoto',
 }
 
+// スキル名→日本語タスク説明
+const SKILL_DESCRIPTIONS = {
+  article:  '記事制作パイプライン',
+  research: 'テーマリサーチ',
+  write:    '記事執筆',
+  direct:   '記事レビュー・校正',
+  hotel:    'ホテル運営タスク',
+  dev:      'アプリ開発・バグ修正',
+  infra:    'インフラ・自動化',
+  ceo:      '事業分析・経営企画',
+  standup:  '全社朝会・状況確認',
+}
+
 // ── Agentツール委任検知用: 社員キーワード ──
 const MEMBER_KEYWORDS = {
   kobayashi: ['イーサン', 'kobayashi.md', 'kobayashi', 'エンジニア'],
@@ -172,18 +213,38 @@ const DEPARTMENT_MEMBERS = {
 }
 
 // ── cwd/ファイルパスから部門長を自動判定 ──
+// 細かいルールを先に、汎用ルールを後に（先にマッチしたものが優先）
 const PATH_MEMBER_RULES = [
-  { pattern: /lp-kaigo|cases\/.*research|drafts\//,       member: 'sato',     label: 'コンテンツ制作' },
-  { pattern: /hotel-sui|sui-room-cre/,                     member: 'watanabe', label: '開発（SUI関連）' },
-  { pattern: /new-project/,                                member: 'watanabe', label: '開発（ダッシュボード）' },
-  { pattern: /\.claude\/org|\.claude\/commands/,            member: 'kato',     label: 'インフラ・設定' },
+  // コンテンツ制作 - 案件別
+  { pattern: /cases\/介護美容研究所.*research/,             member: 'sato',     label: '介護美容研究所 / リサーチ' },
+  { pattern: /cases\/([^/]+).*research/,                    member: 'sato',     label: null, extract: /cases\/([^/]+)/, suffix: ' / リサーチ' },
+  { pattern: /lp-kaigo/,                                    member: 'sato',     label: '介護美容研究所 / LP制作' },
+  { pattern: /lp-speak/,                                    member: 'sato',     label: 'Speak / LP制作' },
+  { pattern: /lp-([^/]+)/,                                  member: 'sato',     label: null, extract: /lp-([^/]+)/, suffix: ' / LP制作' },
+  { pattern: /drafts\//,                                    member: 'sato',     label: '記事ドラフト作成' },
+  { pattern: /cases\//,                                     member: 'sato',     label: '案件リサーチ' },
+  // ホテル
+  { pattern: /sui-room-cre/,                                member: 'watanabe', label: 'SUI清掃アプリ / 開発' },
+  { pattern: /hotel-sui/,                                   member: 'nakamura', label: 'HOTEL SUI / 運営' },
+  // 開発
+  { pattern: /new-project/,                                 member: 'watanabe', label: 'エージェントモニター / 開発' },
+  { pattern: /threads-poster/,                              member: 'watanabe', label: 'Threads投稿ツール / 開発' },
+  { pattern: /gas\//,                                       member: 'watanabe', label: 'GAS / 開発' },
+  // インフラ
+  { pattern: /\.claude\/org|\.claude\/commands/,             member: 'kato',     label: '組織設定 / メンテナンス' },
+  { pattern: /\.claude\//,                                   member: 'kato',     label: 'Claude設定 / メンテナンス' },
 ]
 
 function detectMemberFromPath(cwd, filePath) {
   const target = (filePath || '') + ' ' + (cwd || '')
   for (const rule of PATH_MEMBER_RULES) {
     if (rule.pattern.test(target)) {
-      return { member: rule.member, label: rule.label }
+      // 動的ラベル生成（extract パターンがある場合）
+      if (!rule.label && rule.extract) {
+        const m = target.match(rule.extract)
+        if (m) return { member: rule.member, label: m[1] + (rule.suffix || '') }
+      }
+      return { member: rule.member, label: rule.label || '作業中' }
     }
   }
   return null
@@ -335,9 +396,11 @@ app.post('/api/update', (req, res) => {
     const skillName = tool_input.skill
     const targetMember = SKILL_MEMBER_MAP[skillName]
     if (targetMember) {
+      const skillDesc = SKILL_DESCRIPTIONS[skillName] || skillName
+      const taskDetail = tool_input.args ? `${skillDesc}: ${tool_input.args.slice(0, 60)}` : skillDesc
       // ノアが代表で持っている場合はリルート、そうでなければ通常の活性化
-      rerouteFromDefault(session_id, targetMember, '/' + skillName, tool_input.args || null)
-      autoActivateMember(targetMember, session_id, '/' + skillName, tool_input.args || null)
+      rerouteFromDefault(session_id, targetMember, '/' + skillName, taskDetail)
+      autoActivateMember(targetMember, session_id, '/' + skillName, taskDetail)
       member_id = targetMember
     }
   }

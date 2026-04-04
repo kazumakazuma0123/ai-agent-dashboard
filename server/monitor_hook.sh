@@ -26,7 +26,14 @@ CWD=$(echo "$INPUT"     | jq -r '.cwd        // empty')
 TOOL_INPUT=$(echo "$INPUT" | jq -c '{
   file_path: (.tool_input.file_path // null),
   command:   ((.tool_input.command  // "") | .[0:80]),
-  pattern:   (.tool_input.pattern   // null)
+  pattern:   (.tool_input.pattern   // null),
+  skill:     (.tool_input.skill // null),
+  args:      ((.tool_input.args // "") | .[0:120]),
+  description: ((.tool_input.description // "") | .[0:80]),
+  prompt:    ((.tool_input.prompt // "") | .[0:200]),
+  content:   ((.tool_input.content // "") | .[0:60]),
+  query:     ((.tool_input.query // "") | .[0:60]),
+  url:       ((.tool_input.url // "") | .[0:100])
 }')
 
 # バックグラウンドで送信（エージェントをブロックしない）
