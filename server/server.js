@@ -691,6 +691,8 @@ app.post('/api/vps-file', (req, res) => {
     '/root/hotel-sui-slack/todo.json',
     '/root/daily-morning/daily-morning.sh',
     '/root/daily-morning/weekly-brief.json',
+    '/root/daily-morning/weekly-brief-refresh.sh',
+    '/root/daily-morning/monthly-goals.md',
     '/root/daily-morning/.env',
     '/etc/cron.d/daily-morning',
   ]
