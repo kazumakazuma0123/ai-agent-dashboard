@@ -685,7 +685,15 @@ app.post('/api/vps-file', (req, res) => {
     return res.status(401).json({ error: 'unauthorized' })
   }
   const { action, file, content } = req.body
-  const ALLOWED = ['/root/claude-proxy-server.js', '/root/hotel-sui-slack/daily-slack-report.sh', '/root/hotel-sui-slack/todo.json']
+  const ALLOWED = [
+    '/root/claude-proxy-server.js',
+    '/root/hotel-sui-slack/daily-slack-report.sh',
+    '/root/hotel-sui-slack/todo.json',
+    '/root/daily-morning/daily-morning.sh',
+    '/root/daily-morning/weekly-brief.json',
+    '/root/daily-morning/.env',
+    '/etc/cron.d/daily-morning',
+  ]
 
   if (action === 'write') {
     if (!file || !content || !ALLOWED.includes(file)) {
