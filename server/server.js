@@ -707,6 +707,23 @@ app.post('/api/vps-file', (req, res) => {
     return res.json({ ok: true, file, size: content.length })
   }
 
+  if (action === 'read') {
+    // デバッグ・監視用。読み取り可能なパスはホワイトリスト + ログファイル（cron.log / refresh.log）に限定
+    const READABLE = [
+      ...ALLOWED,
+      '/root/daily-morning/cron.log',
+      '/root/daily-morning/refresh.log',
+    ]
+    if (!file || !READABLE.includes(file)) {
+      return res.status(403).json({ error: 'path not readable: ' + file })
+    }
+    if (!fs.existsSync(file)) {
+      return res.json({ ok: true, file, exists: false, content: '' })
+    }
+    const content = fs.readFileSync(file, 'utf-8')
+    return res.json({ ok: true, file, exists: true, size: content.length, content })
+  }
+
   if (action === 'start-proxy') {
     // claude-proxy-server.js をバックグラウンド起動
     try {
