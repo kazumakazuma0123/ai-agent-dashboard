@@ -8,7 +8,8 @@ const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50kb' }))
 
-const API_KEY = process.env.API_KEY || 'REDACTED_API_KEY'
+const API_KEY = process.env.API_KEY
+if (!API_KEY) { console.error('環境変数 API_KEY が設定されていません'); process.exit(1) }
 
 // ── 社員マスタ（常駐表示） ──
 const MEMBERS = [

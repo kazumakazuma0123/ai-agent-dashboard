@@ -13,8 +13,8 @@
 #   }]
 # }
 
-VPS_URL="http://REDACTED_VPS_IP:3001"
-API_KEY="REDACTED_API_KEY"
+VPS_URL="${VPS_MONITOR_URL:-http://localhost:3001}"
+API_KEY="${VPS_API_KEY:-}"
 
 INPUT=$(cat)
 
