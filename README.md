@@ -54,19 +54,12 @@ API_KEY=local-test-only PORT=4317 MONITOR_STATE_FILE=/tmp/agent-monitor-local-te
 
 ## 公開・復旧の状態（2026-10-03）
 
-既存公開先: https://claude-agent-monitor.vercel.app
+公開先: https://claude-agent-monitor.vercel.app （実データ表示）。`?demo=1` は架空の作業例です。
 
-停止原因はVercelからVPSへの転送先に `REDACTED_VPS_IP` が残っていたこと。既存VPSは応答していますが、Git履歴が現在のGitHub mainと分岐しており、既存 `/api/deploy` の `git pull` が失敗します。SSHもタイムアウトします。
+Vercelの転送先を修正済み。VPSは通常のSSH接続がタイムアウトするものの、既存の `vps-tailscale` 接続から管理できます。新版を `/root/ai-agent-dashboard-v2-f7463a7` に配置し、PM2の `ai-agent-dashboard` として起動しました。旧 `/root/ai-agent-dashboard` は変更せず復旧用に保持しています。
 
-バックエンドの新版はmainへpush済み。新画面・接続アダプターは `codex/agent-monitor-v2` で準備しています。VPSの切り替え・本番画面の更新・実クライアントのフック移行は未完了です。
+既存プロセスの認証設定を引き継ぎ、キーの変更・ログ出力は行っていません。既存の平文プロキシ応答対応も保持。新版の起動・既存運用APIを別ポートで確認してから切り替え、PM2設定を保存しました。履歴は新版の `server/data/sessions.json` に保存します。
 
-### VPSコンソールが使える場合の切り替え方針
+Mac側のCodexとClaude Codeの通知設定はバックアップ後に移行済み。Codexは `/hooks` で新しい通知フックの信頼操作が必要です。Claude Codeは既存セッションを再起動して設定を読み直してください。通知アダプターの手動通信確認と、実クライアントが自動で通知を発火する確認は区別します。
 
-1. `/root/ai-agent-dashboard` のGit状態、PM2設定、API_KEYが既存プロセスに設定されているかを値を表示せず確認。
-2. 旧チェックアウト・ローカル差分を保持したまま、新しいディレクトリに対象コミットをチェックアウトする。履歴の強制リセット・旧履歴の無条件マージはしない。
-3. 新版の依存関係とテストを確認。認証キーが環境変数に無い場合は、この変更についてユーザー確認を取ってから設定する。
-4. PM2の対象プロセスだけを新しいディレクトリへ切り替え、`/health` の `version: 2`、既存の管理APIを確認。新しいデータ保存先を確定する。
-5. Vercelへ新画面を公開。`vercel.json` にある転送先が稼働中のVPSを指すことを確認。
-6. 両クライアントのフックを移行し、Codexの信頼確認後、実際の開始→活動→応答完了をそれぞれ確認する。
-
-既存のサーバーにローカル変更がある可能性があるため、復旧時に `git reset --hard` は使いません。
+今後の更新は `codex/agent-monitor-v2` を使用。サーバー側の既存変更を保持し、`git reset --hard` は使いません。通知が途絶えた状態を完了とは扱いません。
