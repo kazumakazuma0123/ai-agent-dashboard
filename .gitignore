@@ -1,1 +1,9 @@
 .vercel
+.DS_Store
+node_modules/
+data/
+public/
+.env
+.env.*
+__pycache__/
+*.pyc
