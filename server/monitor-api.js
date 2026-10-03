@@ -30,13 +30,33 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
   function record(input) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('Event must be an object')
     // Keep only display metadata. Never persist raw tool input, shell commands or responses.
-    const member = memberIds.has(input.member_id) ? input.member_id : department(text(input.cwd || input.project, 1000))
-    return store.ingest({
+    const existing = store.snapshot().sessions.find(s => s.source === (input.source ?? 'unknown') && s.session_id === input.session_id)
+    const event = {
       source: input.source ?? 'unknown', session_id: input.session_id, event_id: input.event_id,
       event: input.event, timestamp: input.timestamp,
-      project: text(input.project || path.basename(text(input.cwd, 1000))) || 'プロジェクト未指定',
-      task: text(input.task), tool: text(input.tool), description: text(input.description), member_id: member,
-    })
+    }
+    for (const field of ['task', 'tool', 'description', 'project']) {
+      if (input[field] !== undefined) {
+        if (typeof input[field] !== 'string') throw new TypeError(`Invalid ${field}`)
+        if (text(input[field]).trim()) event[field] = text(input[field])
+      }
+    }
+    if (!event.project && !existing?.project && input.cwd) event.project = path.basename(text(input.cwd, 1000))
+    if (input.event === 'start') {
+      if (!event.task) event.task = '新しい依頼を確認中'
+      if (input.stage === undefined) event.stage = 'general'
+    }
+    if (memberIds.has(input.member_id)) {
+      event.member_id = input.member_id
+      event.assignment = input.assignment ?? 'explicit'
+    } else if (!existing?.member_id || (input.event === 'start' && existing.assignment !== 'explicit')) {
+      event.member_id = department(text(input.cwd || input.project, 1000))
+      event.assignment = 'inferred'
+    }
+    if (input.assignment !== undefined && !['explicit', 'inferred', 'unknown'].includes(input.assignment)) throw new TypeError('Invalid assignment')
+    if (input.assignment !== undefined && existing?.member_id && !event.member_id) event.assignment = input.assignment
+    if (input.stage !== undefined) event.stage = input.stage
+    return store.ingest(event)
   }
   function respond(res, operation) {
     try { return res.json(operation()) }
@@ -84,7 +104,16 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
   }))
   app.get('/api/monitor', (_, res) => {
     const snapshot = store.snapshot()
-    res.json({ ...snapshot, agents: projectedAgents(snapshot), version: 2 })
+    const completed_items = snapshot.sessions.flatMap(session => session.history
+      .filter(event => event.event === 'completed' && event.accepted_completion === true)
+      .map(event => ({
+        id: JSON.stringify([session.source, session.session_id, event.event_id]),
+        session_id: session.session_id, source: session.source, member_id: event.member_id,
+        assignment: event.assignment || 'unknown', stage: event.stage || 'general',
+        task: event.task || '', project: event.project || 'プロジェクト未指定', description: event.description || '',
+        completed_at: event.timestamp, status: 'completed',
+      }))).sort((a, b) => Date.parse(b.completed_at) - Date.parse(a.completed_at)).slice(0, 100)
+    res.json({ ...snapshot, completed_items, agents: projectedAgents(snapshot), version: 2 })
   })
   app.get('/api/agents', (_, res) => res.json({ agents: projectedAgents(store.snapshot()), unmapped_sessions: 0, unmapped_details: [] }))
   app.get('/api/sessions', authorize, (_, res) => res.json(store.snapshot().sessions))

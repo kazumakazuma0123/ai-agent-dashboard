@@ -106,3 +106,70 @@ test('monitor reads disable caching, including authentication errors', async t =
     assert.equal((await f.get(route)).headers.get('cache-control'), 'no-store');
   }
 });
+
+test('completion snapshots survive missing metadata, duplicate completion and next turn', async t => {
+  const f = await fixture(t);
+  await f.send({ task: '記事Aを執筆', project: '案件A', stage: 'writing', assignment: 'explicit' });
+  f.tick(10);
+  // Stop commonly supplies only session identity and lifecycle event.
+  await f.post('/api/events', { source: 'codex', session_id: 's1', event_id: 'stop1', event: 'completed' });
+  await f.post('/api/events', { source: 'codex', session_id: 's1', event_id: 'stop-repeat', event: 'completed' });
+  let snapshot = await (await f.get('/api/monitor')).json();
+  assert.equal(snapshot.completed_items.length, 1);
+  assert.equal(snapshot.completed_items[0].task, '記事Aを執筆');
+  assert.equal(snapshot.completed_items[0].project, '案件A');
+  assert.equal(snapshot.completed_items[0].stage, 'writing');
+  assert.equal(snapshot.completed_items[0].member_id, 'watanabe');
+  assert.equal(snapshot.completed_items[0].assignment, 'explicit');
+  f.tick(10);
+  await f.send({ task: '記事Bを調査', project: '案件B', stage: 'research', member_id: 'kobayashi' });
+  await f.send({ event: 'completed', timestamp: base + 10 });
+  snapshot = await (await f.get('/api/monitor')).json();
+  assert.equal(snapshot.sessions[0].status, 'active');
+  assert.equal(snapshot.completed_items.length, 1);
+  assert.equal(snapshot.completed_items[0].task, '記事Aを執筆');
+  f.tick(10);
+  await f.post('/api/events', { source: 'codex', session_id: 's1', event_id: 'stop2', event: 'completed' });
+  snapshot = await (await f.get('/api/monitor')).json();
+  assert.equal(snapshot.completed_items.length, 2);
+  assert.equal(snapshot.completed_items[0].task, '記事Bを調査');
+  assert.equal(snapshot.completed_items[0].member_id, 'kobayashi');
+  assert.equal(snapshot.completed_items[1].member_id, 'watanabe');
+});
+
+test('assignment fallback is inferred and work stage is never guessed', async t => {
+  const f = await fixture(t);
+  await f.send({ member_id: undefined, project: 'new-project', task: 'レビュー作業' });
+  const s = (await (await f.get('/api/monitor')).json()).sessions[0];
+  assert.equal(s.member_id, 'watanabe');
+  assert.equal(s.assignment, 'inferred');
+  assert.equal(s.stage, 'general');
+  for (const changes of [{ stage: 'made-up' }, { assignment: 'made-up' }, { task: {} }]) assert.equal((await f.send(changes)).status, 400);
+});
+
+test('new requests reset absent task and stage while preserving completion and explicit persona', async t => {
+  const f = await fixture(t);
+  await f.send({ task: '記事を執筆', stage: 'writing', member_id: 'kobayashi' });
+  f.tick(10);
+  await f.send({ event: 'completed', member_id: undefined });
+  f.tick(10);
+  await f.send({ member_id: undefined });
+  let snapshot = await (await f.get('/api/monitor')).json();
+  assert.equal(snapshot.sessions[0].task, '新しい依頼を確認中');
+  assert.equal(snapshot.sessions[0].stage, 'general');
+  assert.equal(snapshot.sessions[0].member_id, 'kobayashi');
+  assert.equal(snapshot.completed_items[0].task, '記事を執筆');
+  assert.equal(snapshot.completed_items[0].stage, 'writing');
+  await f.send({ session_id: 'inferred', member_id: undefined, project: 'new-project', task: '開発', stage: 'development' });
+  f.tick(10);
+  await f.send({ session_id: 'inferred', member_id: undefined });
+  snapshot = await (await f.get('/api/monitor')).json();
+  const inferred = snapshot.sessions.find(s => s.session_id === 'inferred');
+  assert.equal(inferred.member_id, 'matsumoto');
+  assert.equal(inferred.assignment, 'inferred');
+  assert.equal(inferred.task, '新しい依頼を確認中');
+  assert.equal(inferred.stage, 'general');
+  // An older start must not reset the currently displayed request.
+  await f.send({ session_id: 'inferred', timestamp: base, member_id: 'watanabe', task: '古い作業', stage: 'writing' });
+  assert.equal((await (await f.get('/api/monitor')).json()).sessions.find(s => s.session_id === 'inferred').task, '新しい依頼を確認中');
+});

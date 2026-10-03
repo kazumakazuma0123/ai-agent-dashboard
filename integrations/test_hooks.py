@@ -34,6 +34,51 @@ class HooksTests(unittest.TestCase):
         payload['agent_id'] = 'child'
         self.assertEqual(hook.normalized(payload, 'codex')['session_id'], 'session:child')
 
+    def test_inferred_writing_and_research_metadata(self):
+        data = self.payload('PreToolUse')
+        data.update(tool_name='Write', tool_input={'file_path': '/home/user/ppc/drafts/articles/a.md', 'content': 'SECRET'})
+        event = hook.normalized(data, 'codex')
+        self.assertEqual((event['stage'], event['member_id'], event['assignment']), ('writing', 'yamada', 'inferred'))
+        self.assertNotIn('tool', event)
+        self.assertNotIn('SECRET', json.dumps(event))
+        data.update(tool_name='Read', tool_input={'file_path': '/home/user/ppc/cases/介護美容研究所/research/a.md'})
+        event = hook.normalized(data, 'claude')
+        self.assertEqual(event['project'], '介護美容研究所')
+        self.assertEqual(event['member_id'], 'tanaka')
+        self.assertNotIn('/home', json.dumps(event))
+
+    def test_skill_exact_match_and_unknown_preserves_previous_metadata(self):
+        data = self.payload()
+        data.update(tool_name='Skill', tool_input={'skill': '/write', 'args': 'SECRET'})
+        self.assertEqual(hook.normalized(data, 'claude')['stage'], 'writing')
+        for name in ('Stop', 'UserPromptSubmit', 'SessionEnd', 'Interrupt'):
+            event = hook.normalized(self.payload(name), 'codex')
+            for field in ('task', 'stage', 'member_id', 'assignment'):
+                self.assertNotIn(field, event)
+        self.assertNotIn('stage', hook.normalized(self.payload(), 'codex'))
+        data['tool_input']['skill'] = '/write secret prompt'
+        self.assertNotIn('stage', hook.normalized(data, 'claude'))
+
+    def test_secret_paths_never_drive_assignment(self):
+        data = self.payload()
+        data.update(tool_name='Edit', tool_input={'file_path': '/home/user/credentials/articles/secret.md'})
+        event = hook.normalized(data, 'codex')
+        self.assertNotIn('stage', event)
+        self.assertNotIn('credentials', json.dumps(event))
+        data.update(hook_event_name='SubagentStart', agent_id='child', agent_type='yamada')
+        self.assertEqual(hook.normalized(data, 'codex')['member_id'], 'yamada')
+        data['agent_type'] = 'custom SECRET'
+        self.assertNotIn('member_id', hook.normalized(data, 'codex'))
+
+    def test_project_only_sent_for_start_or_specific_case(self):
+        for name in ('SessionStart', 'UserPromptSubmit'):
+            self.assertEqual(hook.normalized(self.payload(name), 'codex')['project'], 'project')
+        for name in ('PreToolUse', 'PostToolUse', 'Stop', 'Interrupt', 'SessionEnd'):
+            self.assertNotIn('project', hook.normalized(self.payload(name), 'codex'))
+        data = self.payload('PreToolUse')
+        data.update(tool_name='Read', tool_input={'file_path': '/workspace/ppc/cases/案件A/research/info.md'})
+        self.assertEqual(hook.normalized(data, 'codex')['project'], '案件A')
+
     def test_safe_legacy_key(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {}, clear=True):
             path = Path(tmp) / 'old.sh'

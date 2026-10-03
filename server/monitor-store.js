@@ -9,7 +9,9 @@ const TERMINAL = new Set(['completed', 'failed']);
 const MAX_SESSIONS = 500;
 const MAX_HISTORY = 100;
 const MAX_IDS = 2000;
-const TEXT_FIELDS = ['project', 'cwd', 'task', 'tool', 'description', 'member_id'];
+const STAGES = new Set(['writing', 'research', 'review', 'development', 'operations', 'automation', 'planning', 'general']);
+const ASSIGNMENTS = new Set(['explicit', 'inferred', 'unknown']);
+const TEXT_FIELDS = ['project', 'cwd', 'task', 'tool', 'description', 'member_id', 'stage', 'assignment'];
 const clone = value => JSON.parse(JSON.stringify(value));
 const iso = time => new Date(time).toISOString();
 
@@ -61,6 +63,8 @@ export class MonitorStore {
         event[key] = input[key];
       }
     }
+    if (event.stage !== undefined && !STAGES.has(event.stage)) throw new TypeError('Invalid stage');
+    if (event.assignment !== undefined && !ASSIGNMENTS.has(event.assignment)) throw new TypeError('Invalid assignment');
     const id = `${source}:${event.session_id}`;
     const existing = this.sessions.get(id);
     if (existing?.event_ids.includes(event.event_id)) return this.publicSession(existing, time);
@@ -68,11 +72,13 @@ export class MonitorStore {
     const session = existing ? clone(existing) : {
       id, source, session_id: event.session_id, status: 'active', started_at: event.timestamp,
       updated_at: event.timestamp, last_activity_at: event.timestamp, tool_count: 0, history: [], event_ids: [],
+      project: 'プロジェクト未指定', stage: 'general', assignment: 'unknown',
     };
     const late = Date.parse(event.timestamp) < Date.parse(session.updated_at);
     // Only an explicit, strictly newer turn start can reopen a terminal conversation.
     const newTurn = TERMINAL.has(session.status) && event.event === 'start' && Date.parse(event.timestamp) > Date.parse(session.updated_at);
-    if (!late && (!TERMINAL.has(session.status) || newTurn)) {
+    const accepted = !late && (!TERMINAL.has(session.status) || newTurn);
+    if (accepted) {
       session.status = event.event === 'completed' || event.event === 'failed' ? event.event
         : event.event === 'waiting' ? 'waiting'
         : event.event === 'heartbeat' ? session.status : 'active';
@@ -82,6 +88,14 @@ export class MonitorStore {
     }
     if (event.event === 'activity' && event.tool) session.tool_count += 1;
     if (newTurn) session.started_at = event.timestamp;
+    if (event.event === 'completed') {
+      event.accepted_completion = accepted;
+      if (accepted) {
+        for (const key of ['task', 'project', 'member_id', 'stage', 'assignment', 'description']) {
+          if (session[key] !== undefined) event[key] = session[key];
+        }
+      }
+    }
     session.history.push(event);
     session.history.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
     session.history = session.history.slice(-MAX_HISTORY);

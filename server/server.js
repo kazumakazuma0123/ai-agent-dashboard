@@ -32,6 +32,7 @@ const MEMBERS = [
 // セッションを唯一の稼働根拠にする。運用APIは既存のまま維持する。
 installMonitor(app, { apiKey: API_KEY, members: MEMBERS })
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+app.use('/assets', express.static(path.join(projectRoot, 'assets'), { dotfiles: 'deny' }))
 app.get('/', (_, res) => res.sendFile(path.join(projectRoot, 'index.html')))
 app.get('/office.html', (_, res) => res.sendFile(path.join(projectRoot, 'office.html')))
 

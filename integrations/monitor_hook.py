@@ -29,6 +29,64 @@ EVENTS = {
     'SubagentStop': ('completed', 'サブエージェント応答完了'),
 }
 
+ROLES = {
+    'write': ('writing', 'yamada', '記事ドラフトを執筆'),
+    'research': ('research', 'tanaka', '競合情報を調査'),
+    'direct': ('review', 'suzuki', 'コンテンツをレビュー'),
+    'article': ('writing', 'sato', '記事制作を進行'),
+    'dev': ('development', 'watanabe', '開発作業を実施'),
+    'hotel': ('operations', 'nakamura', 'ホテル運営を確認'),
+    'infra': ('automation', 'kato', '自動化・基盤を整備'),
+    'ceo': ('planning', 'matsumoto', '事業計画を確認'),
+    'standup': ('planning', 'matsumoto', '全社の状況を確認'),
+}
+NAMED_ROLES = {value[1]: value for value in ROLES.values()}
+SECRET_PATH = re.compile(r'(?i)(secret|credential|token|password|\.env|\.ssh|\.aws|private[_-]?key)')
+
+def safe_label(value):
+    if (isinstance(value, str) and 0 < len(value) <= 80
+            and re.fullmatch(r'[\w\- .・（）()]+', value)
+            and not SECRET_PATH.search(value)):
+        return value
+    return None
+
+def task_metadata(data):
+    """Infer only from exact skill names or structured file paths, never raw text."""
+    name = data.get('hook_event_name')
+    role = None
+    result = {}
+    if name == 'SubagentStart':
+        role = NAMED_ROLES.get(data.get('agent_type')) if isinstance(data.get('agent_type'), str) else None
+    elif name in ('PreToolUse', 'PostToolUse', 'PostToolUseFailure'):
+        tool = data.get('tool_name')
+        arguments = data.get('tool_input')
+        if not isinstance(arguments, dict):
+            return result
+        if tool == 'Skill' and isinstance(arguments.get('skill'), str):
+            role = ROLES.get(arguments['skill'].removeprefix('/'))
+        path = arguments.get('file_path')
+        if tool in ('Read', 'Write', 'Edit', 'MultiEdit') and isinstance(path, str) and not SECRET_PATH.search(path):
+            parts = Path(path).parts
+            for i in range(len(parts) - 2):
+                if parts[i:i + 2] == ('ppc', 'cases'):
+                    project = safe_label(parts[i + 2])
+                    if project:
+                        result['project'] = project
+                    break
+            directories = set(parts[:-1])
+            if 'research' in directories:
+                role = ROLES['research']
+            elif directories.intersection({'review', 'reviews', 'レビューログ'}):
+                role = ROLES['direct']
+            elif tool in ('Write', 'Edit', 'MultiEdit') and directories.intersection({'drafts', 'articles'}):
+                role = ROLES['write']
+            elif tool in ('Write', 'Edit', 'MultiEdit') and Path(path).suffix.lower() in {
+                    '.py', '.js', '.jsx', '.ts', '.tsx', '.html', '.css', '.go', '.rs', '.java', '.swift', '.vue', '.svelte'}:
+                role = ('development', 'watanabe', 'コードを編集')
+    if role:
+        result.update(stage=role[0], member_id=role[1], task=role[2], assignment='inferred')
+    return result
+
 def normalized(data, source):
     name = data.get('hook_event_name')
     if name not in EVENTS or not isinstance(data.get('session_id'), str):
@@ -40,14 +98,15 @@ def normalized(data, source):
         session += ':' + str(data['agent_id'])[:100]
     event, description = EVENTS[name]
     cwd = data.get('cwd') if isinstance(data.get('cwd'), str) else ''
-    project = Path(cwd).name[:80] or '未指定'
-    if re.search(r'(?i)(secret|credential|token|\.env)', project):
-        project = '非公開プロジェクト'
+    project = safe_label(Path(cwd).name) or '非公開プロジェクト'
     ident = data.get('tool_use_id')
     event_id = hashlib.sha256(f'{source}:{session}:{name}:{ident}'.encode()).hexdigest() if ident else str(uuid.uuid4())
     result = dict(source=source, session_id=session, event_id=event_id, event=event,
-                  timestamp=dt.datetime.now(dt.timezone.utc).isoformat(), project=project,
-                  task=description, description=description)
+                  timestamp=dt.datetime.now(dt.timezone.utc).isoformat(),
+                  description=description)
+    if name in ('SessionStart', 'UserPromptSubmit', 'SubagentStart'):
+        result['project'] = project
+    result.update(task_metadata(data))
     # Never forward tool arguments, output, prompts, transcript paths or absolute cwd.
     if name in ('PostToolUse', 'PostToolUseFailure'):
         tool = data.get('tool_name', '')

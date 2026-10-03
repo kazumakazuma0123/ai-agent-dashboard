@@ -112,3 +112,26 @@ test('only strictly newer explicit start reopens a completed conversation', () =
   store.ingest(event({ event_id: 'late-done', event: 'completed', timestamp: base + 100 }));
   assert.equal(store.snapshot().sessions[0].status, 'active');
 });
+
+test('completion metadata persists independently from a later turn', t => {
+  const dir = mkdtempSync(join(tmpdir(), 'monitor-completion-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const filePath = join(dir, 'sessions.json');
+  let time = base;
+  const store = new MonitorStore({ filePath, now: () => time });
+  store.ingest(event({ task: '原稿A', project: '案件A', member_id: 'writer', stage: 'writing', assignment: 'explicit' }));
+  time += 10;
+  store.ingest(event({ event_id: 'done', event: 'completed', timestamp: time }));
+  store.ingest(event({ event_id: 'duplicate-done', event: 'completed', timestamp: time }));
+  time += 10;
+  store.ingest(event({ event_id: 'next', timestamp: time, task: '原稿B', member_id: 'reviewer', stage: 'review' }));
+  const restored = new MonitorStore({ filePath, now: () => time });
+  const completed = restored.snapshot().sessions[0].history.filter(e => e.accepted_completion);
+  assert.equal(completed.length, 1);
+  assert.equal(completed[0].task, '原稿A');
+  assert.equal(completed[0].member_id, 'writer');
+  assert.equal(completed[0].stage, 'writing');
+  assert.equal(completed[0].assignment, 'explicit');
+  assert.throws(() => store.ingest(event({ event_id: 'bad', stage: 'invalid' })), TypeError);
+  assert.throws(() => store.ingest(event({ event_id: 'bad', assignment: 'invalid' })), TypeError);
+});
