@@ -58,7 +58,7 @@ API_KEY=local-test-only PORT=4317 MONITOR_STATE_FILE=/tmp/agent-monitor-local-te
 
 Vercelの転送先を修正済み。VPSは通常のSSH接続がタイムアウトするものの、既存の `vps-tailscale` 接続から管理できます。新版を `/root/ai-agent-dashboard-v2-f7463a7` に配置し、PM2の `ai-agent-dashboard` として起動しました。旧 `/root/ai-agent-dashboard` は変更せず復旧用に保持しています。
 
-既存プロセスの認証設定を引き継ぎ、キーの変更・ログ出力は行っていません。既存の平文プロキシ応答対応も保持。新版の起動・既存運用APIを別ポートで確認してから切り替え、PM2設定を保存しました。履歴は新版の `server/data/sessions.json` に保存します。
+既存プロセスの認証設定を引き継ぎ、キーの変更・ログ出力は行っていません。既存の平文プロキシ応答対応も保持。新版の起動・既存運用APIを別ポートで確認してから切り替え、PM2設定を保存しました。履歴は新版の `data/sessions.json` に保存します。
 
 Mac側のCodexとClaude Codeの通知設定はバックアップ後に移行済み。Codexは `/hooks` で新しい通知フックの信頼操作が必要です。Claude Codeは既存セッションを再起動して設定を読み直してください。通知アダプターの手動通信確認と、実クライアントが自動で通知を発火する確認は区別します。
 
