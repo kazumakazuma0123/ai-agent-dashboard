@@ -162,9 +162,9 @@ class HooksTests(unittest.TestCase):
         event = hook.normalized(data, 'claude')
         self.assertEqual(event['task'], 'モニターの表示を確認')
         self.assertNotIn('SECRET', json.dumps(event))
-        # 英語だけの作業名は本人に伝わらないので送らない
+        # 英語だけの作業名は本人に伝わらないので、汎用の日本語表示に置き換える
         data.update(tool_input={'command': 'SECRET', 'description': 'Fetch live monitor API'})
-        self.assertNotIn('task', hook.normalized(data, 'claude'))
+        self.assertEqual(hook.normalized(data, 'claude')['task'], '作業を実行中')
         data.update(tool_name='Agent', tool_input={'prompt': 'SECRET', 'description': '【ホテル運営部】OTA説明文の見直し'})
         event = hook.normalized(data, 'claude')
         self.assertEqual((event['task'], event['member_id'], event['assignment']),

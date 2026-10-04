@@ -129,6 +129,9 @@ def task_metadata(data):
             label = work_label(arguments.get('description'))
             if label:
                 result.update(label_metadata(label))
+            elif data.get('tool_name') == 'Bash' and isinstance(arguments.get('description'), str):
+                # 英語などで表示できない説明文のとき、古い見出しが残り続けないよう汎用表示で上書きする。
+                result['task'] = '作業を実行中'
     return result
 
 def label_file(label_dir, session):
