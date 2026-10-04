@@ -290,8 +290,29 @@ function renderProjects(){
  const q=el('project-search').value.trim().toLowerCase(),domain=el('project-domain').value;
  const list=projects.filter(p=>(filter==='all'||p.group===filter)&&(domain==='all'||p.domain===domain)&&[p.name,p.purpose,p.current,p.routine||''].some(t=>t.toLowerCase().includes(q)));
  el('project-count').textContent=`${list.length} 件のプロジェクト`;
- el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2>${compactState(p)}<p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
+ el('project-grid').innerHTML=list.length?list.map(p=>`<article data-project="${projects.indexOf(p)}" class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2>${compactState(p)}<p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details><button class="project-open" data-open-project="${projects.indexOf(p)}" aria-label="${escapeHtml(p.name)}の詳細を開く" aria-haspopup="dialog"></button></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));renderProjects();}));
 el('project-search').addEventListener('input',renderProjects);el('project-domain').addEventListener('change',renderProjects);renderProjects();
 renderHealthSummary();loadHealth();setInterval(loadHealth,300000);
+
+let selectedProject=null;
+const projectDialog=el('project-dialog');
+el('project-grid').addEventListener('click',event=>{
+ const button=event.target.closest('[data-open-project]');
+ if(!button||!document.body.classList.contains('monitor'))return;
+ selectedProject=button.dataset.openProject;
+ const content=button.closest('.project-card').cloneNode(true);
+ content.className='project-detail';content.removeAttribute('data-project');
+ content.querySelector('.project-open').remove();
+ content.querySelector('.monitor-state').remove();
+ content.querySelector('h2').id='project-detail-title';
+ el('project-dialog-content').replaceChildren(content);
+ projectDialog.showModal();
+});
+el('project-dialog-close').addEventListener('click',()=>projectDialog.close());
+projectDialog.addEventListener('click',event=>{if(event.target!==projectDialog)return;const r=projectDialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)projectDialog.close();});
+projectDialog.addEventListener('close',()=>{
+ const button=document.querySelector(`[data-open-project="${selectedProject}"]`);
+ if(button)button.focus({preventScroll:true});
+});
