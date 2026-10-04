@@ -156,5 +156,40 @@ class HooksTests(unittest.TestCase):
             self.assertFalse(installer.install(tmp, 'claude', 'https://example.com', True)['changed'])
             self.assertEqual(len(list(path.parent.glob('*.monitor-backup-*'))), 1)
 
+    def test_ai_written_labels_and_department_prefix(self):
+        data = self.payload('PreToolUse')
+        data.update(tool_name='Bash', tool_input={'command': 'SECRET', 'description': 'Fetch live monitor API'})
+        event = hook.normalized(data, 'claude')
+        self.assertEqual(event['task'], 'Fetch live monitor API')
+        self.assertNotIn('SECRET', json.dumps(event))
+        data.update(tool_name='Agent', tool_input={'prompt': 'SECRET', 'description': '【ホテル運営部】OTA説明文の見直し'})
+        event = hook.normalized(data, 'claude')
+        self.assertEqual((event['task'], event['member_id'], event['assignment']),
+                         ('【ホテル運営部】OTA説明文の見直し', 'nakamura', 'explicit'))
+        self.assertNotIn('SECRET', json.dumps(event))
+        # Post通知や説明文のないツールは作業名を送らず、直前の表示を保つ
+        data.update(hook_event_name='PostToolUse')
+        self.assertNotIn('task', hook.normalized(data, 'claude'))
+
+    def test_unsafe_labels_are_dropped(self):
+        for text in ('Read /Users/kazuma/.env', 'Set API key for x', 'curl https://example.com/a',
+                     'send to someone@example.com', 'token abcdefghijklmnopqrstuvwxyz123456'):
+            self.assertIsNone(hook.work_label(text))
+        self.assertEqual(len(hook.work_label('あ' * 100)), 60)
+
+    def test_subagent_inherits_label_from_parent_agent_call(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = self.payload('PreToolUse')
+            parent.update(tool_name='Agent', tool_input={'description': '【経営企画部】矛盾監査'})
+            hook.attach_agent_label(parent, hook.normalized(parent, 'claude'), tmp)
+            child = dict(hook_event_name='SubagentStart', session_id='session', agent_id='child', cwd='/x/bizdev')
+            event = hook.normalized(child, 'claude')
+            hook.attach_agent_label(child, event, tmp)
+            self.assertEqual((event['session_id'], event['task'], event['member_id']),
+                             ('session:child', '【経営企画部】矛盾監査', 'matsumoto'))
+            other = hook.normalized(child, 'claude')
+            hook.attach_agent_label(child, other, tmp)
+            self.assertNotIn('member_id', other)
+
 if __name__ == '__main__':
     unittest.main()

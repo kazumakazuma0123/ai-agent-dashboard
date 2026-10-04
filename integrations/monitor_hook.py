@@ -42,6 +42,39 @@ ROLES = {
 }
 NAMED_ROLES = {value[1]: value for value in ROLES.values()}
 SECRET_PATH = re.compile(r'(?i)(secret|credential|token|password|\.env|\.ssh|\.aws|private[_-]?key)')
+# 「【ホテル運営部】…」のように作業名の先頭に部署を書くと、その部署の担当として表示する。
+DEPARTMENT_PREFIX = {
+    '経営企画': 'matsumoto', 'ホテル': 'nakamura', '開発': 'watanabe',
+    'インフラ': 'kato', 'コンテンツ': 'sato',
+}
+# AIが書いた短い作業名（Agentのdescription、Bashのdescription）だけを表示に使う。
+# 依頼文・コマンド本体・ツール引数は送らない。秘密情報らしき文字列を含む作業名は捨てる。
+UNSAFE_LABEL = re.compile(
+    r'(?i)(secret|credential|token|password|api[_ -]?key|\.env|\.ssh|private[_-]?key'
+    r'|[A-Za-z0-9_\-]{24,}|[\w.+-]+@[\w-]+\.[\w.]+|https?://|/Users/|/home/|/root/|~/)')
+
+def work_label(value, max_length=60):
+    if not isinstance(value, str):
+        return None
+    label = re.sub(r'\s+', ' ', value).strip()
+    if not label or UNSAFE_LABEL.search(label):
+        return None
+    return label[:max_length]
+
+def label_member(label):
+    match = re.match(r'^[【\[]([^】\]]{1,20})[】\]]', label)
+    if match:
+        for keyword, member in DEPARTMENT_PREFIX.items():
+            if keyword in match.group(1):
+                return member
+    return None
+
+def label_metadata(label):
+    result = dict(task=label)
+    member = label_member(label)
+    if member:
+        result.update(member_id=member, assignment='explicit')
+    return result
 
 def safe_label(value):
     if (isinstance(value, str) and 0 < len(value) <= 80
@@ -85,7 +118,61 @@ def task_metadata(data):
                 role = ('development', 'watanabe', 'コードを編集')
     if role:
         result.update(stage=role[0], member_id=role[1], task=role[2], assignment='inferred')
+    if name == 'PreToolUse':
+        arguments = data.get('tool_input') if isinstance(data.get('tool_input'), dict) else {}
+        if data.get('tool_name') in ('Agent', 'Task', 'Bash'):
+            label = work_label(arguments.get('description'))
+            if label:
+                result.update(label_metadata(label))
     return result
+
+def label_file(label_dir, session):
+    directory = Path(label_dir).expanduser()
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    return directory / (hashlib.sha256(session.encode()).hexdigest()[:16] + '.json')
+
+def remember_agent_label(label_dir, session, label):
+    """親セッションでAgentを起動した時の作業名を、子のSubagentStartへ引き継ぐ。"""
+    path = label_file(label_dir, session)
+    with path.open('a+') as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        handle.seek(0)
+        try:
+            pending = json.loads(handle.read() or '[]')
+        except ValueError:
+            pending = []
+        pending = [p for p in pending if p.get('at', 0) > time.time() - 600][-20:] + [dict(label=label, at=time.time())]
+        handle.seek(0)
+        handle.truncate()
+        json.dump(pending, handle, ensure_ascii=False)
+
+def claim_agent_label(label_dir, session):
+    path = label_file(label_dir, session)
+    if not path.exists():
+        return None
+    with path.open('r+') as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            pending = [p for p in json.loads(handle.read() or '[]') if p.get('at', 0) > time.time() - 600]
+        except ValueError:
+            pending = []
+        claimed = pending.pop(0)['label'] if pending else None
+        handle.seek(0)
+        handle.truncate()
+        json.dump(pending, handle, ensure_ascii=False)
+    return work_label(claimed)
+
+def attach_agent_label(data, event, label_dir):
+    name = data.get('hook_event_name')
+    parent = data.get('session_id')
+    if not isinstance(parent, str):
+        return
+    if name == 'PreToolUse' and data.get('tool_name') in ('Agent', 'Task') and event.get('task'):
+        remember_agent_label(label_dir, parent[:200], event['task'])
+    elif name == 'SubagentStart':
+        label = claim_agent_label(label_dir, parent[:200])
+        if label:
+            event.update(label_metadata(label))
 
 def normalized(data, source):
     name = data.get('hook_event_name')
@@ -186,6 +273,7 @@ def main():
     parser.add_argument('--url', required=True)
     parser.add_argument('--legacy-config')
     parser.add_argument('--queue-dir', default='~/.cache/agent-monitor/queue')
+    parser.add_argument('--label-dir', default='~/.cache/agent-monitor/labels')
     args = parser.parse_args()
     name = None
     try:
@@ -194,6 +282,10 @@ def main():
             name = data.get('hook_event_name')
             event = normalized(data, args.source)
             if event:
+                try:
+                    attach_agent_label(data, event, args.label_dir)
+                except OSError:
+                    pass
                 deliver(event, args.url, auth_key(args.legacy_config), args.queue_dir)
     except Exception:
         # A monitor outage must never alter the agent's execution.
