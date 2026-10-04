@@ -67,3 +67,14 @@ Mac側のCodexとClaude Codeの通知設定はバックアップ後に移行済�
 ## プロジェクト概要
 
 `/projects.html` は資料に基づくプロジェクト一覧。`assets/projects.js` で目的・現在の状況・次の予定・確認資料を管理します。リアルタイムの稼働監視とは別です。方針変更時は該当項目と確認日を更新して再公開してください。AI支配人は客室タブレットとは別（2026-10-05本人確認）。タスク「スタッフ向けLINE Bot構築」と別フォルダの接続進捗から、運用・拡充中として更新済み。採用・X運用・八丈島メディアは停止決定を優先します。
+
+## 自動の稼働状況（死活監視の表示）
+
+プロジェクト概要の各事業カードに「✅正常／⚠️要対応／⏸休止中」と「最終確認 ◯分前」を自動表示し、ページ上部に「要対応 N件」をまとめます。⚠️の項目は警告文（直し方つき）も出ます。休止・凍結・休眠の事業はグレーの参考表示で、要対応には数えません。
+
+- 元データ: VPS の `healthcheck.sh --monitor`（`common/daily-morning/`）が毎時17分に実行し、`/root/daily-morning/health-status.json` に書き出す（cron は `/etc/cron.d/healthcheck-monitor`）。Slack には何も送らない。
+- API: `GET /api/health-status`（認証なし・公開画面用）。`server/health-status.js` がJSONを読み、URL・内部パス・トークン状の文字列を除去して返す。ファイルの場所は環境変数 `HEALTH_STATUS_FILE`（既定は上記）。
+- 監視自体の停止検知: ファイルの生成時刻が2時間以上前なら `monitor.state = "stale"`（ファイルが無い／壊れていれば `"missing"`）。画面は「監視自体が止まっています」を出し、個別の状態は最新扱いにしない。
+- 画面: `assets/projects.js` の `HEALTH_MAP`（事業カード名 → 監視項目ID）で紐づけ。項目を足したら healthcheck.sh 側のIDとここを揃える。5分ごとに再取得。
+- テスト: `server/health-status.test.js`（`npm test`）。
+- 反映: サーバー側は `server/health-status.js`・`server.js` を VPS へ scp → `PM2_HOME=/etc/.pm2 pm2 restart ai-agent-dashboard`。画面側は `vercel --prod --yes`。

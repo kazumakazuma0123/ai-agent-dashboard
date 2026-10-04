@@ -5,6 +5,7 @@ import path from 'path'
 import { execSync, spawn } from 'child_process'
 import { fileURLToPath } from 'node:url'
 import { installMonitor } from './monitor-api.js'
+import { installHealthStatus } from './health-status.js'
 
 const app = express()
 app.use(cors())
@@ -31,6 +32,8 @@ const MEMBERS = [
 
 // セッションを唯一の稼働根拠にする。運用APIは既存のまま維持する。
 installMonitor(app, { apiKey: API_KEY, members: MEMBERS })
+// 死活監視の結果（公開画面用。VPSのhealthcheckが1時間ごとに書き出すJSONを読む）
+installHealthStatus(app)
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 app.use('/assets', express.static(path.join(projectRoot, 'assets'), { dotfiles: 'deny' }))
 app.get('/', (_, res) => res.sendFile(path.join(projectRoot, 'index.html')))

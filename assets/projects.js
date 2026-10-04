@@ -200,6 +200,69 @@ const projects = [
   }
 ];
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// ── 自動の稼働状況（VPSの死活監視が1時間ごとに更新。GET /api/health-status） ──
+// 各事業カードに紐づける監視項目ID。休止・凍結・休眠の事業は参考表示（グレー）で、要対応には数えない。
+const HEALTH_MAP={
+ 'ホテル予約・売上の自動連携':['gas.api','gas.sync','gas.cancel','gas.trig.sync','gas.trig.cancel','gas.cleaningPush','gas.cleaningConfig','gas.salesWrite','gas.salesMail','gas.weekly','gas.trig.weekly','http.cleaningWebhook'],
+ 'ゲストメッセージの返信案作成':['gas.guest','gas.trig.guest','gas.guestConfig'],
+ 'シフト用予約状況表の自動更新':['gas.shift','gas.trig.shift'],
+ 'Slack通知・朝会':['morning.prev','pm2.proxy','disk.vps'],
+ '清掃管理アプリ':['http.cleaning','http.cleaningWebhook'],
+ '客室タブレット':['http.tablet'],
+ 'ホテル運営マニュアル':['http.manual'],
+ 'HOTEL SUI 集客・収益改善':['http.kpi'],
+ 'エージェントモニター':['http.monitor','pm2.dashboard'],
+ 'HOTEL SUI 採用ページ':['http.recruit'],
+ 'ねるぞう X・Threads運用':['poster.x','poster.threads']
+};
+let health=null,healthFailed=false;
+const pausedNames=new Set(projects.filter(p=>p.group==='paused').map(p=>p.name));
+const activeMappedIds=new Set(Object.entries(HEALTH_MAP).filter(([n])=>!pausedNames.has(n)).flatMap(([,ids])=>ids));
+const allMappedIds=new Set(Object.values(HEALTH_MAP).flat());
+const STATE={ok:['✅','正常','ok'],warn:['⚠️','要対応','warn'],error:['⚠️','要対応','warn'],skip:['⏸','休止中','skip']};
+function ago(iso){if(!iso)return '不明';const m=Math.max(0,Math.floor((Date.now()-Date.parse(iso))/60000));if(m<1)return 'たった今';if(m<60)return `${m}分前`;const h=Math.floor(m/60);return h<48?`${h}時間前`:`${Math.floor(h/24)}日前`;}
+const healthStopped=()=>!health||health.monitor.state!=='ok';
+function healthBlock(p){
+ const ids=HEALTH_MAP[p.name];if(!ids)return '';
+ const paused=p.group==='paused';
+ if(!health)return `<div class="hc ${paused?'paused':''}"><span class="hc-chip skip">${healthFailed?'監視結果を取得できません':'監視結果を読み込み中'}</span></div>`;
+ const items=ids.map(id=>health.items.find(i=>i.id===id)).filter(Boolean);
+ if(!items.length)return '';
+ const stopped=healthStopped();
+ const bad=items.filter(i=>i.status==='warn'||i.status==='error');
+ const allSkip=items.every(i=>i.status==='skip');
+ let chip;
+ if(stopped)chip=`<span class="hc-chip stopped">⚠️ 監視が止まっています</span>`;
+ else if(paused)chip=`<span class="hc-chip skip">⏸ 休止中${bad.length?'（監視は参考表示）':''}</span>`;
+ else if(bad.length)chip=`<span class="hc-chip warn">⚠️ 要対応 ${bad.length}件</span>`;
+ else if(allSkip)chip=`<span class="hc-chip skip">⏸ 休止中</span>`;
+ else chip=`<span class="hc-chip ok">✅ 正常</span>`;
+ const when=health.monitor.generatedAt?`最終確認 ${ago(health.monitor.generatedAt)}`:'最終確認 不明';
+ const warns=(stopped||paused)?'':bad.map(i=>`<div class="hc-warn"><strong>${escapeHtml(i.label)}</strong><span>${escapeHtml(i.message||'確認が必要です')}</span></div>`).join('');
+ const rows=items.map(i=>{const [icon,label,cls]=STATE[i.status]||STATE.error;return `<li class="${stopped||paused?'skip':cls}"><span>${stopped?'―':icon}</span>${escapeHtml(i.label)}<em>${stopped?'確認できません':label}</em></li>`;}).join('');
+ return `<div class="hc ${paused?'paused':''}"><div class="hc-head">${chip}<span class="hc-when">${escapeHtml(when)}</span></div>${warns}<details class="hc-list"><summary>監視している項目（${items.length}件）</summary><ul>${rows}</ul></details></div>`;
+}
+function renderHealthSummary(){
+ const box=el('health-summary');if(!box)return;
+ if(!health){box.className='health-summary';box.innerHTML=healthFailed?'<strong>自動の稼働状況を取得できませんでした</strong><span>しばらくして再読み込みしてください。</span>':'<strong>自動の稼働状況を読み込み中…</strong>';return;}
+ if(healthStopped()){
+  const at=health.monitor.generatedAt;
+  box.className='health-summary stopped';
+  box.innerHTML=`<strong>⚠️ 監視自体が止まっています</strong><span>${at?`最後に確認できたのは${escapeHtml(ago(at))}。`:'監視結果がまだ届いていません。'}2時間以上更新がないため、下の状態は最新ではありません。VPSの死活監視（1時間ごとのcron）を確認してください（Claude Code に「死活監視のcronを直して」と依頼）。</span>`;
+  return;
+ }
+ const bad=health.items.filter(i=>(i.status==='warn'||i.status==='error')&&(activeMappedIds.has(i.id)||!allMappedIds.has(i.id)));
+ const when=`最終確認 ${ago(health.monitor.generatedAt)}（1時間ごとに自動更新）`;
+ if(!bad.length){box.className='health-summary ok';box.innerHTML=`<strong>✅ 要対応 0件</strong><span>自動の稼働状況はすべて正常です。${escapeHtml(when)}</span>`;return;}
+ const owner=id=>Object.entries(HEALTH_MAP).filter(([n,ids])=>ids.includes(id)&&!pausedNames.has(n)).map(([n])=>n);
+ box.className='health-summary warn';
+ box.innerHTML=`<strong>⚠️ 要対応 ${bad.length}件</strong><span>${escapeHtml(when)}</span><ul>${bad.map(i=>`<li><b>${escapeHtml(i.label)}</b>${owner(i.id).length?`<small>（${escapeHtml(owner(i.id).join('・'))}）</small>`:''}<span>${escapeHtml(i.message||'確認が必要です')}</span></li>`).join('')}</ul>`;
+}
+async function loadHealth(){
+ try{const r=await fetch('/api/health-status',{cache:'no-store'});if(!r.ok)throw new Error(r.status);health=await r.json();healthFailed=false;}
+ catch{if(!health)healthFailed=true;}
+ renderHealthSummary();renderProjects();
+}
 let filter='active';
 const el=id=>document.getElementById(id);
 for(const domain of [...new Set(projects.map(p=>p.domain))]){const option=document.createElement('option');option.value=domain;option.textContent=domain;el('project-domain').append(option);}
@@ -208,7 +271,8 @@ function renderProjects(){
  const q=el('project-search').value.trim().toLowerCase(),domain=el('project-domain').value;
  const list=projects.filter(p=>(filter==='all'||p.group===filter)&&(domain==='all'||p.domain===domain)&&[p.name,p.purpose,p.current,p.routine||''].some(t=>t.toLowerCase().includes(q)));
  el('project-count').textContent=`${list.length} 件のプロジェクト`;
- el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2><p class="project-purpose">${escapeHtml(p.purpose)}</p><dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
+ el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2><p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));renderProjects();}));
 el('project-search').addEventListener('input',renderProjects);el('project-domain').addEventListener('change',renderProjects);renderProjects();
+renderHealthSummary();loadHealth();setInterval(loadHealth,300000);
