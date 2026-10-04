@@ -1,6 +1,28 @@
 'use strict';
 const projects = [
   {
+    "name": "ホテル経営管理",
+    "domain": "ホテル",
+    "group": "active",
+    "status": "運用中・取得に要確認",
+    "purpose": "購入費・固定費・光熱費などをコスト表へ集め、月別の経費と原価を把握する。",
+    "routine": "毎朝9:00：Amazon購入データを取得する設定。請求書・固定費は確認時に追加。",
+    "current": "購入データ候補とコスト表・月別集計を整備済み。10月4日のAmazon取得は、ホテル用アカウントに切り替えが必要となり未完了。定期実行設定は有効。",
+    "next": "ホテル購入用のAmazonアカウントへの切替後、購入データ取得を再確認。未確定の費用・対象月を整理する。",
+    "reference": "チャット「ホテル経営管理」の10月4日までの記録・Amazon購入データ取得の有効な定期実行設定（10月5日確認）。売上数値の毎朝取得とは別の処理"
+  },
+  {
+    "name": "ホテル予約・売上の自動連携",
+    "domain": "ホテル",
+    "group": "active",
+    "status": "運用・確認中",
+    "purpose": "予約メールからカレンダー・売上管理シート・清掃管理へ情報をつなぎ、転記の手間を減らす。",
+    "routine": "予約・キャンセルメールの検知時に反映。毎週月曜8:00頃に売上レポートをSlackへ通知する設定。",
+    "current": "予約・キャンセルの連携と週次レポートの仕組みを整備済み。メールにないaiPass直接入力の予約は集計に含まれない。今回、最新の実行結果は未確認。",
+    "next": "取り込み・通知の最終成功を確認し、aiPassの全予約と照合して集計の漏れを整理する。",
+    "reference": "予約管理GAS README・売上管理シート運用ガイド・朝会の死活監視資料"
+  },
+  {
     "name": "年金解説チャンネル（シニア向けYouTube）",
     "domain": "YouTube",
     "group": "active",
@@ -38,7 +60,8 @@ const projects = [
     "purpose": "日々の予定や進捗をSlackにまとめ、返信から更新できるようにする。",
     "current": "日次朝会・週次再生成・返信反映の仕組みを整備済み。週次生成と返信の実運用確認が残る。",
     "next": "週次生成結果と、Slack返信がブリーフへ反映されるか確認。",
-    "reference": "朝会運用ルール・月次目標・朝会README"
+    "reference": "朝会運用ルール・月次目標・朝会README",
+    "routine": "毎朝7:00：朝会・仕組みの停止確認。毎週月曜6:30：週次ブリーフ生成。"
   },
   {
     "name": "客室タブレット",
@@ -128,9 +151,9 @@ for(const domain of [...new Set(projects.map(p=>p.domain))]){const option=docume
 el('project-stats').innerHTML=[['進行・運用中',projects.filter(p=>p.group==='active').length],['停止・休止中',projects.filter(p=>p.group==='paused').length],['確認中',projects.filter(p=>p.group==='unknown').length]].map(([label,count])=>`<div class="project-stat"><strong>${count}</strong><span>${label}</span></div>`).join('');
 function renderProjects(){
  const q=el('project-search').value.trim().toLowerCase(),domain=el('project-domain').value;
- const list=projects.filter(p=>(filter==='all'||p.group===filter)&&(domain==='all'||p.domain===domain)&&[p.name,p.purpose,p.current].some(t=>t.toLowerCase().includes(q)));
+ const list=projects.filter(p=>(filter==='all'||p.group===filter)&&(domain==='all'||p.domain===domain)&&[p.name,p.purpose,p.current,p.routine||''].some(t=>t.toLowerCase().includes(q)));
  el('project-count').textContent=`${list.length} 件のプロジェクト`;
- el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2><p class="project-purpose">${escapeHtml(p.purpose)}</p><dl><dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
+ el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2><p class="project-purpose">${escapeHtml(p.purpose)}</p><dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));renderProjects();}));
 el('project-search').addEventListener('input',renderProjects);el('project-domain').addEventListener('change',renderProjects);renderProjects();
