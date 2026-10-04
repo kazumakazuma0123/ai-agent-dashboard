@@ -173,3 +173,16 @@ test('new requests reset absent task and stage while preserving completion and e
   await f.send({ session_id: 'inferred', timestamp: base, member_id: 'watanabe', task: '古い作業', stage: 'writing' });
   assert.equal((await (await f.get('/api/monitor')).json()).sessions.find(s => s.session_id === 'inferred').task, '新しい依頼を確認中');
 });
+
+test('English-only task labels are shown as 作業中 on public views', async t => {
+  const f = await fixture(t);
+  await f.send({ task: 'Rebuild narration with tail pause' });
+  await f.send({ event: 'activity', task: '動画⑨の図解を確認', session_id: 's2' });
+  const body = await (await f.get('/api/monitor')).json();
+  const tasks = Object.fromEntries(body.sessions.map(s => [s.session_id, s.task]));
+  assert.equal(tasks.s1, '作業中');
+  assert.equal(tasks.s2, '動画⑨の図解を確認');
+  assert.ok(!JSON.stringify(body).includes('Rebuild narration'));
+  const agents = await (await f.get('/api/agents')).json();
+  assert.ok(!JSON.stringify(agents).includes('Rebuild narration'));
+});

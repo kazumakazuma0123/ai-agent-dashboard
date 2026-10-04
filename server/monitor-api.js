@@ -10,6 +10,12 @@ const labels = {
   WebFetch: 'ページを確認', Agent: 'サブエージェントを起動', Skill: 'スキルを実行',
 }
 const text = (value, max = 160) => typeof value === 'string' ? value.replace(/[\x00-\x1f]/g, ' ').slice(0, max) : ''
+// 画面は本人（非エンジニア）が読む。日本語を含まない作業名（英語のコマンド説明など）は「作業中」と表示する。
+const readable = value => typeof value === 'string' && value && !/[\u3040-\u30ff\u4e00-\u9fff]/.test(value) ? '作業中' : value
+const readableSnapshot = snapshot => ({
+  ...snapshot,
+  sessions: snapshot.sessions.map(s => ({ ...s, task: readable(s.task), history: (s.history || []).map(e => ({ ...e, task: readable(e.task) })) })),
+})
 const department = (cwd = '') => {
   if (/new-project|sui-room-cre|threads-poster|\/gas\//.test(cwd)) return 'watanabe'
   if (/hotel|HOTEL|sui-tablet/.test(cwd)) return 'nakamura'
@@ -103,7 +109,7 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
     return { ok: true, member_id: session.member_id }
   }))
   app.get('/api/monitor', (_, res) => {
-    const snapshot = store.snapshot()
+    const snapshot = readableSnapshot(store.snapshot())
     const completed_items = snapshot.sessions.flatMap(session => session.history
       .filter(event => event.event === 'completed' && event.accepted_completion === true)
       .map(event => ({
@@ -115,7 +121,7 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
       }))).sort((a, b) => Date.parse(b.completed_at) - Date.parse(a.completed_at)).slice(0, 100)
     res.json({ ...snapshot, completed_items, agents: projectedAgents(snapshot), version: 2 })
   })
-  app.get('/api/agents', (_, res) => res.json({ agents: projectedAgents(store.snapshot()), unmapped_sessions: 0, unmapped_details: [] }))
+  app.get('/api/agents', (_, res) => res.json({ agents: projectedAgents(readableSnapshot(store.snapshot())), unmapped_sessions: 0, unmapped_details: [] }))
   app.get('/api/sessions', authorize, (_, res) => res.json(store.snapshot().sessions))
   app.get('/health', (_, res) => {
     const snapshot = store.snapshot()
