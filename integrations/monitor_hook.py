@@ -44,7 +44,7 @@ NAMED_ROLES = {value[1]: value for value in ROLES.values()}
 SECRET_PATH = re.compile(r'(?i)(secret|credential|token|password|\.env|\.ssh|\.aws|private[_-]?key)')
 # 「【ホテル運営部】…」のように作業名の先頭に部署を書くと、その部署の担当として表示する。
 DEPARTMENT_PREFIX = {
-    '経営企画': 'matsumoto', 'ホテル': 'nakamura', '開発': 'watanabe',
+    '秘書': 'matsumoto', '経営企画': 'matsumoto', 'ホテル': 'nakamura', '開発': 'watanabe',
     'インフラ': 'kato', 'コンテンツ': 'sato',
 }
 # AIが書いた短い作業名（Agentのdescription、Bashのdescription）だけを表示に使う。
