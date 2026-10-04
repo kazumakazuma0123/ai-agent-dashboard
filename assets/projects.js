@@ -263,15 +263,34 @@ async function loadHealth(){
  catch{if(!health)healthFailed=true;}
  renderHealthSummary();renderProjects();
 }
-let filter='active';
+let filter='all';
 const el=id=>document.getElementById(id);
 for(const domain of [...new Set(projects.map(p=>p.domain))]){const option=document.createElement('option');option.value=domain;option.textContent=domain;el('project-domain').append(option);}
 el('project-stats').innerHTML=[['進行・運用中',projects.filter(p=>p.group==='active').length],['停止・休止中',projects.filter(p=>p.group==='paused').length],['確認中',projects.filter(p=>p.group==='unknown').length]].map(([label,count])=>`<div class="project-stat"><strong>${count}</strong><span>${label}</span></div>`).join('');
+function compactState(p){
+ if(p.group==='paused')return `<span class="monitor-state">⏸ ${escapeHtml(p.status)}</span>`;
+ const ids=HEALTH_MAP[p.name];
+ if(!ids)return `<span class="monitor-state ${p.group==='unknown'||p.status.includes('要確認')?'warn':''}">${escapeHtml(p.status)} · 自動監視なし</span>`;
+ if(!health||healthStopped())return `<span class="monitor-state warn">${healthFailed?'監視取得失敗':health?'監視更新停止':'監視を確認中'}</span>`;
+ const checks=ids.map(id=>health.items.find(i=>i.id===id)).filter(Boolean);
+ if(!checks.length)return '<span class="monitor-state warn">監視結果なし</span>';
+ const bad=checks.filter(i=>i.status==='warn'||i.status==='error');
+ if(bad.length)return `<span class="monitor-state warn">⚠ 要対応 ${bad.length}件</span>`;
+ if(checks.every(i=>i.status==='skip'))return '<span class="monitor-state">⏸ 監視休止中</span>';
+ return '<span class="monitor-state ok">● 監視項目は正常</span>';
+}
+function setMode(mode){
+ document.body.classList.toggle('monitor',mode==='monitor');
+ document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+ try{localStorage.setItem('project-view-mode',mode);}catch{}
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+try{setMode(localStorage.getItem('project-view-mode')==='detail'?'detail':'monitor');}catch{}
 function renderProjects(){
  const q=el('project-search').value.trim().toLowerCase(),domain=el('project-domain').value;
  const list=projects.filter(p=>(filter==='all'||p.group===filter)&&(domain==='all'||p.domain===domain)&&[p.name,p.purpose,p.current,p.routine||''].some(t=>t.toLowerCase().includes(q)));
  el('project-count').textContent=`${list.length} 件のプロジェクト`;
- el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2><p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
+ el('project-grid').innerHTML=list.length?list.map(p=>`<article class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2>${compactState(p)}<p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));renderProjects();}));
 el('project-search').addEventListener('input',renderProjects);el('project-domain').addEventListener('change',renderProjects);renderProjects();
