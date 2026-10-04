@@ -29,10 +29,11 @@
 .person[data-state="stale"] .person-status{background:#ececf3;color:#6b6687}
 .person .face{grid-row:1}.person .person-task{font-size:13px;font-weight:600}.person[data-state="idle"] .person-task{font-weight:400;color:var(--muted)}
 @media(max-width:750px){.person .person-status{font-size:14px}.person .person-name{font-size:13px}}
+.page-nav{display:grid;gap:8px;margin-top:48px}.page-nav a{display:block;color:#c3d3d3;text-decoration:none;padding:14px 12px;border-radius:9px;font-weight:600;line-height:1.6}.page-nav a:hover{background:#2b444f}.page-nav a[aria-current="page"]{background:#344c56;color:#fff}@media(max-width:750px){aside{flex-wrap:wrap}.page-nav{display:flex;gap:6px;width:100%;margin-top:8px}.page-nav a{flex:1;text-align:center;font-size:12px;padding:10px 5px}}
 </style>
 </head>
 <body>
-<aside><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><div class="nav-current">◉　作業状況</div><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
+<aside><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/" aria-current="page">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
 <main>
 <header><div id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">接続を確認中</span><button id="refresh" class="refresh" type="button">更新 ↻</button></div></header>
 <div id="demo-banner" class="demo-banner" hidden>デモ表示：架空の作業例です。本番の稼働状況ではありません。<a href="/">本番の表示へ戻る →</a></div>
