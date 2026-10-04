@@ -158,10 +158,13 @@ class HooksTests(unittest.TestCase):
 
     def test_ai_written_labels_and_department_prefix(self):
         data = self.payload('PreToolUse')
-        data.update(tool_name='Bash', tool_input={'command': 'SECRET', 'description': 'Fetch live monitor API'})
+        data.update(tool_name='Bash', tool_input={'command': 'SECRET', 'description': 'モニターの表示を確認'})
         event = hook.normalized(data, 'claude')
-        self.assertEqual(event['task'], 'Fetch live monitor API')
+        self.assertEqual(event['task'], 'モニターの表示を確認')
         self.assertNotIn('SECRET', json.dumps(event))
+        # 英語だけの作業名は本人に伝わらないので送らない
+        data.update(tool_input={'command': 'SECRET', 'description': 'Fetch live monitor API'})
+        self.assertNotIn('task', hook.normalized(data, 'claude'))
         data.update(tool_name='Agent', tool_input={'prompt': 'SECRET', 'description': '【ホテル運営部】OTA説明文の見直し'})
         event = hook.normalized(data, 'claude')
         self.assertEqual((event['task'], event['member_id'], event['assignment']),

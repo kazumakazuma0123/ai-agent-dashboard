@@ -53,11 +53,16 @@ UNSAFE_LABEL = re.compile(
     r'(?i)(secret|credential|token|password|api[_ -]?key|\.env|\.ssh|private[_-]?key'
     r'|[A-Za-z0-9_\-]{24,}|[\w.+-]+@[\w-]+\.[\w.]+|https?://|/Users/|/home/|/root/|~/)')
 
+JAPANESE = re.compile(r'[぀-ヿ一-鿿]')
+
 def work_label(value, max_length=60):
     if not isinstance(value, str):
         return None
     label = re.sub(r'\s+', ' ', value).strip()
     if not label or UNSAFE_LABEL.search(label):
+        return None
+    # 画面は本人（非エンジニア）が読む。英語だけの作業名は意味が伝わらないので表示しない。
+    if not JAPANESE.search(label):
         return None
     return label[:max_length]
 
