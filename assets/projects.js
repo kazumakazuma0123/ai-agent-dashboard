@@ -279,9 +279,18 @@ function compactState(p){
  if(checks.every(i=>i.status==='skip'))return '<span class="monitor-state">⏸ 監視休止中</span>';
  return '<span class="monitor-state ok">● 監視項目は正常</span>';
 }
+let modeAnimation=null;
 function setMode(mode){
+ const changed=document.body.classList.contains('monitor')!==(mode==='monitor');
+ modeAnimation?.cancel();
  document.body.classList.toggle('monitor',mode==='monitor');
  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));
+ if(changed && el('project-grid').children.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  modeAnimation=el('project-grid').animate([
+   {opacity:0,transform:'translateY(8px)'},
+   {opacity:1,transform:'translateY(0)'}
+  ],{duration:240,easing:'cubic-bezier(.2,.7,.2,1)'});
+ }
  try{localStorage.setItem('project-view-mode',mode);}catch{}
 }
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
