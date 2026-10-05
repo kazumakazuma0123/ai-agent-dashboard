@@ -31,10 +31,10 @@
 @media(max-width:750px){.person .person-status{font-size:14px}.person .person-name{font-size:13px}}
 .page-nav{display:grid;gap:8px;margin-top:48px}.page-nav a{display:block;color:#c3d3d3;text-decoration:none;padding:14px 12px;border-radius:9px;font-weight:600;line-height:1.6}.page-nav a:hover{background:#2b444f}.page-nav a[aria-current="page"]{background:#344c56;color:#fff}@media(max-width:750px){aside{flex-wrap:wrap}.page-nav{display:flex;gap:6px;width:100%;margin-top:8px}.page-nav a{flex:1;text-align:center;font-size:12px;padding:10px 5px}}
 </style>
-</head>
-<body>
-<aside><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/" aria-current="page">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
-<main>
+<link rel="stylesheet" href="/assets/sidebar.css"></head>
+<body class="sidebar-closed">
+<aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/" aria-current="page">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
+<main><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button>
 <header><div id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">接続を確認中</span><button id="refresh" class="refresh" type="button">更新 ↻</button></div></header>
 <div id="demo-banner" class="demo-banner" hidden>デモ表示：架空の作業例です。本番の稼働状況ではありません。<a href="/">本番の表示へ戻る →</a></div>
 <section class="metrics" aria-label="表示条件に合うセッションの概要"><div class="metric"><div class="metric-label">作業中</div><div class="metric-value"><span id="active-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">応答待ち</div><div class="metric-value"><span id="waiting-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">応答完了</div><div class="metric-value"><span id="completed-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">要確認・エラー</div><div class="metric-value"><span id="attention-count">—</span><span class="metric-unit">セッション</span></div></div></section>
@@ -147,5 +147,5 @@ if(demoMode){
 }else{render();poll();setInterval(poll,5000);}
 
 </script>
-</body>
+<script src="/assets/sidebar.js"></script></body>
 </html>
