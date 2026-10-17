@@ -55,6 +55,16 @@ header.topbar .sidebar-toggle{margin:0}
 .org-note{margin:0 0 12px;font-size:11px}
 /* 「あなた」の箱と、その下のつなぎ線は表示しない */
 .org-owner,.org-owner+.org-line{display:none}
+.flow{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px 16px;margin:0 0 4px}
+.flow-head{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}.flow-head h3{font-size:14px;margin:0}.flow-sub{font-size:11px;color:var(--muted)}
+.flow-list{list-style:none;margin:0;padding:0;max-height:190px;overflow-y:auto;overscroll-behavior:contain}
+.flow-list li{display:grid;grid-template-columns:84px 190px minmax(0,1fr) auto;gap:10px;align-items:center;font-size:12px;padding:6px 0;border-top:1px solid #eef1ec}
+.flow-list li:first-child{border-top:0}.flow-list time{color:var(--muted);font-size:11px;white-space:nowrap}
+.flow-who{display:flex;align-items:center;gap:4px;font-weight:600;white-space:nowrap}.flow-who img{width:20px;height:20px;border-radius:50%;object-fit:cover}.flow-arrow{color:var(--teal);margin:0 4px}
+.flow-task{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.flow-task small{color:var(--muted);margin-left:8px;font-size:11px}
+.flow-st{font-size:10px;padding:2px 6px;border-radius:4px;background:#edf0ee;color:#677773;white-space:nowrap}.flow-st.done{color:#1c6a4b;background:#e2f2ea}.flow-st.active{color:#14776c;background:#e3f1ee}
+.flow-list li.flow-empty{display:block;color:var(--muted);font-size:12px}
+@media(max-width:750px){.flow-list li{grid-template-columns:1fr auto;gap:2px 8px}.flow-who{grid-column:1}.flow-task{grid-column:1/-1;white-space:normal}.flow-st{grid-row:1;grid-column:2}}
 </style>
 <link rel="stylesheet" href="/assets/sidebar.css"></head>
 <body class="sidebar-closed">
@@ -64,7 +74,7 @@ header.topbar .sidebar-toggle{margin:0}
 <div id="demo-banner" class="demo-banner" hidden>デモ表示：架空の作業例です。本番の稼働状況ではありません。<a href="/">本番の表示へ戻る →</a></div>
 <section class="metrics" aria-label="表示条件に合うセッションの概要" hidden><div class="metric"><div class="metric-label">作業中</div><div class="metric-value"><span id="active-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">応答待ち</div><div class="metric-value"><span id="waiting-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">応答完了</div><div class="metric-value"><span id="completed-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">要確認・エラー</div><div class="metric-value"><span id="attention-count">—</span><span class="metric-unit">セッション</span></div></div></section>
 <div id="banner" class="banner" role="status" hidden></div>
-<section aria-labelledby="organization-title"><div class="section-heading"><div><h2 id="organization-title">チームの全体像</h2><p class="section-meta">5部門・12名のチーム</p></div><span id="updated" class="subtle">まだ取得していません</span></div><div class="toolbar"><div class="tabs" aria-label="利用ツールで絞り込み"><button class="tab" data-source="all" aria-pressed="true">すべて</button><button class="tab" data-source="codex" aria-pressed="false">Codex</button><button class="tab" data-source="claude" aria-pressed="false">Claude Code</button><button class="tab" data-source="unknown" aria-pressed="false">不明</button></div><select id="status" aria-label="状態で絞り込み"><option value="all">すべての状態</option><option value="active">作業中</option><option value="waiting">応答待ち</option><option value="completed">応答完了</option><option value="failed">エラー</option><option value="stale">通知途絶・要確認</option></select><input id="search" type="search" aria-label="セッションを検索" placeholder="プロジェクト・作業を検索"></div><p id="filter-note" class="filter-note">すべての受信セッションを集計</p><p class="org-note">メンバーと役割を部署ごとに表示しています。作業の振り分けは推定です。件数・状態は届いた作業通知をもとに表示します。</p><div class="organization"><div class="org-owner"><strong>あなた</strong><span>方針・優先順位を決める</span></div><div class="org-line" aria-hidden="true"></div><div id="planning-department"></div><div class="org-line" aria-hidden="true"></div><div id="department-grid" class="department-grid"></div></div></section><section aria-labelledby="session-title"><div class="section-heading list-heading" id="session-list"><div><h2 id="session-title">セッション一覧</h2><p id="list-count" class="section-meta">取得待ち</p></div><div class="list-controls"><select id="member-filter" aria-label="担当で絞り込み"><option value="all">すべての担当</option></select><select id="department-filter" aria-label="一覧の部署で絞り込み"><option value="all">すべての部署</option><option value="planning">秘書室</option><option value="content">コンテンツ制作部</option><option value="hotel">ホテル運営部</option><option value="development">開発部</option><option value="infra">インフラ・自動化部</option><option value="unknown">未分類</option></select></div></div><div id="cards" class="cards"></div></section>
+<section aria-labelledby="organization-title"><div class="section-heading"><div><h2 id="organization-title">チームの全体像</h2><p class="section-meta">5部門・12名のチーム</p></div><span id="updated" class="subtle">まだ取得していません</span></div><div class="toolbar"><div class="tabs" aria-label="利用ツールで絞り込み"><button class="tab" data-source="all" aria-pressed="true">すべて</button><button class="tab" data-source="codex" aria-pressed="false">Codex</button><button class="tab" data-source="claude" aria-pressed="false">Claude Code</button><button class="tab" data-source="unknown" aria-pressed="false">不明</button></div><select id="status" aria-label="状態で絞り込み"><option value="all">すべての状態</option><option value="active">作業中</option><option value="waiting">応答待ち</option><option value="completed">応答完了</option><option value="failed">エラー</option><option value="stale">通知途絶・要確認</option></select><input id="search" type="search" aria-label="セッションを検索" placeholder="プロジェクト・作業を検索"></div><p id="filter-note" class="filter-note">すべての受信セッションを集計</p><p class="org-note">メンバーと役割を部署ごとに表示しています。作業の振り分けは推定です。件数・状態は届いた作業通知をもとに表示します。</p><div class="organization"><div class="org-owner"><strong>あなた</strong><span>方針・優先順位を決める</span></div><div class="org-line" aria-hidden="true"></div><div id="planning-department"></div><section id="flow" class="flow" aria-labelledby="flow-title"><div class="flow-head"><h3 id="flow-title">指示の流れ</h3><span class="flow-sub">ハルが受けた依頼を、どの担当に回したか</span></div><ol id="flow-list" class="flow-list"></ol></section><div class="org-line" aria-hidden="true"></div><div id="department-grid" class="department-grid"></div></div></section><section aria-labelledby="session-title"><div class="section-heading list-heading" id="session-list"><div><h2 id="session-title">セッション一覧</h2><p id="list-count" class="section-meta">取得待ち</p></div><div class="list-controls"><select id="member-filter" aria-label="担当で絞り込み"><option value="all">すべての担当</option></select><select id="department-filter" aria-label="一覧の部署で絞り込み"><option value="all">すべての部署</option><option value="planning">秘書室</option><option value="content">コンテンツ制作部</option><option value="hotel">ホテル運営部</option><option value="development">開発部</option><option value="infra">インフラ・自動化部</option><option value="unknown">未分類</option></select></div></div><div id="cards" class="cards"></div></section>
 <footer>5秒ごとに自動更新。5分以上通知が途絶えたセッションは、応答完了と区別して表示します。応答完了は、事業上のタスク全体の完了を意味しません。<br>件数は受信したセッションから集計しています。仮想社員の登録人数ではありません。 <a href="/office.html">旧オフィス表示 ↗</a></footer>
 </main>
 <div id="overlay" class="overlay" hidden><section class="panel" role="dialog" aria-modal="true" aria-labelledby="detail-title" tabindex="-1"><div class="panel-head"><span class="eyebrow">セッション詳細</span><button id="close" class="close" aria-label="詳細を閉じる">閉じる ×</button></div><div id="detail"></div></section></div>
@@ -167,10 +177,35 @@ function allCompleted(){
  return [...history,...sessions.filter(s=>s.status==='completed'&&!history.some(c=>c.source===s.source&&c.session_id===s.session_id))];
 }
 let parkedOpen=false;
+// サブエージェント（セッションIDが「親:子」）を「誰から誰への依頼」として並べる。最上位の依頼はハルが受けて回したものとみなす
+// 依頼した時点で親セッションがしていた作業名（あとで別の作業に移っても、その時点のものを出す）
+function originAt(parent,at){const h=Array.isArray(parent.history)?parent.history:[];let found='';for(const e of h){const t=Date.parse(e&&e.timestamp);if(Number.isNaN(t)||t>at)break;const n=text(e.task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim();if(n&&!GENERIC_WORK.has(n))found=n;}return found;}
+function delegations(){
+ const by=new Map(sessions.map(s=>[text(s.session_id),s])),rows=[];
+ for(const s of sessions){
+  const sid=text(s.session_id),cut=sid.lastIndexOf(':');if(cut<0)continue;
+  const name=text(s.task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim();if(!name||GENERIC_WORK.has(name))continue;
+  const pid=sid.slice(0,cut),parent=by.get(pid),from=pid.includes(':')?((parent&&parent.member_id)||'matsumoto'):'matsumoto',to=s.member_id;
+  if(!to||!names[to]||to===from)continue;
+  const at=Date.parse(s.started_at||s.updated_at);rows.push({from,to,name,at,status:s.status,origin:parent?originAt(parent,at):''});
+ }
+ return rows.filter(r=>!Number.isNaN(r.at)).sort((a,b)=>b.at-a.at).slice(0,40);
+}
+const faceSrc=id=>'/assets/avatars/'+id+(PHOTO_AVATARS.has(id)?'.jpg':'.svg');
+function renderFlow(){
+ const list=$('flow-list');if(!list)return;const keep=list.scrollTop;
+ const rows=loaded?delegations():[];
+ list.innerHTML=rows.length?rows.map(r=>{
+  const st=r.status==='completed'?'<span class="flow-st done">✓ 完了</span>':r.status==='active'?'<span class="flow-st active">● 作業中</span>':'<span class="flow-st">'+safe(statusName({status:r.status}))+'</span>';
+  return '<li><time>'+safe(logTime(r.at))+'</time><span class="flow-who"><img src="'+faceSrc(r.from)+'" alt="">'+safe(names[r.from])+'<span class="flow-arrow">→</span><img src="'+faceSrc(r.to)+'" alt="">'+safe(names[r.to])+'</span><span class="flow-task">「'+safe(r.name)+'」を依頼'+(r.origin&&r.origin!==r.name?'<small>元の作業：'+safe(r.origin)+'</small>':'')+'</span>'+st+'</li>';
+ }).join(''):'<li class="flow-empty">'+(loaded?'まだ担当への依頼の記録はありません。サブエージェントに【部署名】付きで仕事を渡すとここに出ます。':'取得しています…')+'</li>';
+ list.scrollTop=keep;
+}
 function render(){
  const matched=matchingSessions(),done=matchingSessions(allCompleted()),filtered=source!=='all'||$('status').value!=='all'||Boolean($('search').value.trim());
  $('filter-note').textContent=filtered?'絞り込み中：概要件数・部署の作業・一覧に同じ条件を適用しています。':'すべての受信セッションを集計';
  renderOrganization(matched,done);
+ renderFlow();
  if(!loaded){empty('作業状況を確認しています','接続が完了すると、受信した作業がここに表示されます。');return;}
  for(const st of ['active','waiting','completed'])$(st+'-count').textContent=matched.filter(s=>s.status===st).length;
  $('attention-count').textContent=matched.filter(s=>(s.status==='failed'||s.status==='stale'||!Object.hasOwn(statuses,s.status))&&!isEnded(s)&&!isOld(s)).length;
