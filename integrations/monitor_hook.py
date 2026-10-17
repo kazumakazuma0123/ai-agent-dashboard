@@ -4,6 +4,7 @@ import argparse
 import datetime as dt
 import fcntl
 import hashlib
+import glob
 import json
 import os
 from pathlib import Path
@@ -88,6 +89,41 @@ def safe_label(value):
         return value
     return None
 
+SCHEDULED_PREFIX = re.compile(r'\s*<scheduled-task name="([A-Za-z0-9_.-]{1,80})"')
+
+# 表示名が設定されていない定期タスクの日本語名（設定に表示名があればそちらを優先）
+SCHEDULED_NAMES = {
+    'youtube-post-publish-monitor': 'YouTube公開後モニタリング',
+    'video-production-runner': '年金チャンネル 制作ランナー',
+    'weekly-theme-planner': '年金チャンネル テーマ分析とスケジュール更新',
+}
+
+def scheduled_task_label(prompt):
+    """定期タスクの起動文の先頭タグからタスクIDだけを取り出し、設定の表示名に置き換える（依頼文そのものは送らない）。"""
+    if not isinstance(prompt, str):
+        return None
+    match = SCHEDULED_PREFIX.match(prompt[:300])
+    if not match:
+        return None
+    task_id = match.group(1)
+    name = SCHEDULED_NAMES.get(task_id, task_id)
+    pattern = Path.home() / 'Library/Application Support/Claude/claude-code-sessions'
+    for path in glob.glob(str(pattern / '*' / '*' / 'scheduled-tasks.json')):
+        try:
+            for item in json.loads(Path(path).read_text()).get('scheduledTasks', []):
+                if item.get('id') == task_id and isinstance(item.get('displayName'), str) and item['displayName'].strip():
+                    name = item['displayName'].strip()
+        except (OSError, ValueError, AttributeError):
+            continue
+    name = re.sub(r'^[【\[][^】\]]{1,20}[】\]]\s*', '', name)[:60]
+    return '定期タスク：' + name
+
+def environment_label():
+    """claude-proxy 等が起動時に AGENT_MONITOR_LABEL で渡す作業名（例: Slack返信への応答）。"""
+    value = os.environ.get('AGENT_MONITOR_LABEL', '')
+    value = re.sub(r'[\x00-\x1f]', '', value).strip()[:60]
+    return value or None
+
 def task_metadata(data):
     """Infer only from exact skill names or structured file paths, never raw text."""
     name = data.get('hook_event_name')
@@ -123,6 +159,10 @@ def task_metadata(data):
                 role = ('development', 'watanabe', 'コードを編集')
     if role:
         result.update(stage=role[0], member_id=role[1], task=role[2], assignment='inferred')
+    if name == 'UserPromptSubmit':
+        label = scheduled_task_label(data.get('prompt')) or environment_label()
+        if label:
+            result['task'] = label
     if name == 'PreToolUse':
         arguments = data.get('tool_input') if isinstance(data.get('tool_input'), dict) else {}
         if data.get('tool_name') in ('Agent', 'Task', 'Bash'):

@@ -196,3 +196,16 @@ class HooksTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ScheduledTaskLabelTest(unittest.TestCase):
+    def test_scheduled_task_prompt_becomes_label_without_prompt_text(self):
+        import monitor_hook as m
+        meta = m.task_metadata({'hook_event_name': 'UserPromptSubmit',
+                                'prompt': '<scheduled-task name="youtube-post-publish-monitor" file="/x/SKILL.md">\nThis is an automated run 秘密の本文'})
+        self.assertTrue(meta['task'].startswith('定期タスク：'))
+        self.assertNotIn('秘密', meta['task'])
+
+    def test_ordinary_prompt_sends_no_task(self):
+        import monitor_hook as m
+        self.assertNotIn('task', m.task_metadata({'hook_event_name': 'UserPromptSubmit', 'prompt': '普通の依頼です'}))

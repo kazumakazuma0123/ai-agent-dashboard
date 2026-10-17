@@ -30,6 +30,7 @@
 @media(min-width:751px){.department.planning.solo{max-width:none}.department.planning.solo .roster .person{max-width:max(50%,620px)}.department.planning.solo .dept-body{display:block}.department.planning.solo .roster{display:block;margin:6px 0}.department.planning.solo .person{grid-template-columns:48px 200px minmax(0,1fr);column-gap:14px;align-items:start}.department.planning.solo .person .face{grid-column:1;grid-row:1/3}.department.planning.solo .person>span:nth-child(2){grid-column:2;grid-row:1}.department.planning.solo .person .person-status{grid-column:2;grid-row:2}.department.planning.solo .person .person-task,.department.planning.solo .person .person-meta,.department.planning.solo .person .person-done,.department.planning.solo .person .person-log{grid-column:3}.department.planning.solo .person .person-task{grid-row:1}.department.planning.solo .person .person-meta{grid-row:2}.department.planning.solo .person .person-log{border-top:0;border-left:1px dashed #dde3dc;padding:0 0 0 12px;margin:0}}.person .person-log{grid-column:1/-1;display:block;margin-top:2px;padding-top:6px;border-top:1px dashed #dde3dc;font-size:11px;line-height:1.55;color:#56646a}.person .person-log-title{display:block;font-size:10px;color:var(--muted);margin-bottom:1px}.person .person-log-line{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.person .person-log-line time{color:var(--muted);margin-right:.5em;font-variant-numeric:tabular-nums}.person .person-log-none{display:block;color:var(--muted)}.person .face{grid-row:1}.person .person-task{font-size:13px;font-weight:600}.person[data-state="idle"] .person-task{font-weight:400;color:var(--muted)}
 @media(max-width:750px){.person .person-status{font-size:14px}.person .person-name{font-size:13px}}
 .page-nav{display:grid;gap:8px;margin-top:48px}.page-nav a{display:block;color:#c3d3d3;text-decoration:none;padding:14px 12px;border-radius:9px;font-weight:600;line-height:1.6}.page-nav a:hover{background:#2b444f}.page-nav a[aria-current="page"]{background:#344c56;color:#fff}@media(max-width:750px){aside{flex-wrap:wrap}.page-nav{display:flex;gap:6px;width:100%;margin-top:8px}.page-nav a{flex:1;text-align:center;font-size:12px;padding:10px 5px}}
+.parked{grid-column:1/-1;margin:4px 0 18px}.parked summary{cursor:pointer;color:var(--muted,#6b777b);font-size:13px;padding:8px 2px}.parked-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:8px;opacity:.75}
 </style>
 <link rel="stylesheet" href="/assets/sidebar.css"></head>
 <body class="sidebar-closed">
@@ -65,7 +66,14 @@ let sessions=[],loaded=false,fetching=false,source='all',selected=null,lastFocus
 const safe=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const date=value=>{if(!value)return '未取得';const d=new Date(value);return Number.isNaN(d.getTime())?'日時不明':d.toLocaleString('ja-JP',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});};
 const text=value=>typeof value==='string'?value:typeof value==='number'?String(value):'';
-const title=s=>text(s.task)||text(s.project)||'作業名未設定';
+// 作業場所の名前から、何の作業かが分かる説明に置き換える（作業名が届いていないセッション用）
+const PLACE_LABELS={'Extreme 2TB':'年金チャンネルの定期作業（Mac mini）','tmp':'Slack返信への応答','workspace':'Slack返信への応答','daily-morning':'朝会・ブリーフの作業','bizdev':'bizdevでの作業','new-project':'エージェントモニターの作業','integrations':'エージェントモニターの作業'};
+const placeLabel=s=>{const p=text(s.project);if(!p||p==='プロジェクト未指定')return '';if(PLACE_LABELS[p])return PLACE_LABELS[p];if(/^scratch-/.test(p))return 'Claudeアプリの一時作業';return p+' での作業';};
+const lastConcrete=s=>{const h=Array.isArray(s.history)?s.history:[];for(let i=h.length-1;i>=0;i--){const n=text(h[i]&&h[i].task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim();if(n&&!GENERIC_WORK.has(n))return n;}return '';};
+const title=s=>{const t=text(s.task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim();return (t&&!GENERIC_WORK.has(t)?t:'')||lastConcrete(s)||placeLabel(s)||'作業名の記録なし';};
+// セッション終了の通知が最後に届いたもの＝もう終わっている
+const isEnded=s=>{const h=Array.isArray(s.history)?s.history:[];const e=h[h.length-1];return Boolean(e&&(text(e.description)==='セッション終了'||e.event==='end'||e.event==='session_end'));};
+const OLD_MS=12*3600e3,isOld=s=>s.status==='stale'&&Date.now()-Date.parse(s.last_activity_at||s.updated_at||0)>OLD_MS;
 const stages={writing:'✍️ 記事を執筆中',research:'🔎 調査中',review:'📝 校正・確認中',development:'💻 開発中',operations:'📋 運営対応中',automation:'⚙️ 自動化の作業中',planning:'📊 計画・整理中',general:'● 作業中'};
 const stageName=s=>s.status==='active'?(stages[s.stage]||'作業中'):statusName(s);
 const inferred=s=>s.assignment==='explicit'?'':'<span class="inferred">推定</span>';
@@ -120,8 +128,15 @@ function renderOrganization(list,done){
   $(department.id==='planning'?'planning-department':'department-grid').append(panel);
  }
 }
+function cardLine(s){
+ const parts=[];const p=text(s.project);if(p&&p!=='プロジェクト未指定')parts.push('作業場所: '+p);
+ const recent=workLogsOf(s,2).filter(n=>n!==title(s));if(recent.length)parts.push('直前: '+recent.join(' / '));
+ else if(!text(s.task)||GENERIC_WORK.has(text(s.task)))parts.push('作業名が届いていません（説明付きの操作がないセッション）');
+ return parts.join(' · ');
+}
+function workLogsOf(s,limit){const h=Array.isArray(s.history)?s.history:[],out=[];for(let i=h.length-1;i>=0&&out.length<limit+1;i--){const n=text(h[i]&&h[i].task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim();if(n&&!GENERIC_WORK.has(n)&&!out.includes(n))out.push(n);}return out.slice(0,limit);}
 function appendWorkCard(s,isDone){
- const card=document.createElement('button');card.className='card'+(isDone?' completed-card':'');card.type='button';card.innerHTML='<div class="card-head"><span class="source"><span class="source-icon" aria-hidden="true">'+(s.source==='codex'?'C':s.source==='claude'?'✳':'?')+'</span>'+safe(sourceName(s))+'</span>'+badge(s)+'</div><div class="stage-label">'+safe(isDone?'✓ 応答完了':stageName(s))+'</div><h3>'+safe(title(s))+'</h3><div class="description">'+safe([...new Set([text(s.project),text(s.tool),text(s.description)].filter(v=>v&&v!==title(s)))].join(' · ')||'作業の詳細はまだ届いていません')+'</div><div class="card-foot"><span>'+safe(s.member_id?'担当: '+(names[s.member_id]||text(s.member_id)):'担当の指定なし')+inferred(s)+'</span><span>'+safe(date(s.completed_at||s.last_activity_at||s.updated_at))+'</span></div>';card.addEventListener('click',()=>openDetail(s,card));$('cards').append(card);
+ const card=document.createElement('button');card.className='card'+(isDone?' completed-card':'');card.type='button';card.innerHTML='<div class="card-head"><span class="source"><span class="source-icon" aria-hidden="true">'+(s.source==='codex'?'C':s.source==='claude'?'✳':'?')+'</span>'+safe(sourceName(s))+'</span>'+badge(s)+'</div><div class="stage-label">'+safe(isDone?'✓ 応答完了':stageName(s))+'</div><h3>'+safe(title(s))+'</h3><div class="description">'+safe(cardLine(s))+'</div><div class="card-foot"><span>'+safe(s.member_id?'担当: '+(names[s.member_id]||text(s.member_id)):'担当の指定なし')+inferred(s)+'</span><span>'+safe(date(s.completed_at||s.last_activity_at||s.updated_at))+'</span></div>';card.addEventListener('click',()=>openDetail(s,card));$('cards').append(card);
 }
 function allCompleted(){
  const history=hasCompletedItems?completedItems:[];
@@ -133,8 +148,8 @@ function render(){
  renderOrganization(matched,done);
  if(!loaded){empty('作業状況を確認しています','接続が完了すると、受信した作業がここに表示されます。');return;}
  for(const st of ['active','waiting','completed'])$(st+'-count').textContent=matched.filter(s=>s.status===st).length;
- $('attention-count').textContent=matched.filter(s=>s.status==='failed'||s.status==='stale'||!Object.hasOwn(statuses,s.status)).length;
- const dept=$('department-filter').value,member=$('member-filter').value,inScope=s=>(dept==='all'||departmentOf(s)===dept)&&(member==='all'||s.member_id===member),list=matched.filter(inScope),finished=done.filter(inScope),ongoing=list.filter(s=>s.status!=='completed').sort(byWork);
+ $('attention-count').textContent=matched.filter(s=>(s.status==='failed'||s.status==='stale'||!Object.hasOwn(statuses,s.status))&&!isEnded(s)&&!isOld(s)).length;
+ const dept=$('department-filter').value,member=$('member-filter').value,inScope=s=>(dept==='all'||departmentOf(s)===dept)&&(member==='all'||s.member_id===member),list=matched.filter(inScope),finished=done.filter(inScope),ongoing=list.filter(s=>s.status!=='completed'&&!isEnded(s)&&!isOld(s)).sort(byWork),parked=list.filter(s=>s.status!=='completed'&&(isEnded(s)||isOld(s))).sort(byWork);
  $('list-count').textContent=ongoing.length+' 件が進行中・確認待ち / '+finished.length+' 件が応答完了'+(filtered||dept!=='all'||member!=='all'?'（絞り込み中）':'')+' · 未分類 '+matched.filter(s=>departmentOf(s)==='unknown').length+' 件';
  $('cards').replaceChildren();
  for(const [heading,items,isDone] of [['進行中・確認待ち',ongoing,false],['完了した作業',finished,true]]){
@@ -142,6 +157,7 @@ function render(){
   if(isDone){const note=document.createElement('p');note.className='group-note';note.textContent='応答が完了した作業です。成果物の品質や、事業上のタスク全体の完了を保証するものではありません。';$('cards').append(note);}
   if(!items.length){const e=document.createElement('div');e.className='group-empty';e.textContent=isDone?'この表示条件での完了通知はありません。':'この表示条件での進行中・確認待ちの通知はありません。';$('cards').append(e);}
   items.forEach(item=>appendWorkCard(item,isDone));
+  if(!isDone&&parked.length){const d=document.createElement('details');d.className='parked';d.innerHTML='<summary>終了したセッション・12時間以上通知のないもの · '+parked.length+' 件</summary>';const g=document.createElement('div');g.className='parked-cards';d.append(g);$('cards').append(d);parked.forEach(item=>{const before=$('cards').lastElementChild;appendWorkCard(item,false);const c=$('cards').lastElementChild;if(c!==before)g.append(c);});}
  }
 }
 function renderDetail(s){
