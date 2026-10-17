@@ -16,6 +16,7 @@ section{margin:0 0 30px}h2{margin:0 0 12px;font-size:17px}
 .hosts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.host{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.host.stale-host{border-color:#e2c79c;background:#fffaf1}.host-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.fetched{font-size:11px;color:var(--muted)}.tasks{list-style:none;margin:0;padding:0}.task{padding:10px 0;border-top:1px solid #edf0ec}.task:first-child{border-top:0}.task.paused{color:#8a9396}.task-name{font-weight:600;line-height:1.6;overflow-wrap:anywhere}.task-meta{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.7}.tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;vertical-align:1px}.tag.off{background:#ececf3;color:#6b6687}.tag.res{background:#e2f2ea;color:#1c6a4b}.empty{color:var(--muted);font-size:13px;padding:6px 2px;list-style:none}
 @media(max-width:1100px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:750px){.sched main{padding:16px 16px 36px}.hosts{grid-template-columns:minmax(0,1fr)}.tl{grid-template-columns:minmax(0,1fr);gap:4px}.s-state{margin-left:0;width:100%}.s-head h1{font-size:20px}}
+.tl-every{font-size:12px;color:var(--muted,#7a7a7a);margin-left:6px}
 </style><link rel="stylesheet" href="/assets/sidebar.css"></head>
 <body class="sched sidebar-closed"><aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a><a href="/schedules.html" aria-current="page">◷　定期タスク</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
 <main>
@@ -81,7 +82,9 @@ function upcoming(hosts,now){
  const rows=[];
  for(const h of hosts)for(const t of h.tasks||[]){
   if(t.enabled===false)continue;
-  for(const iso of t.next_runs||[]){const d=new Date(iso);if(!isNaN(d)&&d.getTime()>=now.getTime()-60000)rows.push({host:h.host,name:t.name,at:d})}
+  // 各タスクは次の1回だけ載せる（毎時の処理で一覧が埋まらないように）
+  const d=(t.next_runs||[]).map(iso=>new Date(iso)).find(d=>!isNaN(d)&&d.getTime()>=now.getTime()-60000);
+  if(d)rows.push({host:h.host,name:t.name,at:d,every:t.schedule_text})
  }
  rows.sort((a,b)=>a.at-b.at||a.name.localeCompare(b.name));
  return rows;
@@ -110,7 +113,7 @@ function render(data,now){
  }
  $('alerts').innerHTML=alerts;
  const rows=upcoming(hosts,now).slice(0,UPCOMING);
- $('timeline').innerHTML=rows.length?rows.map(r=>'<li class="tl"><div class="tl-time"><strong>'+esc(when(r.at,now))+'</strong><span>'+esc(rel(r.at-now))+'</span></div><div class="tl-body"><span class="tl-name">'+esc(r.name)+'</span>'+badge(r.host)+'</div></li>').join(''):'<li class="empty">時刻が分かる予定はまだありません。</li>';
+ $('timeline').innerHTML=rows.length?rows.map(r=>'<li class="tl"><div class="tl-time"><strong>'+esc(when(r.at,now))+'</strong><span>'+esc(rel(r.at-now))+'</span></div><div class="tl-body"><span class="tl-name">'+esc(r.name)+'</span>'+badge(r.host)+(r.every?'<span class="tl-every">'+esc(r.every)+'</span>':'')+'</div></li>').join(''):'<li class="empty">時刻が分かる予定はまだありません。</li>';
  $('hosts').innerHTML=hosts.length?hosts.map(h=>{
   const age=now.getTime()-Date.parse(h.received_at),stale=isNaN(age)||age>STALE_MIN*60000;
   const tasks=(h.tasks||[]).slice().sort((a,b)=>(b.enabled!==false)-(a.enabled!==false)||String(a.next_runs&&a.next_runs[0]||'~').localeCompare(String(b.next_runs&&b.next_runs[0]||'~')));

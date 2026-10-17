@@ -280,7 +280,7 @@ def launchd_task(plist, filename_stem, now, labels):
     if not label:
         return None
     key = 'launchd:' + label
-    name = display_name(key, unknown_name(label), labels)
+    name = display_name(key, unknown_name(label.rsplit('.', 1)[-1] + '.x'), labels)
     calendar = plist.get('StartCalendarInterval')
     interval = plist.get('StartInterval')
     base = dict(id=key, name=name, last_run=None, enabled=True)
