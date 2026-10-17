@@ -96,6 +96,8 @@ export class MonitorStore {
         }
       }
     }
+    // その時点の担当を記録に残す（後でセッションの担当が付け替わっても、過去の作業記録が別の人へ移らないように）
+    if (!event.member_id && session.member_id) event.member_id = session.member_id;
     session.history.push(event);
     session.history.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
     session.history = session.history.slice(-MAX_HISTORY);

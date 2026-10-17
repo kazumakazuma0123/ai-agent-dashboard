@@ -135,3 +135,13 @@ test('completion metadata persists independently from a later turn', t => {
   assert.throws(() => store.ingest(event({ event_id: 'bad', stage: 'invalid' })), TypeError);
   assert.throws(() => store.ingest(event({ event_id: 'bad', assignment: 'invalid' })), TypeError);
 });
+
+test('history keeps the member at the time of each event even after the session is reassigned', () => {
+  const store = new MonitorStore({ now: () => base });
+  store.ingest(event({ member_id: 'matsumoto' }));
+  store.ingest(event({ event_id: 'e2', event: 'activity', tool: 'read', timestamp: base + 1000 }));
+  store.ingest(event({ event_id: 'e3', event: 'activity', tool: 'edit', member_id: 'watanabe', timestamp: base + 2000 }));
+  const [session] = store.snapshot().sessions;
+  assert.equal(session.member_id, 'watanabe');
+  assert.deepEqual(session.history.map(e => e.member_id), ['matsumoto', 'matsumoto', 'watanabe']);
+});
