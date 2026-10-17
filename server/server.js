@@ -43,9 +43,10 @@ app.get('/', (_, res) => res.sendFile(path.join(projectRoot, 'index.html')))
 app.get('/schedules.html', (_, res) => res.sendFile(path.join(projectRoot, 'schedules.html')))
 app.get('/office.html', (_, res) => res.sendFile(path.join(projectRoot, 'office.html')))
 
-// ── POST /api/proxy — localhost:3002 への中継 ──
-// port 3002（claude proxy）はパケットフィルター未開放のため外部から到達不可。
-// port 3001（本サーバー）経由でlocalhost:3002にリクエストを中継する。
+// ── POST /api/proxy — claude proxy（:3002）への中継 ──
+// Slack返信（Vercel → 本サーバー）を claude proxy へ渡す。
+// 2026-10-17〜 claude proxy は Mac mini で動かし、Tailscale 越しに中継する（VPS の :3002 は停止）。
+const CLAUDE_PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://100.75.127.75:3002'
 app.post('/api/proxy', async (req, res) => {
   if (req.headers['x-api-key'] !== API_KEY) {
     return res.status(401).json({ error: 'unauthorized' })
@@ -53,7 +54,7 @@ app.post('/api/proxy', async (req, res) => {
   const { path, body: proxyBody } = req.body
   if (!path) return res.status(400).json({ error: 'missing path' })
   try {
-    const resp = await fetch(`http://localhost:3002${path}`, {
+    const resp = await fetch(`${CLAUDE_PROXY_URL}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(proxyBody || {}),
