@@ -32,6 +32,10 @@ DEFAULT_LABELS = {
     'script:weekly-brief-refresh.sh': '週次ブリーフを再生成',
     'script:healthcheck.sh': '死活監視',
     'script:daily-slack-report.sh': 'HOTEL SUI 日次Slackレポート',
+    'launchd:com.kazuma.hotel-market-report': 'HOTEL SUI 課題・市場動向レポート（週次）',
+    'launchd:com.kazuma.hotel-report-sync': 'ホテルレポート用の資料をMac miniへ同期',
+    'launchd:com.kazuma.schedule-report': '定期タスク予定表の収集（モニター）',
+    'script:schedule-report.sh': '定期タスク予定表の収集（モニター）',
     'claude:youtube-post-publish-monitor': 'YouTube公開後モニタリング（お財布ガードマン）',
 }
 # OS・パッケージが入れる /etc/cron.d の定期処理は本人の予定ではないので表示しない

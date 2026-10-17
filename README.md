@@ -98,3 +98,13 @@ Mac側のCodexとClaude Codeの通知設定はバックアップ後に移行済�
 ```
 
 - テスト: `python3 -m unittest discover -s integrations -p 'test_*.py'` と `server/schedules.test.js`。反映: サーバーは `schedules.js`・`server.js` を VPS へ配置して再起動、画面は再デプロイ。
+
+### 定期タスク予定表の設置状況（2026-10-17）
+
+| マシン | 実行方法 | 収集スクリプトの置き場所 | 認証キー |
+|---|---|---|---|
+| VPS | `/etc/cron.d/schedule-report`（10分ごと） | `/root/agent-monitor/`（`schedule-report.sh` 経由、送信先は `http://localhost:3001`） | 稼働中のモニターサーバーの環境変数から実行時に読む |
+| Mac mini | `~/Library/LaunchAgents/com.kazuma.schedule-report.plist`（600秒ごと） | `~/.agent-monitor/schedule_report.py` | `~/.agent-monitor/legacy_key.sh` |
+| MacBook | 同上 | `~/.agent-monitor/schedule_report.py` | `~/.claude/hooks/monitor_hook.sh` |
+
+`integrations/schedule_report.py` を直したら3台の置き場所へコピーし直す（launchd は `~/Downloads` 配下を読めないことがあるため、リポジトリから直接は実行しない）。新しい定期処理を足したら `DEFAULT_LABELS` に日本語名を追加する。
