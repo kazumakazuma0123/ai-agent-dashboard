@@ -94,7 +94,7 @@ export function installSchedules(app, { apiKey, store = new ScheduleStore({
   filePath: process.env.SCHEDULES_STATE_FILE || path.join(path.dirname(fileURLToPath(import.meta.url)), '../data/schedules.json'),
 }) } = {}) {
   if (typeof apiKey !== 'string' || !apiKey.trim()) throw new TypeError('API key is required')
-  const authorize = (req, res, next) => req.headers['x-api-key'] === apiKey ? next() : res.status(401).json({ error: 'unauthorized' })
+  const authorize = (req, res, next) => apiKey && req.headers['x-api-key'] === apiKey ? next() : res.status(401).json({ error: 'unauthorized' })
   app.get('/api/schedules', (_, res) => {
     res.set('Cache-Control', 'no-store')
     res.json(store.snapshot())
