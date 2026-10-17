@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import compression from 'compression'
 import path from 'path'
 import { fileURLToPath } from 'node:url'
 import { installMonitor } from './monitor-api.js'
@@ -8,6 +9,8 @@ import { installSchedules } from './schedules.js'
 
 const app = express()
 app.use(cors())
+// Mac mini（Tailscale Funnel経由）は回線が細いので、2MB超の /api/monitor を圧縮して返す
+app.use(compression())
 app.use(express.json({ limit: '50kb' }))
 
 const API_KEY = process.env.API_KEY
