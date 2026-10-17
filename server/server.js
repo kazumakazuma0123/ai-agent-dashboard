@@ -1,8 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import fs from 'fs'
 import path from 'path'
-import { execSync, spawn } from 'child_process'
 import { fileURLToPath } from 'node:url'
 import { installMonitor } from './monitor-api.js'
 import { installHealthStatus } from './health-status.js'
@@ -45,8 +43,8 @@ app.get('/office.html', (_, res) => res.sendFile(path.join(projectRoot, 'office.
 
 // ── POST /api/proxy — claude proxy（:3002）への中継 ──
 // Slack返信（Vercel → 本サーバー）を claude proxy へ渡す。
-// 2026-10-17〜 claude proxy は Mac mini で動かし、Tailscale 越しに中継する（VPS の :3002 は停止）。
-const CLAUDE_PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://100.75.127.75:3002'
+// 2026-10-17〜 本サーバーも claude proxy も Mac mini で動く（VPS解約）。同じマシンの :3002 へ渡す。
+const CLAUDE_PROXY_URL = process.env.CLAUDE_PROXY_URL || 'http://100.75.127.75:3002' // claude proxy はTailscaleのアドレスだけで待ち受ける
 app.post('/api/proxy', async (req, res) => {
   if (req.headers['x-api-key'] !== API_KEY) {
     return res.status(401).json({ error: 'unauthorized' })
@@ -70,99 +68,7 @@ app.post('/api/proxy', async (req, res) => {
   }
 })
 
-// ── POST /api/deploy — リモートデプロイ ──
-app.post('/api/deploy', (req, res) => {
-  if (req.headers['x-api-key'] !== API_KEY) {
-    return res.status(401).json({ error: 'unauthorized' })
-  }
-  try {
-    const cwd = process.cwd()
-    const pull = execSync('git pull', { cwd, encoding: 'utf8', timeout: 15000 })
-    res.json({ ok: true, pull: pull.trim() })
-    // git pullの後、pm2で自身を再起動（レスポンス送信後に実行）
-    if (!pull.includes('Already up to date')) {
-      setTimeout(() => {
-        try { execSync('pm2 restart ai-agent-dashboard', { encoding: 'utf8' }) } catch {}
-      }, 500)
-    }
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message })
-  }
-})
-
-// ── POST /api/vps-file — VPSにファイルを書き込み＆プロセス管理 ──
-// claude-proxy-server.js 等のファイルをリモートから配置・起動するためのエンドポイント
-app.post('/api/vps-file', (req, res) => {
-  if (req.headers['x-api-key'] !== API_KEY) {
-    return res.status(401).json({ error: 'unauthorized' })
-  }
-  const { action, file, content } = req.body
-  const ALLOWED = [
-    '/root/claude-proxy-server.js',
-    '/root/hotel-sui-slack/daily-slack-report.sh',
-    '/root/hotel-sui-slack/todo.json',
-    '/root/daily-morning/daily-morning.sh',
-    '/root/daily-morning/weekly-brief.json',
-    '/root/daily-morning/weekly-brief-refresh.sh',
-    '/root/daily-morning/monthly-goals.md',
-    '/root/daily-morning/.env',
-    '/etc/cron.d/daily-morning',
-  ]
-
-  if (action === 'write') {
-    if (!file || !content || !ALLOWED.includes(file)) {
-      return res.status(403).json({ error: 'path not allowed: ' + file })
-    }
-    const dir = path.dirname(file)
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    fs.writeFileSync(file, content, 'utf-8')
-    return res.json({ ok: true, file, size: content.length })
-  }
-
-  if (action === 'read') {
-    // デバッグ・監視用。読み取り可能なパスはホワイトリスト + ログファイル（cron.log / refresh.log）に限定
-    const READABLE = [
-      ...ALLOWED,
-      '/root/daily-morning/cron.log',
-      '/root/daily-morning/refresh.log',
-    ]
-    if (!file || !READABLE.includes(file)) {
-      return res.status(403).json({ error: 'path not readable: ' + file })
-    }
-    if (!fs.existsSync(file)) {
-      return res.json({ ok: true, file, exists: false, content: '' })
-    }
-    const content = fs.readFileSync(file, 'utf-8')
-    return res.json({ ok: true, file, exists: true, size: content.length, content })
-  }
-
-  if (action === 'start-proxy') {
-    // claude-proxy-server.js をバックグラウンド起動
-    try {
-      // まず既存プロセスを停止
-      try { execSync('kill $(lsof -t -i:3002 -sTCP:LISTEN) 2>/dev/null', { encoding: 'utf8' }) } catch {}
-      // 1秒待ってから起動
-      spawn('bash', ['-c', 'sleep 1 && cd /root && nohup node claude-proxy-server.js >> claude-proxy.log 2>&1 &'], {
-        detached: true, stdio: 'ignore'
-      }).unref()
-      return res.json({ ok: true, message: 'proxy starting on :3002' })
-    } catch (e) {
-      return res.status(500).json({ error: e.message })
-    }
-  }
-
-  if (action === 'status') {
-    // port 3002 のプロセス状態を確認
-    try {
-      const pid = execSync('lsof -t -i:3002 -sTCP:LISTEN 2>/dev/null', { encoding: 'utf8' }).trim()
-      return res.json({ ok: true, port3002: pid ? 'running (PID: ' + pid + ')' : 'stopped' })
-    } catch {
-      return res.json({ ok: true, port3002: 'stopped' })
-    }
-  }
-
-  return res.status(400).json({ error: 'unknown action. use: write, start-proxy, status' })
-})
+// /api/deploy・/api/vps-file はVPS専用だったため2026-10-17のMac mini移行で削除（外部公開するのでファイル書き込み・コマンド実行の口を残さない）
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT, () => console.log(`Agent monitor server running on :${PORT}`))
+app.listen(PORT, process.env.HOST || '127.0.0.1', () => console.log(`Agent monitor server running on :${PORT}`))
