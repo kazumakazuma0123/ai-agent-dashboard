@@ -44,12 +44,21 @@
 .parked .group-box{opacity:.75;margin-top:8px}
 @media(max-width:750px){.group-box{max-height:60vh}}
 .metrics[hidden]{display:none!important}
+/* 上部を詰める（メニューと接続状態を1行に、見出し・絞り込み・注記の余白を縮める） */
+main{padding-top:20px}
+header.topbar{display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+header.topbar .sidebar-toggle{margin:0}
+.section-heading{margin-bottom:8px}
+.section-heading .section-meta{margin-top:2px}
+.toolbar{margin-bottom:8px}
+.filter-note{margin:0 0 2px}
+.org-note{margin:0 0 12px;font-size:11px}
 </style>
 <link rel="stylesheet" href="/assets/sidebar.css"></head>
 <body class="sidebar-closed">
 <aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/" aria-current="page">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a><a href="/schedules.html">◷　定期タスク</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
-<main><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button>
-<header><div id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">接続を確認中</span><button id="refresh" class="refresh" type="button">更新 ↻</button></div></header>
+<main>
+<header class="topbar"><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button><div id="connection" class="connection" role="status"><span class="dot"></span><span id="connection-text">接続を確認中</span><button id="refresh" class="refresh" type="button">更新 ↻</button></div></header>
 <div id="demo-banner" class="demo-banner" hidden>デモ表示：架空の作業例です。本番の稼働状況ではありません。<a href="/">本番の表示へ戻る →</a></div>
 <section class="metrics" aria-label="表示条件に合うセッションの概要" hidden><div class="metric"><div class="metric-label">作業中</div><div class="metric-value"><span id="active-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">応答待ち</div><div class="metric-value"><span id="waiting-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">応答完了</div><div class="metric-value"><span id="completed-count">—</span><span class="metric-unit">セッション</span></div></div><div class="metric"><div class="metric-label">要確認・エラー</div><div class="metric-value"><span id="attention-count">—</span><span class="metric-unit">セッション</span></div></div></section>
 <div id="banner" class="banner" role="status" hidden></div>
