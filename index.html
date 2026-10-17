@@ -86,7 +86,7 @@ const workLogs=(id,items=sessions,limit=3)=>{
  for(const s of items)for(const e of Array.isArray(s.history)?s.history:[]){
   if(!e||typeof e!=='object'||(e.member_id||s.member_id)!==id)continue;
   const name=text(e.task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim(),at=Date.parse(e.timestamp);
-  if(!name||GENERIC_WORK.has(name)||e.assignment==='inferred'||Number.isNaN(at))continue;
+  if(!name||GENERIC_WORK.has(name)||Number.isNaN(at))continue;
   rows.push({name,at});
  }
  rows.sort((a,b)=>b.at-a.at);
