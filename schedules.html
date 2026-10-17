@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f5ef"><title>定期タスク・予定｜エージェントモニター</title>
+<style>
+:root{--paper:#f5f5ef;--ink:#203440;--muted:#6b777b;--line:#dce1db;--teal:#14776c;--white:#fff;--soft:#e9f2ed}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;font-size:14px}button,input,select{font:inherit}button,a,input,select{outline-offset:4px}button{cursor:pointer}aside{position:fixed;inset:0 auto 0 0;width:214px;background:#203440;color:#fff;padding:32px 24px;display:flex;flex-direction:column}.brand-mark{display:grid;place-items:center;background:#96cbbb;color:#203440;width:38px;height:38px;border-radius:12px;font-size:22px;font-weight:700}.brand{margin:18px 0 5px;font-size:17px;font-weight:700;line-height:1.7}.side-sub{font-size:11px;letter-spacing:.14em;color:#a6bcbd}.nav-current{margin-top:48px;padding:13px 14px;border-radius:8px;background:#344c56;font-weight:600}.side-bottom{margin-top:auto;font-size:12px;color:#b9c8c7;line-height:1.9}.side-bottom a{color:#e5efec;display:inline-block;margin-top:15px;text-underline-offset:5px}main{margin-left:214px;max-width:1620px;padding:44px 48px 60px}.page-nav{display:grid;gap:8px;margin-top:48px}.page-nav a{display:block;color:#c3d3d3;text-decoration:none;padding:14px 12px;border-radius:9px;font-weight:600;line-height:1.6}.page-nav a:hover{background:#2b444f}.page-nav a[aria-current="page"]{background:#344c56;color:#fff}@media(max-width:750px){aside{flex-wrap:wrap}.page-nav{display:flex;gap:6px;width:100%;margin-top:8px}.page-nav a{flex:1;text-align:center;font-size:12px;padding:10px 5px}}
+
+@media(max-width:750px){aside{position:static;width:auto;padding:16px 22px;display:flex;flex-direction:row;align-items:center;gap:12px}.brand-mark{width:30px;height:30px;font-size:18px;border-radius:9px}.brand{font-size:14px;margin:0}.side-sub,.nav-current,.side-bottom{display:none}main{margin:0;padding:27px 20px 40px}}
+
+.sched main{padding:28px 32px 48px}.s-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}.s-head .sidebar-toggle{margin:0}.s-head h1{font-size:24px;margin:0}.s-sub{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.7}.s-state{margin-left:auto;font-size:12px;color:var(--muted)}.s-state.ok:before,.s-state.err:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;background:var(--teal)}.s-state.err{color:#8a4a1c}.s-state.err:before{background:#ba662c}
+section{margin:0 0 30px}h2{margin:0 0 12px;font-size:17px}
+.notice{border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 16px;margin:0 0 12px;line-height:1.8;font-size:13px}.notice ul{margin:6px 0 0;padding-left:20px}.notice.warn{background:#fff8dc;border-color:#e3cf7c;color:#6d5a10}.notice.stale{background:#fff5e7;border-color:#e2c79c;color:#7e5827}.notice.demo{background:#fff5e7;border-color:#e2c79c;color:#7e5827}.notice a{color:inherit;margin-left:8px}
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:8px}.tl{display:grid;grid-template-columns:190px minmax(0,1fr);gap:14px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 16px}.tl-time strong{font-size:15px;margin-right:10px;white-space:nowrap}.tl-time span{font-size:12px;color:var(--teal);font-weight:600;white-space:nowrap}.tl-body{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}.tl-name{font-weight:600;overflow-wrap:anywhere}
+.mbadge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:11px;font-weight:700;background:#e8ebe5;color:#4f5c60;white-space:nowrap}.mbadge.h-mini{background:#dcebf7;color:#245786}.mbadge.h-book{background:#e8e2f5;color:#51407f}.mbadge.h-vps{background:#e1f1e8;color:#1c6a4b}
+.hosts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.host{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.host.stale-host{border-color:#e2c79c;background:#fffaf1}.host-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.fetched{font-size:11px;color:var(--muted)}.tasks{list-style:none;margin:0;padding:0}.task{padding:10px 0;border-top:1px solid #edf0ec}.task:first-child{border-top:0}.task.paused{color:#8a9396}.task-name{font-weight:600;line-height:1.6;overflow-wrap:anywhere}.task-meta{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.7}.tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;vertical-align:1px}.tag.off{background:#ececf3;color:#6b6687}.tag.res{background:#e2f2ea;color:#1c6a4b}.empty{color:var(--muted);font-size:13px;padding:6px 2px;list-style:none}
+@media(max-width:1100px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:750px){.sched main{padding:16px 16px 36px}.hosts{grid-template-columns:minmax(0,1fr)}.tl{grid-template-columns:minmax(0,1fr);gap:4px}.s-state{margin-left:0;width:100%}.s-head h1{font-size:20px}}
+</style><link rel="stylesheet" href="/assets/sidebar.css"></head>
+<body class="sched sidebar-closed"><aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a><a href="/schedules.html" aria-current="page">◷　定期タスク</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
+<main>
+<div class="s-head"><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button><div><h1>定期タスク・予定</h1><p class="s-sub">3台のマシンで「次にいつ何が動くか」。10分ごとに各マシンから届く予定を表示します。</p></div><div class="s-state" id="state" role="status">読み込み中…</div></div>
+<div id="demo-note" class="notice demo" hidden>デモ表示です。架空の予定を表示しています。<a href="/schedules.html">実データに戻る</a></div>
+<div id="alerts"></div>
+<section aria-labelledby="up-title"><h2 id="up-title">次の予定</h2><ol class="timeline" id="timeline"></ol></section>
+<section aria-labelledby="hosts-title"><h2 id="hosts-title">マシン別の一覧</h2><div class="hosts" id="hosts"></div></section>
+</main>
+<script src="/assets/sidebar.js"></script>
+<script>
+'use strict';
+(()=>{
+const STALE_MIN=30,UPCOMING=15,DEMO=new URLSearchParams(location.search).get('demo')==='1';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DOW='日月火水木金土';
+const pad=n=>String(n).padStart(2,'0');
+const hm=d=>d.getHours()+':'+pad(d.getMinutes());
+const ymd=d=>d.getFullYear()*10000+d.getMonth()*100+d.getDate();
+function dayLabel(d,now){
+ const diff=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5);
+ if(diff===0)return '今日';if(diff===1)return '明日';if(diff===2)return '明後日';
+ return (d.getMonth()+1)+'/'+d.getDate()+'（'+DOW[d.getDay()]+'）';
+}
+function when(d,now){return dayLabel(d,now)+' '+hm(d)}
+function rel(ms){
+ const m=Math.round(ms/60000);
+ if(m<=0)return 'まもなく';if(m<60)return 'あと'+m+'分';
+ const h=Math.floor(m/60),r=m%60;
+ if(h<24)return 'あと'+h+'時間'+(r?r+'分':'');
+ return 'あと'+Math.floor(h/24)+'日';
+}
+function ago(ms){
+ const m=Math.max(0,Math.round(ms/60000));
+ if(m<1)return 'たった今';if(m<60)return m+'分前';
+ if(m<1440)return Math.floor(m/60)+'時間前';return Math.floor(m/1440)+'日前';
+}
+function lastText(iso,now){const d=new Date(iso);return isNaN(d)?'不明':dayLabel(d,now)+' '+hm(d)}
+const HOST_CLASS={'Mac mini':'h-mini','MacBook':'h-book','VPS':'h-vps'};
+const badge=h=>'<span class="mbadge '+(HOST_CLASS[h]||'h-other')+'">'+esc(h)+'</span>';
+
+function demoData(){
+ const now=Date.now(),t=(min)=>new Date(now+min*60000).toISOString();
+ const next=(min,step)=>[t(min),t(min+step),t(min+2*step)];
+ const rec=new Date(now-4*60000).toISOString();
+ return {hosts:[
+  {host:'VPS',received_at:rec,tasks:[
+   {id:'d1',name:'朝会ブリーフをSlackに投稿',kind:'cron',schedule_text:'毎日 7:00',next_runs:next(95,1440),last_run:null,enabled:true},
+   {id:'d2',name:'死活監視',kind:'cron',schedule_text:'毎時17分',next_runs:next(41,60),last_run:null,enabled:true},
+   {id:'d3',name:'週次ブリーフを再生成',kind:'cron',schedule_text:'毎週月曜 6:30',next_runs:next(1100,10080),last_run:null,enabled:true}]},
+  {host:'Mac mini',received_at:rec,tasks:[
+   {id:'d4',name:'朝会ブリーフをSlackに投稿',kind:'launchd',schedule_text:'毎日 7:00',next_runs:next(95,1440),last_run:null,enabled:true},
+   {id:'d5',name:'Obsidian Vaultの同期（git pull）',kind:'launchd',schedule_text:'5分ごと',next_runs:[],last_run:null,enabled:true},
+   {id:'d6',name:'Slack返信の応答サーバー',kind:'常駐',schedule_text:'常駐プロセス',next_runs:[],last_run:null,enabled:true},
+   {id:'d7',name:'YouTube公開後モニタリング',kind:'claude',schedule_text:'3時間ごと（毎時20分）',next_runs:next(30,180),last_run:new Date(now-150*60000).toISOString(),enabled:true}]},
+  {host:'MacBook',received_at:new Date(now-52*60000).toISOString(),tasks:[
+   {id:'d8',name:'HOTEL SUI 日次Slackレポート',kind:'cron',schedule_text:'毎日 8:07',next_runs:next(150,1440),last_run:null,enabled:true},
+   {id:'d9',name:'YouTube公開後モニタリング',kind:'claude',schedule_text:'3時間ごと（毎時20分）',next_runs:[],last_run:new Date(now-3*864e5).toISOString(),enabled:false}]}]};
+}
+
+function upcoming(hosts,now){
+ const rows=[];
+ for(const h of hosts)for(const t of h.tasks||[]){
+  if(t.enabled===false)continue;
+  for(const iso of t.next_runs||[]){const d=new Date(iso);if(!isNaN(d)&&d.getTime()>=now.getTime()-60000)rows.push({host:h.host,name:t.name,at:d})}
+ }
+ rows.sort((a,b)=>a.at-b.at||a.name.localeCompare(b.name));
+ return rows;
+}
+// 同じ処理が複数マシンで同じ時刻に動く設定を探す（各タスクの直近1回で比較）
+function duplicates(hosts){
+ const map=new Map();
+ for(const h of hosts)for(const t of h.tasks||[]){
+  if(t.enabled===false||!(t.next_runs||[]).length)continue;
+  const d=new Date(t.next_runs[0]);if(isNaN(d))continue;
+  const key=t.name+'|'+Math.floor(d.getTime()/60000);
+  if(!map.has(key))map.set(key,{name:t.name,at:d,hosts:new Set()});
+  map.get(key).hosts.add(h.host);
+ }
+ return [...map.values()].filter(v=>v.hosts.size>=2);
+}
+
+function render(data,now){
+ const hosts=Array.isArray(data&&data.hosts)?data.hosts:[];
+ let alerts='';
+ const dups=duplicates(hosts);
+ if(dups.length)alerts+='<div class="notice warn"><strong>同じ処理が複数のマシンで動く設定です</strong><ul>'+dups.map(d=>'<li>'+esc(d.name)+'：'+[...d.hosts].map(badge).join(' ')+'（次回 '+esc(when(d.at,now))+'）</li>').join('')+'</ul></div>';
+ for(const h of hosts){
+  const age=now.getTime()-Date.parse(h.received_at);
+  if(isNaN(age)||age>STALE_MIN*60000)alerts+='<div class="notice stale">'+esc(h.host)+'から予定が届いていません（最終取得：'+(isNaN(age)?'不明':esc(ago(age)))+'）。マシンの電源・収集設定を確認してください。</div>';
+ }
+ $('alerts').innerHTML=alerts;
+ const rows=upcoming(hosts,now).slice(0,UPCOMING);
+ $('timeline').innerHTML=rows.length?rows.map(r=>'<li class="tl"><div class="tl-time"><strong>'+esc(when(r.at,now))+'</strong><span>'+esc(rel(r.at-now))+'</span></div><div class="tl-body"><span class="tl-name">'+esc(r.name)+'</span>'+badge(r.host)+'</div></li>').join(''):'<li class="empty">時刻が分かる予定はまだありません。</li>';
+ $('hosts').innerHTML=hosts.length?hosts.map(h=>{
+  const age=now.getTime()-Date.parse(h.received_at),stale=isNaN(age)||age>STALE_MIN*60000;
+  const tasks=(h.tasks||[]).slice().sort((a,b)=>(b.enabled!==false)-(a.enabled!==false)||String(a.next_runs&&a.next_runs[0]||'~').localeCompare(String(b.next_runs&&b.next_runs[0]||'~')));
+  return '<article class="host'+(stale?' stale-host':'')+'"><div class="host-head">'+badge(h.host)+'<span class="fetched">最終取得：'+(isNaN(age)?'不明':esc(ago(age)))+'</span></div><ul class="tasks">'+
+   (tasks.map(t=>{
+    const paused=t.enabled===false,res=t.kind==='常駐';
+    const nx=(t.next_runs||[])[0],nd=nx?new Date(nx):null;
+    const nextHtml=paused?'':res?'':nd&&!isNaN(nd)?'次回 '+esc(when(nd,now))+'（'+esc(rel(nd-now))+'）':'次回の時刻は未算出';
+    return '<li class="task'+(paused?' paused':'')+'"><div class="task-name">'+esc(t.name)+(paused?' <span class="tag off">停止中</span>':'')+(res?' <span class="tag res">常駐</span>':'')+'</div><div class="task-meta"><span>'+esc(t.schedule_text||'')+'</span>'+(nextHtml?'<span>'+nextHtml+'</span>':'')+'<span>前回：'+(t.last_run?esc(lastText(t.last_run,now)):'記録なし')+'</span></div></li>';
+   }).join('')||'<li class="empty">タスクはありません。</li>')+'</ul></article>';
+ }).join(''):'<p class="empty">まだどのマシンからも予定が届いていません。</p>';
+}
+
+let last=null;
+function setState(text,ok){const s=$('state');s.textContent=text;s.className='s-state '+(ok?'ok':'err')}
+async function load(){
+ const now=new Date();
+ try{
+  let data;
+  if(DEMO)data=demoData();
+  else{const r=await fetch('/api/schedules',{cache:'no-store'});if(!r.ok)throw new Error('http '+r.status);data=await r.json()}
+  last=data;render(data,now);setState('更新：'+hm(now),true);
+ }catch(e){
+  if(last)render(last,now);
+  setState('取得に失敗しました（前回の内容を表示中）。60秒後に再試行します',false);
+  if(!last){$('timeline').innerHTML='<li class="empty">予定を取得できませんでした。</li>';$('hosts').innerHTML=''}
+ }
+}
+if(DEMO)$('demo-note').hidden=false;
+load();setInterval(load,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});
+})();
+</script>
+</body></html>

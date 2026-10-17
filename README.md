@@ -78,3 +78,23 @@ Mac側のCodexとClaude Codeの通知設定はバックアップ後に移行済�
 - 画面: `assets/projects.js` の `HEALTH_MAP`（事業カード名 → 監視項目ID）で紐づけ。項目を足したら healthcheck.sh 側のIDとここを揃える。5分ごとに再取得。
 - テスト: `server/health-status.test.js`（`npm test`）。
 - 反映: サーバー側は `server/health-status.js`・`server.js` を VPS へ scp → `PM2_HOME=/etc/.pm2 pm2 restart ai-agent-dashboard`。画面側は `vercel --prod --yes`。
+
+## 定期タスク・予定（/schedules.html）
+
+3台（Mac mini / MacBook / VPS）の「次にいつ何が動くか」を一覧にするページ。`?demo=1` で架空データの表示。
+
+- 収集: `integrations/schedule_report.py`（標準ライブラリのみ、Python 3.9以上）。Claudeデスクトップの予定タスク（`scheduled-tasks.json`）、`~/Library/LaunchAgents/com.kazuma.*`・`com.obsidian.*`、crontab（Linuxは `/etc/cron.d/*` も）を読み、次回3回分の時刻と日本語の予定文を `POST /api/schedules` へ送る。コマンド・パス・引数は送らない（名前は内蔵の対応表、または `--labels` のJSONで日本語化。未知の処理は「定期処理（スクリプト名）」）。`#PAUSED` などコメントアウトされた行は対象外。通信失敗時も無言で終了コード0。
+- 確認: `python3 integrations/schedule_report.py --host-label "Mac mini" --dry-run`（送信せずJSONを表示）。
+- API: `POST /api/schedules`（`x-api-key` 認証、ホスト名40字・100タスク・next_runs 5件まで、未知の項目は拒否）。マシンごとに最新1件だけを `SCHEDULES_STATE_FILE`（既定 `data/schedules.json`）へ原子的に保存、最大10台。`GET /api/schedules` は認証なし。
+- 画面: 次の予定15件のタイムライン、マシン別カード、最終取得（30分超で警告）、同じ処理が複数マシンで同時刻に動く設定の警告。60秒ごとに更新。
+- 導入（各マシンで10分ごと）。キーは `MONITOR_API_KEY` 環境変数、または `--legacy-config`（フックと同じ `API_KEY="..."` 形式のファイル）で渡す:
+
+```sh
+# cron（VPS・Linux）
+*/10 * * * * MONITOR_API_KEY=... /usr/bin/python3 /path/to/integrations/schedule_report.py --host-label "VPS"
+
+# launchd（Mac）: StartInterval=600 の ~/Library/LaunchAgents/com.kazuma.schedule-report.plist を作り、
+# ProgramArguments に /usr/bin/python3, schedule_report.py のパス, --host-label "Mac mini", --legacy-config <設定ファイル> を指定
+```
+
+- テスト: `python3 -m unittest discover -s integrations -p 'test_*.py'` と `server/schedules.test.js`。反映: サーバーは `schedules.js`・`server.js` を VPS へ配置して再起動、画面は再デプロイ。
