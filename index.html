@@ -31,6 +31,18 @@
 @media(max-width:750px){.person .person-status{font-size:14px}.person .person-name{font-size:13px}}
 .page-nav{display:grid;gap:8px;margin-top:48px}.page-nav a{display:block;color:#c3d3d3;text-decoration:none;padding:14px 12px;border-radius:9px;font-weight:600;line-height:1.6}.page-nav a:hover{background:#2b444f}.page-nav a[aria-current="page"]{background:#344c56;color:#fff}@media(max-width:750px){aside{flex-wrap:wrap}.page-nav{display:flex;gap:6px;width:100%;margin-top:8px}.page-nav a{flex:1;text-align:center;font-size:12px;padding:10px 5px}}
 .parked{grid-column:1/-1;margin:4px 0 18px}.parked summary{cursor:pointer;color:var(--muted,#6b777b);font-size:13px;padding:8px 2px}.parked-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:8px;opacity:.75}
+.group-box{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;max-height:330px;overflow-y:auto;padding:2px 4px 2px 0;align-content:start;overscroll-behavior:contain}
+.group-box.done-box{max-height:400px}
+.group-box .card{padding:10px 12px;border-radius:9px}
+.group-box .card .card-head{gap:6px}
+.group-box .card .source{font-size:11px}
+.group-box .card .stage-label{display:none}
+.group-box .card h3{font-size:13px;margin:6px 0 2px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.group-box .card .description{font-size:11px;line-height:1.6;min-height:0}
+.group-box .card .card-foot{padding-top:6px;margin-top:6px;font-size:10px}
+.group-box .card .source-icon{width:18px;height:18px;border-radius:5px;font-size:10px;margin-right:5px}.group-box .card .badge{font-size:10px;padding:2px 6px}
+.parked .group-box{opacity:.75;margin-top:8px}
+@media(max-width:750px){.group-box{max-height:60vh}}
 </style>
 <link rel="stylesheet" href="/assets/sidebar.css"></head>
 <body class="sidebar-closed">
@@ -135,13 +147,14 @@ function cardLine(s){
  return parts.join(' · ');
 }
 function workLogsOf(s,limit){const h=Array.isArray(s.history)?s.history:[],out=[];for(let i=h.length-1;i>=0&&out.length<limit+1;i--){const n=text(h[i]&&h[i].task).replace(/^[【\[][^】\]]{1,20}[】\]]\s*/,'').trim();if(n&&!GENERIC_WORK.has(n)&&!out.includes(n))out.push(n);}return out.slice(0,limit);}
-function appendWorkCard(s,isDone){
- const card=document.createElement('button');card.className='card'+(isDone?' completed-card':'');card.type='button';card.innerHTML='<div class="card-head"><span class="source"><span class="source-icon" aria-hidden="true">'+(s.source==='codex'?'C':s.source==='claude'?'✳':'?')+'</span>'+safe(sourceName(s))+'</span>'+badge(s)+'</div><div class="stage-label">'+safe(isDone?'✓ 応答完了':stageName(s))+'</div><h3>'+safe(title(s))+'</h3><div class="description">'+safe(cardLine(s))+'</div><div class="card-foot"><span>'+safe(s.member_id?'担当: '+(names[s.member_id]||text(s.member_id)):'担当の指定なし')+inferred(s)+'</span><span>'+safe(date(s.completed_at||s.last_activity_at||s.updated_at))+'</span></div>';card.addEventListener('click',()=>openDetail(s,card));$('cards').append(card);
+function appendWorkCard(s,isDone,target=$('cards')){
+ const card=document.createElement('button');card.className='card'+(isDone?' completed-card':'');card.type='button';card.innerHTML='<div class="card-head"><span class="source"><span class="source-icon" aria-hidden="true">'+(s.source==='codex'?'C':s.source==='claude'?'✳':'?')+'</span>'+safe(sourceName(s))+'</span>'+badge(s)+'</div><div class="stage-label">'+safe(isDone?'✓ 応答完了':stageName(s))+'</div><h3>'+safe(title(s))+'</h3><div class="description">'+safe(cardLine(s))+'</div><div class="card-foot"><span>'+safe(s.member_id?'担当: '+(names[s.member_id]||text(s.member_id)):'担当の指定なし')+inferred(s)+'</span><span>'+safe(date(s.completed_at||s.last_activity_at||s.updated_at))+'</span></div>';card.addEventListener('click',()=>openDetail(s,card));target.append(card);
 }
 function allCompleted(){
  const history=hasCompletedItems?completedItems:[];
  return [...history,...sessions.filter(s=>s.status==='completed'&&!history.some(c=>c.source===s.source&&c.session_id===s.session_id))];
 }
+let parkedOpen=false;
 function render(){
  const matched=matchingSessions(),done=matchingSessions(allCompleted()),filtered=source!=='all'||$('status').value!=='all'||Boolean($('search').value.trim());
  $('filter-note').textContent=filtered?'絞り込み中：概要件数・部署の作業・一覧に同じ条件を適用しています。':'すべての受信セッションを集計';
@@ -151,13 +164,15 @@ function render(){
  $('attention-count').textContent=matched.filter(s=>(s.status==='failed'||s.status==='stale'||!Object.hasOwn(statuses,s.status))&&!isEnded(s)&&!isOld(s)).length;
  const dept=$('department-filter').value,member=$('member-filter').value,inScope=s=>(dept==='all'||departmentOf(s)===dept)&&(member==='all'||s.member_id===member),list=matched.filter(inScope),finished=done.filter(inScope),ongoing=list.filter(s=>s.status!=='completed'&&!isEnded(s)&&!isOld(s)).sort(byWork),parked=list.filter(s=>s.status!=='completed'&&(isEnded(s)||isOld(s))).sort(byWork);
  $('list-count').textContent=ongoing.length+' 件が進行中・確認待ち / '+finished.length+' 件が応答完了'+(filtered||dept!=='all'||member!=='all'?'（絞り込み中）':'')+' · 未分類 '+matched.filter(s=>departmentOf(s)==='unknown').length+' 件';
+ // 一覧は決まった高さの枠の中でスクロールする。5秒ごとの更新でスクロール位置が戻らないよう覚えておく
+ const scrollPos={};$('cards').querySelectorAll('[data-box]').forEach(b=>{scrollPos[b.dataset.box]=b.scrollTop;});
  $('cards').replaceChildren();
  for(const [heading,items,isDone] of [['進行中・確認待ち',ongoing,false],['完了した作業',finished,true]]){
   const h=document.createElement('h3');h.className='work-group'+(isDone?' done':'');h.textContent=heading+' · '+items.length+' 件';$('cards').append(h);
   if(isDone){const note=document.createElement('p');note.className='group-note';note.textContent='応答が完了した作業です。成果物の品質や、事業上のタスク全体の完了を保証するものではありません。';$('cards').append(note);}
   if(!items.length){const e=document.createElement('div');e.className='group-empty';e.textContent=isDone?'この表示条件での完了通知はありません。':'この表示条件での進行中・確認待ちの通知はありません。';$('cards').append(e);}
-  items.forEach(item=>appendWorkCard(item,isDone));
-  if(!isDone&&parked.length){const d=document.createElement('details');d.className='parked';d.innerHTML='<summary>終了したセッション・12時間以上通知のないもの · '+parked.length+' 件</summary>';const g=document.createElement('div');g.className='parked-cards';d.append(g);$('cards').append(d);parked.forEach(item=>{const before=$('cards').lastElementChild;appendWorkCard(item,false);const c=$('cards').lastElementChild;if(c!==before)g.append(c);});}
+  if(items.length){const box=document.createElement('div');box.className='group-box'+(isDone?' done-box':'');box.dataset.box=isDone?'done':'ongoing';$('cards').append(box);items.forEach(item=>appendWorkCard(item,isDone,box));box.scrollTop=scrollPos[box.dataset.box]||0;}
+  if(!isDone&&parked.length){const d=document.createElement('details');d.className='parked';d.open=parkedOpen;d.addEventListener('toggle',()=>{parkedOpen=d.open;});d.innerHTML='<summary>終了したセッション・12時間以上通知のないもの · '+parked.length+' 件</summary>';const g=document.createElement('div');g.className='group-box parked-cards';g.dataset.box='parked';d.append(g);$('cards').append(d);parked.forEach(item=>appendWorkCard(item,false,g));g.scrollTop=scrollPos.parked||0;}
  }
 }
 function renderDetail(s){
