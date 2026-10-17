@@ -32,7 +32,11 @@ DEFAULT_LABELS = {
     'script:weekly-brief-refresh.sh': '週次ブリーフを再生成',
     'script:healthcheck.sh': '死活監視',
     'script:daily-slack-report.sh': 'HOTEL SUI 日次Slackレポート',
+    'claude:youtube-post-publish-monitor': 'YouTube公開後モニタリング（お財布ガードマン）',
 }
+# OS・パッケージが入れる /etc/cron.d の定期処理は本人の予定ではないので表示しない
+SYSTEM_CRON_FILES = {'e2scrub_all', 'sysstat', 'popularity-contest', 'anacron', 'php', 'certbot',
+                     'mdadm', 'zfsutils-linux', 'john', '.placeholder'}
 WEEKLY_CLOSE_LABEL = '週次締めのリマインド'
 
 # ---------- cron式 ----------
@@ -383,6 +387,8 @@ def collect_cron(now, labels):
         pass
     if sys.platform.startswith('linux'):
         for path in sorted(glob.glob('/etc/cron.d/*')):
+            if Path(path).name in SYSTEM_CRON_FILES:
+                continue
             try:
                 entries += parse_crontab(Path(path).read_text(), system=True)
             except OSError:
