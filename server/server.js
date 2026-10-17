@@ -29,7 +29,7 @@ const MEMBERS = [
   { id: 'kobayashi',name: 'イーサン',   role: 'エンジニア',         commands: ['/dev'] },
   { id: 'kato',     name: 'レオ',       role: 'インフラ部長',       commands: ['/infra'] },
   { id: 'yoshida',  name: 'マックス',   role: '自動化エンジニア',   commands: ['/infra'] },
-  { id: 'matsumoto',name: 'ミア',       role: '秘書',               commands: ['/ceo', '/standup'] },
+  { id: 'matsumoto',name: 'ハル',       role: '秘書',               commands: ['/ceo', '/standup'] },
 ]
 
 // セッションを唯一の稼働根拠にする。運用APIは既存のまま維持する。
