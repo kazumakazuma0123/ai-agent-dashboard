@@ -129,6 +129,18 @@ const projects = [
     "reference": "客室タブレットのデプロイ情報・月次目標"
   },
   {
+    "name": "フロントシステム",
+    "domain": "ホテル",
+    "group": "active",
+    "status": "導入確認中",
+    "purpose": "客室タブレットからの内線通話をフロントで受け、応答・拒否・通話・ミュートを行う。",
+    "routine": "フロント端末で受付画面を開いたままにして待機する（時刻指定の定期実行ではない）。",
+    "current": "客室タブレット内のフロント受付画面（要ログイン）を公開済み。着信音とバイブでの通知、不在着信の記録とSlack通知、直近24時間の通話履歴、フロント離席中の自動表示、スマホ表示まで実装済み。",
+    "next": "フロント用の端末を決めて受付画面を常時表示し、各客室からの通話を実機で確認。",
+    "reference": "客室タブレットのコードのうちフロント受付画面・通話状態APIの変更履歴",
+    "checked": "2026年10月24日"
+  },
+  {
     "name": "清掃管理アプリ",
     "domain": "ホテル",
     "group": "active",
@@ -299,7 +311,7 @@ function renderProjects(){
  const q=el('project-search').value.trim().toLowerCase(),domain=el('project-domain').value;
  const list=projects.filter(p=>(filter==='all'||p.group===filter)&&(domain==='all'||p.domain===domain)&&[p.name,p.purpose,p.current,p.routine||''].some(t=>t.toLowerCase().includes(q)));
  el('project-count').textContent=`${list.length} 件のプロジェクト`;
- el('project-grid').innerHTML=list.length?list.map(p=>`<article data-project="${projects.indexOf(p)}" class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2>${compactState(p)}<p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：2026年10月5日</p></details><button class="project-open" data-open-project="${projects.indexOf(p)}" aria-label="${escapeHtml(p.name)}の詳細を開く" aria-haspopup="dialog"></button></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
+ el('project-grid').innerHTML=list.length?list.map(p=>`<article data-project="${projects.indexOf(p)}" class="project-card ${p.group==='paused'?'paused':''}"><div class="project-top"><span class="project-domain">${escapeHtml(p.domain)}</span><span class="badge project-status ${p.group==='active'?'active':p.group==='unknown'?'waiting':''}">${escapeHtml(p.status)}</span></div><h2>${escapeHtml(p.name)}</h2>${compactState(p)}<p class="project-purpose">${escapeHtml(p.purpose)}</p>${healthBlock(p)}<dl>${p.routine?`<dt>定期的に行うこと</dt><dd>${escapeHtml(p.routine)}</dd>`:''}<dt>現在の状況</dt><dd>${escapeHtml(p.current)}</dd><dt>次の予定</dt><dd>${escapeHtml(p.next)}</dd></dl><details><summary>確認した資料</summary><p>${escapeHtml(p.reference)}<br>確認日：${escapeHtml(p.checked||"2026年10月5日")}</p></details><button class="project-open" data-open-project="${projects.indexOf(p)}" aria-label="${escapeHtml(p.name)}の詳細を開く" aria-haspopup="dialog"></button></article>`).join(''):'<div class="empty"><h3>該当するプロジェクトはありません</h3><p>表示範囲や検索条件を変更してください。</p></div>';
 }
 document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(t=>t.setAttribute('aria-pressed',String(t===b)));renderProjects();}));
 el('project-search').addEventListener('input',renderProjects);el('project-domain').addEventListener('change',renderProjects);renderProjects();

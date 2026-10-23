@@ -43,6 +43,7 @@ app.use('/assets', express.static(path.join(projectRoot, 'assets'), { dotfiles: 
 app.get('/', (_, res) => res.sendFile(path.join(projectRoot, 'index.html')))
 app.get('/schedules.html', (_, res) => res.sendFile(path.join(projectRoot, 'schedules.html')))
 app.get('/office.html', (_, res) => res.sendFile(path.join(projectRoot, 'office.html')))
+app.get('/projects.html', (_, res) => res.sendFile(path.join(projectRoot, 'projects.html')))
 
 // ── POST /api/proxy — claude proxy（:3002）への中継 ──
 // Slack返信（Vercel → 本サーバー）を claude proxy へ渡す。
