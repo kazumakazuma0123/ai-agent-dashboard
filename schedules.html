@@ -18,9 +18,9 @@ section{margin:0 0 30px}h2{margin:0 0 12px;font-size:17px}
 @media(max-width:750px){.sched main{padding:16px 16px 36px}.hosts{grid-template-columns:minmax(0,1fr)}.tl{grid-template-columns:minmax(0,1fr);gap:4px}.s-state{margin-left:0;width:100%}.s-head h1{font-size:20px}}
 .tl-every{font-size:12px;color:var(--muted,#7a7a7a);margin-left:6px}
 </style><link rel="stylesheet" href="/assets/sidebar.css"></head>
-<body class="sched sidebar-closed"><aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a><a href="/schedules.html" aria-current="page">◷　定期タスク</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
+<body class="sched sidebar-closed"><aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/overview.html">▦　業務ハブ</a><a href="/">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a><a href="/schedules.html" aria-current="page">◷　定期タスク</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
 <main>
-<div class="s-head"><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button><div><h1>定期タスク・予定</h1><p class="s-sub">3台のマシンで「次にいつ何が動くか」。10分ごとに各マシンから届く予定を表示します。</p></div><div class="s-state" id="state" role="status">読み込み中…</div></div>
+<div class="s-head"><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button><div><h1>定期タスク・予定</h1><p class="s-sub">登録されたマシンで「次にいつ何が動くか」。10分ごとに各マシンから届く予定を表示します。</p></div><div class="s-state" id="state" role="status">読み込み中…</div></div>
 <div id="demo-note" class="notice demo" hidden>デモ表示です。架空の予定を表示しています。<a href="/schedules.html">実データに戻る</a></div>
 <div id="alerts"></div>
 <section aria-labelledby="up-title"><h2 id="up-title">次の予定</h2><ol class="timeline" id="timeline"></ol></section>
@@ -78,6 +78,9 @@ function demoData(){
    {id:'d9',name:'YouTube公開後モニタリング',kind:'claude',schedule_text:'3時間ごと（毎時20分）',next_runs:[],last_run:new Date(now-3*864e5).toISOString(),enabled:false}]}]};
 }
 
+function freshHost(h,now){
+ return [h.received_at,h.collected_at||h.received_at].every(value=>{const age=now.getTime()-Date.parse(value);return Number.isFinite(age)&&age>=-60000&&age<=STALE_MIN*60000});
+}
 function upcoming(hosts,now){
  const rows=[];
  for(const h of hosts)for(const t of h.tasks||[]){
@@ -105,42 +108,45 @@ function duplicates(hosts){
 function render(data,now){
  const hosts=Array.isArray(data&&data.hosts)?data.hosts:[];
  let alerts='';
- const dups=duplicates(hosts);
+ const freshHosts=hosts.filter(h=>freshHost(h,now));
+ const dups=duplicates(freshHosts);
  if(dups.length)alerts+='<div class="notice warn"><strong>同じ処理が複数のマシンで動く設定です</strong><ul>'+dups.map(d=>'<li>'+esc(d.name)+'：'+[...d.hosts].map(badge).join(' ')+'（次回 '+esc(when(d.at,now))+'）</li>').join('')+'</ul></div>';
  for(const h of hosts){
   const age=now.getTime()-Date.parse(h.received_at);
-  if(isNaN(age)||age>STALE_MIN*60000)alerts+='<div class="notice stale">'+esc(h.host)+'から予定が届いていません（最終取得：'+(isNaN(age)?'不明':esc(ago(age)))+'）。マシンの電源・収集設定を確認してください。</div>';
+  if(!freshHost(h,now))alerts+='<div class="notice stale">'+esc(h.host)+'から予定が届いていません（最終取得：'+(isNaN(age)?'不明':esc(ago(age)))+'）。マシンの電源・収集設定を確認してください。</div>';
  }
  $('alerts').innerHTML=alerts;
- const rows=upcoming(hosts,now).slice(0,UPCOMING);
- $('timeline').innerHTML=rows.length?rows.map(r=>'<li class="tl"><div class="tl-time"><strong>'+esc(when(r.at,now))+'</strong><span>'+esc(rel(r.at-now))+'</span></div><div class="tl-body"><span class="tl-name">'+esc(r.name)+'</span>'+badge(r.host)+(r.every?'<span class="tl-every">'+esc(r.every)+'</span>':'')+'</div></li>').join(''):'<li class="empty">時刻が分かる予定はまだありません。</li>';
+ const rows=upcoming(freshHosts,now).slice(0,UPCOMING);
+ $('timeline').innerHTML=rows.length?rows.map(r=>'<li class="tl"><div class="tl-time"><strong>'+esc(when(r.at,now))+'</strong><span>'+esc(rel(r.at-now))+'</span></div><div class="tl-body"><span class="tl-name">'+esc(r.name)+'</span>'+badge(r.host)+(r.every?'<span class="tl-every">'+esc(r.every)+'</span>':'')+'</div></li>').join(''):'<li class="empty">最新の収集結果に、時刻が分かる予定はありません。実行結果は別途確認してください。</li>';
  $('hosts').innerHTML=hosts.length?hosts.map(h=>{
-  const age=now.getTime()-Date.parse(h.received_at),stale=isNaN(age)||age>STALE_MIN*60000;
+  const age=now.getTime()-Date.parse(h.received_at),stale=!freshHost(h,now);
   const tasks=(h.tasks||[]).slice().sort((a,b)=>(b.enabled!==false)-(a.enabled!==false)||String(a.next_runs&&a.next_runs[0]||'~').localeCompare(String(b.next_runs&&b.next_runs[0]||'~')));
   return '<article class="host'+(stale?' stale-host':'')+'"><div class="host-head">'+badge(h.host)+'<span class="fetched">最終取得：'+(isNaN(age)?'不明':esc(ago(age)))+'</span></div><ul class="tasks">'+
    (tasks.map(t=>{
     const paused=t.enabled===false,res=t.kind==='常駐';
     const nx=(t.next_runs||[])[0],nd=nx?new Date(nx):null;
-    const nextHtml=paused?'':res?'':nd&&!isNaN(nd)?'次回 '+esc(when(nd,now))+'（'+esc(rel(nd-now))+'）':'次回の時刻は未算出';
+    const nextHtml=paused?'':res?'':stale?'次回時刻は更新待ち（古い記録）':nd&&!isNaN(nd)?'次回 '+esc(when(nd,now))+'（'+esc(rel(nd-now))+'）':'次回の時刻は未算出';
     return '<li class="task'+(paused?' paused':'')+'"><div class="task-name">'+esc(t.name)+(paused?' <span class="tag off">停止中</span>':'')+(res?' <span class="tag res">常駐</span>':'')+'</div><div class="task-meta"><span>'+esc(t.schedule_text||'')+'</span>'+(nextHtml?'<span>'+nextHtml+'</span>':'')+'<span>前回：'+(t.last_run?esc(lastText(t.last_run,now)):'記録なし')+'</span></div></li>';
    }).join('')||'<li class="empty">タスクはありません。</li>')+'</ul></article>';
  }).join(''):'<p class="empty">まだどのマシンからも予定が届いていません。</p>';
 }
 
-let last=null;
+let last=null,loading=false;
 function setState(text,ok){const s=$('state');s.textContent=text;s.className='s-state '+(ok?'ok':'err')}
 async function load(){
+ if(loading)return;loading=true;
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
  const now=new Date();
  try{
   let data;
   if(DEMO)data=demoData();
-  else{const r=await fetch('/api/schedules',{cache:'no-store'});if(!r.ok)throw new Error('http '+r.status);data=await r.json()}
+  else{const r=await fetch('/api/schedules',{cache:'no-store',signal:controller.signal});if(!r.ok)throw new Error('http '+r.status);data=await r.json();if(!data||!Array.isArray(data.hosts)||!data.hosts.every(h=>h&&typeof h==='object'&&Array.isArray(h.tasks)&&h.tasks.every(t=>t&&typeof t==='object'&&Array.isArray(t.next_runs))))throw new Error('invalid data')}
   last=data;render(data,now);setState('更新：'+hm(now),true);
  }catch(e){
   if(last)render(last,now);
   setState('取得に失敗しました（前回の内容を表示中）。60秒後に再試行します',false);
   if(!last){$('timeline').innerHTML='<li class="empty">予定を取得できませんでした。</li>';$('hosts').innerHTML=''}
- }
+ }finally{clearTimeout(timer);loading=false;}
 }
 if(DEMO)$('demo-note').hidden=false;
 load();setInterval(load,60000);
