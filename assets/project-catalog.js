@@ -374,9 +374,9 @@ window.MONITOR_PROJECTS = [
 window.MONITOR_HEALTH_MAP={
  'ホテル予約・売上の自動連携':['gas.api','gas.sync','gas.cancel','gas.trig.sync','gas.trig.cancel','gas.cleaningPush','gas.cleaningConfig','gas.salesWrite','gas.salesMail','gas.weekly','gas.trig.weekly','http.cleaningWebhook'],
  'ゲストメッセージの返信案作成':['gas.guest','gas.trig.guest','gas.guestConfig'],
- 'シフト用予約状況表の自動更新':['gas.shift','gas.trig.shift'],
+ 'シフト用予約状況表の自動更新':['gas.shift','gas.trig.shift','aipass.daily'],
  'Slack通知・朝会':['morning.prev','pm2.proxy','disk.vps'],
- '清掃管理アプリ':['http.cleaning','http.cleaningWebhook'],
+ '清掃管理アプリ':['http.cleaning','http.cleaningWebhook','cleaning.sync','cleaning.reflect'],
  '客室タブレット':['http.tablet'],
  'ホテル運営マニュアル':['http.manual'],
  'HOTEL SUI 集客・収益改善':['http.kpi'],
