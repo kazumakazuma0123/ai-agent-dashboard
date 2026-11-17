@@ -246,7 +246,7 @@ function openDetail(s,trigger){selected=key(s);lastFocus=trigger;$('overlay').hi
 function closeDetail(){selected=null;$('overlay').hidden=true;document.body.style.overflow='';if(lastFocus?.isConnected)lastFocus.focus();else $('search').focus();}
 async function poll(){
  if(demoMode||fetching)return;fetching=true;$('refresh').disabled=true;
- const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),25000);
  try{const response=await fetch('/api/monitor',{cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error('HTTP '+response.status);const data=await response.json();if(!data||!Array.isArray(data.sessions))throw new Error('Invalid data');sessions=data.sessions.filter(s=>s&&typeof s==='object');hasCompletedItems=Array.isArray(data.completed_items);completedItems=hasCompletedItems?data.completed_items.filter(s=>s&&typeof s==='object').map(s=>({...s,status:'completed'})):[];loaded=true;$('connection').className='connection ok';$('connection-text').textContent='接続中';$('banner').hidden=true;$('updated').textContent='最終取得 '+date(new Date().toISOString());render();if(selected){const item=[...sessions,...completedItems].find(s=>key(s)===selected);if(item)renderDetail(item);}}
  catch(error){$('connection').className='connection error';$('connection-text').textContent='接続を確認してください';$('banner').hidden=false;$('banner').textContent=loaded?'最新情報を取得できません。最後に取得した情報を表示しています。接続が戻ると自動で更新します。':'サーバーに接続できず、作業状況を確認できません。接続先とサーバーの稼働状況を確認してください。自動で再接続します。';if(!loaded)empty('作業状況を取得できません','未接続のため、現在のセッション数は不明です。');}
  finally{clearTimeout(timeout);fetching=false;$('refresh').disabled=false;}

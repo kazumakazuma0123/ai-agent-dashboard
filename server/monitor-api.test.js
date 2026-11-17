@@ -199,3 +199,18 @@ test('Grok経由の起動元は表示名に反映され、不正値は捨てら�
   assert.equal(body.agents.find(a => a.member_id === 'watanabe').command, 'Claude Code（Grok経由）');
   assert.equal(body.agents.find(a => a.member_id === 'kobayashi').command, 'Claude Code');
 });
+
+test('slimSession は履歴から重複項目を外し、古い作業は直近8件だけにする', async () => {
+  const { slimSession } = await import('./monitor-api.js')
+  const now = Date.parse('2026-11-17T09:00:00Z')
+  const history = Array.from({ length: 50 }, (_, i) => ({ event_id: 'x' + i, source: 'claude', session_id: 's', event: 'activity', task: '作業' + i, timestamp: new Date(now - 1000 * i).toISOString() }))
+  const recent = slimSession({ status: 'completed', updated_at: new Date(now - 3600e3).toISOString(), history }, now)
+  assert.equal(recent.history.length, 40)
+  assert.equal(recent.history[0].event_id, undefined)
+  assert.equal(recent.history[0].session_id, undefined)
+  assert.equal(recent.history.at(-1).task, '作業49')
+  const old = slimSession({ status: 'completed', updated_at: new Date(now - 3 * 86400e3).toISOString(), history }, now)
+  assert.equal(old.history.length, 8)
+  const active = slimSession({ status: 'active', updated_at: new Date(now - 3 * 86400e3).toISOString(), history }, now)
+  assert.equal(active.history.length, 40)
+})

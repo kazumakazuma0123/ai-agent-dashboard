@@ -109,7 +109,7 @@
     $('detail-dialog').showModal(); $('close-dialog').focus();
   }
   async function request(key, path, valid) {
-    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 12000);
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 25000);
     try {
       const response = await fetch(path, { cache: 'no-store', signal: controller.signal });
       if (!response.ok) throw new Error('HTTP error');

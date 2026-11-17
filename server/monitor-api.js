@@ -16,6 +16,18 @@ const readableSnapshot = snapshot => ({
   ...snapshot,
   sessions: snapshot.sessions.map(s => ({ ...s, task: readable(s.task), history: (s.history || []).map(e => ({ ...e, task: readable(e.task) })) })),
 })
+// /api/monitor はVercel→Tailscale Funnel経由で届くため回線が細い（2026-11-17、500件・3.4MBで18〜30秒かかり画面が「接続できない」になった）。
+// 画面に要らない重複項目（イベントID・送信元・セッションID）を履歴から外し、動いていない古い作業は直近の履歴だけ返す。
+const RECENT_MS = 24 * 60 * 60 * 1000
+const HISTORY_RECENT = 40
+const HISTORY_OLD = 8
+const slimSession = (s, now = Date.now()) => {
+  const live = s.status === 'active' || s.status === 'waiting' || now - Date.parse(s.updated_at) < RECENT_MS
+  const history = (s.history || []).slice(-(live ? HISTORY_RECENT : HISTORY_OLD))
+    .map(({ event_id, source, session_id, ...rest }) => rest)
+  return { ...s, history }
+}
+export { slimSession }
 const sourceLabel = s => ({ codex: 'Codex', claude: 'Claude Code', unknown: '旧連携' }[s.source]) + (s.launcher === 'grok' ? '（Grok経由）' : '')
 const department = (cwd = '') => {
   if (/new-project|sui-room-cre|threads-poster|\/gas\//.test(cwd)) return 'watanabe'
@@ -121,7 +133,8 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
         task: event.task || '', project: event.project || 'プロジェクト未指定', description: event.description || '',
         completed_at: event.timestamp, status: 'completed',
       }))).sort((a, b) => Date.parse(b.completed_at) - Date.parse(a.completed_at)).slice(0, 100)
-    res.json({ ...snapshot, completed_items, agents: projectedAgents(snapshot), version: 2 })
+    const agents = projectedAgents(snapshot)
+    res.json({ ...snapshot, sessions: snapshot.sessions.map(slimSession), completed_items, agents, version: 2 })
   })
   app.get('/api/agents', (_, res) => res.json({ agents: projectedAgents(readableSnapshot(store.snapshot())), unmapped_sessions: 0, unmapped_details: [] }))
   app.get('/api/sessions', authorize, (_, res) => res.json(store.snapshot().sessions))
