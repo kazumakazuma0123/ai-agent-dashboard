@@ -443,6 +443,42 @@ def load_labels(path):
     return data if isinstance(data, dict) else {}
 
 
+GROK_STATUS = 'Library/Application Support/Grok Bot/desktop-status.json'
+
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True  # 存在するが権限がない＝生きている
+    except OSError:
+        return False
+    return True
+
+
+def collect_apps(home, alive=pid_alive):
+    """Grok Bot の稼働状況。desktop-status.json だけを読み、他のファイルには触れない。
+    送るのは 稼働中か／ログイン済みか／バージョン／起動時刻 だけ。無い・壊れている場合は何も返さない。"""
+    try:
+        data = json.loads((Path(home) / GROK_STATUS).read_text())
+        if not isinstance(data, dict):
+            return []
+        pid = data.get('pid')
+        running = isinstance(pid, int) and not isinstance(pid, bool) and pid > 0 and bool(alive(pid))
+        app = dict(id='grok-bot', name='Grok Bot', running=running, signed_in=data.get('signedIn') is True)
+        version = data.get('appVersion')
+        if isinstance(version, str) and re.fullmatch(r'[A-Za-z0-9.]{1,20}', version):
+            app['app_version'] = version
+        started = data.get('startedAtMs')
+        if isinstance(started, (int, float)) and not isinstance(started, bool) and 0 < started < 4e12:
+            app['started_at'] = dt.datetime.fromtimestamp(started / 1000, dt.timezone.utc).isoformat()
+        return [app]
+    except Exception:
+        return []
+
+
 def build_payload(host_label, now, labels, home=None):
     home = home or Path.home()
     tasks = []
@@ -452,7 +488,14 @@ def build_payload(host_label, now, labels, home=None):
         except Exception:
             continue
     tasks = tasks[:100]
-    return dict(host=host_label[:40], collected_at=now.isoformat(), tasks=tasks)
+    payload = dict(host=host_label[:40], collected_at=now.isoformat(), tasks=tasks)
+    try:
+        apps = collect_apps(home)
+    except Exception:
+        apps = []
+    if apps:
+        payload['apps'] = apps
+    return payload
 
 
 def main(argv=None):

@@ -145,3 +145,16 @@ test('history keeps the member at the time of each event even after the session 
   assert.equal(session.member_id, 'watanabe');
   assert.deepEqual(session.history.map(e => e.member_id), ['matsumoto', 'matsumoto', 'watanabe']);
 });
+
+test('launcher は許可リスト（grok）だけ保存し、不正値は捨て、後続イベントで消えない', () => {
+  const store = new MonitorStore({ now: () => base });
+  store.ingest(event({ source: 'claude', session_id: 'g', event_id: 'g1', launcher: 'grok' }));
+  store.ingest(event({ source: 'claude', session_id: 'g', event_id: 'g2', event: 'activity', tool: 'Read' }));
+  store.ingest(event({ source: 'claude', session_id: 'n', event_id: 'n1', launcher: 'evil' }));
+  store.ingest(event({ source: 'claude', session_id: 'o', event_id: 'o1' }));
+  const state = store.snapshot();
+  assert.equal(state.sessions.find(s => s.session_id === 'g').launcher, 'grok');
+  assert.equal(state.sessions.find(s => s.session_id === 'n').launcher, undefined);
+  assert.equal(state.sessions.find(s => s.session_id === 'o').launcher, undefined);
+  assert.deepEqual(state.summary.by_launcher, { grok: 1 });
+});

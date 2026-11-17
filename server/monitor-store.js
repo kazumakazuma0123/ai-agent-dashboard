@@ -10,6 +10,7 @@ const MAX_SESSIONS = 500;
 const MAX_HISTORY = 100;
 const MAX_IDS = 2000;
 const STAGES = new Set(['writing', 'research', 'review', 'development', 'operations', 'automation', 'planning', 'general']);
+const LAUNCHERS = new Set(['grok'])
 const ASSIGNMENTS = new Set(['explicit', 'inferred', 'unknown']);
 const TEXT_FIELDS = ['project', 'cwd', 'task', 'tool', 'description', 'member_id', 'stage', 'assignment'];
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -63,6 +64,8 @@ export class MonitorStore {
         event[key] = input[key];
       }
     }
+    // 起動元は許可リストの固定値だけ受け付け、不正値は黙って捨てる
+    if (typeof input.launcher === 'string' && LAUNCHERS.has(input.launcher)) event.launcher = input.launcher;
     if (event.stage !== undefined && !STAGES.has(event.stage)) throw new TypeError('Invalid stage');
     if (event.assignment !== undefined && !ASSIGNMENTS.has(event.assignment)) throw new TypeError('Invalid assignment');
     const id = `${source}:${event.session_id}`;
@@ -74,6 +77,8 @@ export class MonitorStore {
       updated_at: event.timestamp, last_activity_at: event.timestamp, tool_count: 0, history: [], event_ids: [],
       project: 'プロジェクト未指定', stage: 'general', assignment: 'unknown',
     };
+    // 一度 Grok 経由と分かったセッションは、後続のイベントで消さない（遅延・終了後のイベントでも付ける）
+    if (event.launcher) session.launcher = event.launcher;
     const late = Date.parse(event.timestamp) < Date.parse(session.updated_at);
     // Only an explicit, strictly newer turn start can reopen a terminal conversation.
     const newTurn = TERMINAL.has(session.status) && event.event === 'start' && Date.parse(event.timestamp) > Date.parse(session.updated_at);
@@ -122,8 +127,11 @@ export class MonitorStore {
   snapshot() {
     const time = this.now();
     const sessions = [...this.sessions.values()].map(s => this.publicSession(s, time)).sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
-    const summary = { total: sessions.length, active: 0, waiting: 0, completed: 0, failed: 0, stale: 0, by_source: { codex: 0, claude: 0, unknown: 0 } };
-    for (const session of sessions) { summary[session.status]++; summary.by_source[session.source]++; }
+    const summary = { total: sessions.length, active: 0, waiting: 0, completed: 0, failed: 0, stale: 0, by_source: { codex: 0, claude: 0, unknown: 0 }, by_launcher: { grok: 0 } };
+    for (const session of sessions) {
+      summary[session.status]++; summary.by_source[session.source]++;
+      if (LAUNCHERS.has(session.launcher)) summary.by_launcher[session.launcher]++;
+    }
     return { sessions, summary, updated_at: iso(time) };
   }
 

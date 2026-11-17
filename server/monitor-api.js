@@ -16,6 +16,7 @@ const readableSnapshot = snapshot => ({
   ...snapshot,
   sessions: snapshot.sessions.map(s => ({ ...s, task: readable(s.task), history: (s.history || []).map(e => ({ ...e, task: readable(e.task) })) })),
 })
+const sourceLabel = s => ({ codex: 'Codex', claude: 'Claude Code', unknown: '旧連携' }[s.source]) + (s.launcher === 'grok' ? '（Grok経由）' : '')
 const department = (cwd = '') => {
   if (/new-project|sui-room-cre|threads-poster|\/gas\//.test(cwd)) return 'watanabe'
   if (/hotel|HOTEL|sui-tablet/.test(cwd)) return 'nakamura'
@@ -47,6 +48,7 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
         if (text(input[field]).trim()) event[field] = text(input[field])
       }
     }
+    if (input.launcher === 'grok') event.launcher = 'grok'
     if (!event.project && !existing?.project && input.cwd) event.project = path.basename(text(input.cwd, 1000))
     if (input.event === 'start') {
       if (!event.task) event.task = '新しい依頼を確認中'
@@ -80,7 +82,7 @@ export function installMonitor(app, { apiKey, members, store = new MonitorStore(
     const history = s => (s?.history || []).slice(-8).reverse().map(e => ({ tool: e.tool || e.event, desc: e.description, time: e.timestamp }))
     return {
       ...member, member_id: member.id, status: active.length ? 'active' : 'idle',
-      command: latest?.source ? ({ codex: 'Codex', claude: 'Claude Code', unknown: '旧連携' }[latest.source]) : null,
+      command: latest?.source ? sourceLabel(latest) : null,
       task: latest?.task || latest?.project || null, started_at: latest?.started_at || null,
       last_seen: latest?.updated_at || null, tool_count: latest?.tool_count || 0,
       last_tool: latest?.tool || null, last_desc: latest?.description || null,

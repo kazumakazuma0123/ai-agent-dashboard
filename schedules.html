@@ -16,6 +16,7 @@ section{margin:0 0 30px}h2{margin:0 0 12px;font-size:17px}
 .hosts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}.host{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.host.stale-host{border-color:#e2c79c;background:#fffaf1}.host-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.fetched{font-size:11px;color:var(--muted)}.tasks{list-style:none;margin:0;padding:0}.task{padding:10px 0;border-top:1px solid #edf0ec}.task:first-child{border-top:0}.task.paused{color:#8a9396}.task-name{font-weight:600;line-height:1.6;overflow-wrap:anywhere}.task-meta{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px;line-height:1.7}.tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;vertical-align:1px}.tag.off{background:#ececf3;color:#6b6687}.tag.res{background:#e2f2ea;color:#1c6a4b}.empty{color:var(--muted);font-size:13px;padding:6px 2px;list-style:none}
 @media(max-width:1100px){.hosts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:750px){.sched main{padding:16px 16px 36px}.hosts{grid-template-columns:minmax(0,1fr)}.tl{grid-template-columns:minmax(0,1fr);gap:4px}.s-state{margin-left:0;width:100%}.s-head h1{font-size:20px}}
+.apps{list-style:none;margin:0;padding:0;display:grid;gap:8px}.app{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:11px 16px}.app-name{font-weight:700}.app-state{display:inline-block;padding:2px 9px;border-radius:5px;font-size:12px;font-weight:700;background:#e2f2e9;color:#147052}.app-state.stopped{background:#f9e7e3;color:#9e493b}.app-state.nologin{background:#fbefcf;color:#896216}.app-state.unknown{background:#ececf3;color:#6b6687}.app-meta{font-size:12px;color:var(--muted)}
 .tl-every{font-size:12px;color:var(--muted,#7a7a7a);margin-left:6px}
 </style><link rel="stylesheet" href="/assets/sidebar.css"></head>
 <body class="sched sidebar-closed"><aside id="app-sidebar"><span class="brand-mark" aria-hidden="true">a</span><div><div class="brand">エージェント<br>モニター</div><div class="side-sub">作業状況モニター</div></div><nav class="page-nav" aria-label="ページ切り替え"><a href="/overview.html">▦　業務ハブ</a><a href="/">◉　作業状況</a><a href="/projects.html">▤　プロジェクト概要</a><a href="/schedules.html" aria-current="page">◷　定期タスク</a></nav><div class="side-bottom">Codex と Claude Code の<br>作業を、ひとつの場所で。<br><a href="/office.html">旧オフィス表示 ↗</a></div></aside>
@@ -23,6 +24,7 @@ section{margin:0 0 30px}h2{margin:0 0 12px;font-size:17px}
 <div class="s-head"><button type="button" id="sidebar-toggle" class="sidebar-toggle" aria-controls="app-sidebar" aria-expanded="false">☰ メニューを開く</button><div><h1>定期タスク・予定</h1><p class="s-sub">登録されたマシンで「次にいつ何が動くか」。10分ごとに各マシンから届く予定を表示します。</p></div><div class="s-state" id="state" role="status">読み込み中…</div></div>
 <div id="demo-note" class="notice demo" hidden>デモ表示です。架空の予定を表示しています。<a href="/schedules.html">実データに戻る</a></div>
 <div id="alerts"></div>
+<section id="apps-section" aria-labelledby="apps-title" hidden><h2 id="apps-title">アプリの稼働状況</h2><ul class="apps" id="apps"></ul></section>
 <section aria-labelledby="up-title"><h2 id="up-title">次の予定</h2><ol class="timeline" id="timeline"></ol></section>
 <section aria-labelledby="hosts-title"><h2 id="hosts-title">マシン別の一覧</h2><div class="hosts" id="hosts"></div></section>
 </main>
@@ -68,7 +70,7 @@ function demoData(){
    {id:'d1',name:'朝会ブリーフをSlackに投稿',kind:'cron',schedule_text:'毎日 7:00',next_runs:next(95,1440),last_run:null,enabled:true},
    {id:'d2',name:'死活監視',kind:'cron',schedule_text:'毎時17分',next_runs:next(41,60),last_run:null,enabled:true},
    {id:'d3',name:'週次ブリーフを再生成',kind:'cron',schedule_text:'毎週月曜 6:30',next_runs:next(1100,10080),last_run:null,enabled:true}]},
-  {host:'Mac mini',received_at:rec,tasks:[
+  {host:'Mac mini',received_at:rec,apps:[{id:'grok-bot',name:'Grok Bot',running:true,signed_in:true,app_version:'1.1.0',started_at:new Date(now-86400000).toISOString()}],tasks:[
    {id:'d4',name:'朝会ブリーフをSlackに投稿',kind:'launchd',schedule_text:'毎日 7:00',next_runs:next(95,1440),last_run:null,enabled:true},
    {id:'d5',name:'Obsidian Vaultの同期（git pull）',kind:'launchd',schedule_text:'5分ごと',next_runs:[],last_run:null,enabled:true},
    {id:'d6',name:'Slack返信の応答サーバー',kind:'常駐',schedule_text:'常駐プロセス',next_runs:[],last_run:null,enabled:true},
@@ -78,6 +80,23 @@ function demoData(){
    {id:'d9',name:'YouTube公開後モニタリング',kind:'claude',schedule_text:'3時間ごと（毎時20分）',next_runs:[],last_run:new Date(now-3*864e5).toISOString(),enabled:false}]}]};
 }
 
+// 常駐アプリの稼働表示。レポートが30分以上来ていないマシンは「状況不明」にする
+function appState(app,fresh){
+ if(!fresh)return {cls:'unknown',text:'状況不明'};
+ if(!app.running)return {cls:'stopped',text:'停止中'};
+ if(!app.signed_in)return {cls:'nologin',text:'未ログイン'};
+ return {cls:'',text:'稼働中'};
+}
+function renderApps(hosts,now){
+ const rows=[];
+ for(const h of hosts)for(const a of (Array.isArray(h.apps)?h.apps:[])){
+  if(!a||typeof a!=='object')continue;
+  const st=appState(a,freshHost(h,now)),seen=Date.parse(h.collected_at||h.received_at);
+  rows.push('<li class="app"><span class="app-name">'+esc(a.name||'アプリ')+'</span><span class="app-state '+st.cls+'">'+esc(st.text)+'</span>'+badge(h.host)+'<span class="app-meta">最終確認：'+(isNaN(seen)?'不明':esc(ago(now.getTime()-seen))+'（'+esc(hm(new Date(seen)))+'）')+(a.app_version?'・v'+esc(a.app_version):'')+'</span></li>');
+ }
+ $('apps').innerHTML=rows.join('');
+ $('apps-section').hidden=!rows.length;
+}
 function freshHost(h,now){
  return [h.received_at,h.collected_at||h.received_at].every(value=>{const age=now.getTime()-Date.parse(value);return Number.isFinite(age)&&age>=-60000&&age<=STALE_MIN*60000});
 }
@@ -116,6 +135,7 @@ function render(data,now){
   if(!freshHost(h,now))alerts+='<div class="notice stale">'+esc(h.host)+'から予定が届いていません（最終取得：'+(isNaN(age)?'不明':esc(ago(age)))+'）。マシンの電源・収集設定を確認してください。</div>';
  }
  $('alerts').innerHTML=alerts;
+ renderApps(hosts,now);
  const rows=upcoming(freshHosts,now).slice(0,UPCOMING);
  $('timeline').innerHTML=rows.length?rows.map(r=>'<li class="tl"><div class="tl-time"><strong>'+esc(when(r.at,now))+'</strong><span>'+esc(rel(r.at-now))+'</span></div><div class="tl-body"><span class="tl-name">'+esc(r.name)+'</span>'+badge(r.host)+(r.every?'<span class="tl-every">'+esc(r.every)+'</span>':'')+'</div></li>').join(''):'<li class="empty">最新の収集結果に、時刻が分かる予定はありません。実行結果は別途確認してください。</li>';
  $('hosts').innerHTML=hosts.length?hosts.map(h=>{

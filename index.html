@@ -67,7 +67,7 @@ header.topbar .sidebar-toggle{margin:0}
 @media(max-width:750px){.flow-list li{grid-template-columns:1fr auto;gap:2px 8px}.flow-who{grid-column:1}.flow-task{grid-column:1/-1;white-space:normal}.flow-st{grid-row:1;grid-column:2}}
 .flow-list li{grid-template-columns:84px minmax(200px,max-content) minmax(0,1fr) auto}
 .flow-person{display:inline-flex;align-items:center;gap:4px}.flow-person em{font-style:normal;font-size:9px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 3px;margin-left:2px}
-.flow-person.to{color:var(--teal)}
+.flow-person.to{color:var(--teal)}.flow-person.via{padding:0 6px;border-radius:4px;background:#eceaf5;color:#51407f;font-size:11px}
 </style>
 <link rel="stylesheet" href="/assets/sidebar.css"><style>.hub-entry{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:14px 18px;margin-bottom:16px;border:1px solid #b8d3c6;border-radius:10px;background:#e9f2ed;color:#145e51;text-decoration:none}.hub-entry span{font-size:12px}</style></head>
 <body class="sidebar-closed">
@@ -118,7 +118,7 @@ const priority={active:0,waiting:1,failed:2,stale:3,completed:4};
 const byWork=(a,b)=>(priority[a.status]??5)-(priority[b.status]??5)||(Date.parse(b.updated_at||b.completed_at)||0)-(Date.parse(a.updated_at||a.completed_at)||0);
 const eventNames={start:'開始',activity:'作業',waiting:'応答待ち',completed:'応答完了',complete:'応答完了',end:'応答完了',failed:'エラー',error:'エラー',stale:'通知途絶',stop:'応答完了',session_start:'セッション開始',session_end:'セッション終了',tool_start:'操作開始',tool_end:'操作終了',heartbeat:'接続確認'};
 const eventLabel=e=>eventNames[text(e.event)||text(e.type)]||'作業通知';
-const sourceName=s=>sources[s.source]||sources.unknown;
+const sourceName=s=>(sources[s.source]||sources.unknown)+(s.launcher==='grok'?'（Grok経由）':'');
 const statusName=s=>statuses[s.status]||'状態不明';
 const badge=s=>'<span class="badge '+(Object.hasOwn(statuses,s.status)?s.status:'')+'">'+safe(statusName(s))+'</span>';
 const key=s=>text(s.id)||sourceName(s)+':'+text(s.session_id);
@@ -202,7 +202,7 @@ function delegations(){
   if(from&&from!=='matsumoto'&&from!==head&&from!==to&&deptOfId(from)===deptOfId(to))chain.push(from);
   chain.push(to);
   if(chain.length<2)continue;
-  rows.push({chain,name,at,status:s.status,origin:parent?originAt(parent,at):''});
+  rows.push({chain,name,at,status:s.status,origin:parent?originAt(parent,at):'',via:s.launcher==='grok'||parent?.launcher==='grok'});
  }
  return rows.sort((a,b)=>b.at-a.at).slice(0,40);
 }
@@ -212,7 +212,7 @@ function renderFlow(){
  const rows=loaded?delegations():[];
  list.innerHTML=rows.length?rows.map(r=>{
   const st=r.status==='completed'?'<span class="flow-st done">✓ 完了</span>':r.status==='active'?'<span class="flow-st active">● 作業中</span>':'<span class="flow-st">'+safe(statusName({status:r.status}))+'</span>';
-  return '<li><time>'+safe(logTime(r.at))+'</time><span class="flow-who">'+r.chain.map((id,i)=>(i?'<span class="flow-arrow">→</span>':'')+'<span class="flow-person'+(i===r.chain.length-1?' to':'')+'"><img src="'+faceSrc(id)+'" alt="">'+safe(names[id])+(i>0&&i<r.chain.length-1&&headOf(id)===id?'<em>部長</em>':'')+'</span>').join('')+'</span><span class="flow-task">「'+safe(r.name)+'」を依頼'+(r.origin&&r.origin!==r.name?'<small>元の作業：'+safe(r.origin)+'</small>':'')+'</span>'+st+'</li>';
+  return '<li><time>'+safe(logTime(r.at))+'</time><span class="flow-who">'+(r.via?'<span class="flow-person via">Grok</span><span class="flow-arrow">→</span>':'')+r.chain.map((id,i)=>(i?'<span class="flow-arrow">→</span>':'')+'<span class="flow-person'+(i===r.chain.length-1?' to':'')+'"><img src="'+faceSrc(id)+'" alt="">'+safe(names[id])+(i>0&&i<r.chain.length-1&&headOf(id)===id?'<em>部長</em>':'')+'</span>').join('')+'</span><span class="flow-task">「'+safe(r.name)+'」を依頼'+(r.origin&&r.origin!==r.name?'<small>元の作業：'+safe(r.origin)+'</small>':'')+'</span>'+st+'</li>';
  }).join(''):'<li class="flow-empty">'+(loaded?'まだ担当への依頼の記録はありません。サブエージェントに【部署名】付きで仕事を渡すとここに出ます。':'取得しています…')+'</li>';
  list.scrollTop=keep;
 }

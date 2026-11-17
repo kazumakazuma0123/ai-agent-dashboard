@@ -10,13 +10,34 @@ export const MAX_TASKS = 100
 export const MAX_NEXT_RUNS = 5
 const KINDS = new Set(['claude', 'launchd', 'cron', '常駐'])
 const TASK_KEYS = new Set(['id', 'name', 'kind', 'schedule_text', 'next_runs', 'last_run', 'enabled'])
-const BODY_KEYS = new Set(['host', 'collected_at', 'tasks'])
+const BODY_KEYS = new Set(['host', 'collected_at', 'tasks', 'apps'])
+// 常駐アプリの稼働状況（今は Grok Bot だけ）。IDは許可リスト、項目は固定の型だけ受け付ける
+const APP_IDS = new Set(['grok-bot'])
+const APP_KEYS = new Set(['id', 'name', 'running', 'signed_in', 'app_version', 'started_at'])
+export const MAX_APPS = 5
 const CONTROL = /[\x00-\x1f\x7f]/
 
 const isIso = value => typeof value === 'string' && value.length <= 40 && !Number.isNaN(Date.parse(value))
 const text = (value, max, { required = false } = {}) => {
   if (typeof value !== 'string' || value.length > max || CONTROL.test(value) || (required && !value.trim())) throw new TypeError('invalid text')
   return value
+}
+
+function validateApps(raw) {
+  if (raw === undefined || raw === null) return []
+  if (!Array.isArray(raw) || raw.length > MAX_APPS) throw new TypeError('invalid apps')
+  return raw.map(app => {
+    if (!app || typeof app !== 'object' || Array.isArray(app)) throw new TypeError('app must be an object')
+    for (const key of Object.keys(app)) if (!APP_KEYS.has(key)) throw new TypeError(`unexpected app field: ${key}`)
+    if (!APP_IDS.has(app.id)) throw new TypeError('invalid app id')
+    if (typeof app.running !== 'boolean' || typeof app.signed_in !== 'boolean') throw new TypeError('invalid app state')
+    if (app.app_version != null && !(typeof app.app_version === 'string' && /^[A-Za-z0-9.]{1,20}$/.test(app.app_version))) throw new TypeError('invalid app_version')
+    if (app.started_at != null && !isIso(app.started_at)) throw new TypeError('invalid started_at')
+    return {
+      id: app.id, name: text(app.name ?? 'Grok Bot', 40, { required: true }), running: app.running, signed_in: app.signed_in,
+      app_version: app.app_version ?? null, started_at: app.started_at ? new Date(app.started_at).toISOString() : null,
+    }
+  })
 }
 
 export function validateSnapshot(body) {
@@ -43,7 +64,7 @@ export function validateSnapshot(body) {
       enabled: raw.enabled,
     }
   })
-  return { host, collected_at: new Date(body.collected_at).toISOString(), tasks }
+  return { host, apps: validateApps(body.apps), collected_at: new Date(body.collected_at).toISOString(), tasks }
 }
 
 export class ScheduleStore {
@@ -56,7 +77,7 @@ export class ScheduleStore {
         const saved = JSON.parse(fs.readFileSync(filePath, 'utf8'))
         if (!Array.isArray(saved.hosts) || saved.hosts.length > MAX_HOSTS) throw new Error('Unsupported schema')
         for (const h of saved.hosts) {
-          const snapshot = validateSnapshot({ host: h.host, collected_at: h.collected_at, tasks: h.tasks })
+          const snapshot = validateSnapshot({ host: h.host, collected_at: h.collected_at, tasks: h.tasks, apps: h.apps })
           if (typeof h.received_at !== 'string' || Number.isNaN(Date.parse(h.received_at))) throw new Error('Invalid received_at')
           this.hosts.set(snapshot.host, { ...snapshot, received_at: h.received_at })
         }
@@ -76,7 +97,7 @@ export class ScheduleStore {
 
   snapshot() {
     const hosts = [...this.hosts.values()]
-      .map(h => ({ host: h.host, received_at: h.received_at, collected_at: h.collected_at, tasks: h.tasks }))
+      .map(h => ({ host: h.host, received_at: h.received_at, collected_at: h.collected_at, tasks: h.tasks, apps: h.apps || [] }))
       .sort((a, b) => a.host.localeCompare(b.host))
     return { hosts }
   }

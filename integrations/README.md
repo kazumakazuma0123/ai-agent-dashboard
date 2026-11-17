@@ -17,6 +17,12 @@ python3 integrations/install_hooks.py --apply
 
 通信失敗時はローカルの非公開キューに残し、次のフックで再送します（最大200件、24時間、1回約1.5秒）。同じ送信先だけに再送し、リダイレクトは追跡しません。アダプタの障害はエージェントを止めません。認証キー未設定時は送信しません。継続的な heartbeat は送らないため、長い無通信はサーバー側で接続状態不明として扱います。
 
+## Grok Bot 連携（2026-11-17追加）
+
+**Grok経由の判定（monitor_hook.py）**: Claude Code が xAI の「Grok Bot」アプリから起動されたかを、環境変数 `NODE_PATH` に `Grok Bot.app` が含まれるか、無ければ親プロセスを最大8段たどって実行ファイル名に `Grok Bot` が含まれるか（`ps` を1回だけ）で判定します。結果はセッション単位でローカルにキャッシュします。判定できた時だけ固定値 `launcher: "grok"` を送ります。パス・環境変数の中身・プロセス名は送りません。判定失敗時は何も付けず、エージェントを止めません。サーバーは `grok` 以外の値を捨て、一度 Grok経由と分かったセッションは後続イベントでも保持します（表示は「Claude Code（Grok経由）」、`/api/monitor` の `summary.by_launcher.grok` に件数）。
+
+**Grok Bot の稼働状況（schedule_report.py）**: `~/Library/Application Support/Grok Bot/desktop-status.json` だけを読み、`pid` の生死（`os.kill(pid, 0)`）と合わせて `apps: [{id: "grok-bot", name, running, signed_in, app_version, started_at}]` を定期レポートへ足します。同じフォルダの他のファイル（認証情報・Cookie 等）には触れません。ファイルが無いマシンでは `apps` を付けず、読み取り失敗でも定期レポートは止まりません。Grok自身の会話・思考内容は取得しません。画面では定期タスクページ（schedules.html）と業務ハブの「データの届き方」に「稼働中／停止中／未ログイン」と最終確認時刻を出し、レポートが30分以上来ていないマシンは「状況不明」とします。
+
 ```sh
 python3 -m unittest discover -s integrations -p 'test_*.py'
 ```

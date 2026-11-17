@@ -74,6 +74,7 @@
       ['エージェントの作業通知', monitorOk, monitorOk ? `取得 ${date(monitor.receivedAt)}・作業中 ${active}件` : stateText(monitor)],
       ['定期タスクの予定', schedule.known && !schedule.staleHosts.length, schedule.known ? `${schedule.freshHosts}台の予定を取得${schedule.staleHosts.length ? `・${schedule.staleHosts.length}台は更新を要確認` : ''}` : schedules.state === 'ok' ? '30分以内の有効な収集記録がありません。' : stateText(schedules)]
     ];
+    for (const app of M.appStatuses(schedules, now)) sources.push([app.name, app.state === 'running', `${app.label}（${app.host}）・最終確認 ${Number.isFinite(app.checkedAt) ? date(app.checkedAt) : '不明'}`]);
     $('source-status').innerHTML = sources.map(([label, ok, text]) => `<div class="source-row ${ok ? '' : 'problem'}"><strong>${escape(label)}</strong><span>${escape(text)}</span></div>`).join('');
     if (healthOk) {
       const mappedIds = new Set(Object.values(healthMap).filter(Array.isArray).flat());

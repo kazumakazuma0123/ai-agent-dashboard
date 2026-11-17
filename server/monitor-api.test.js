@@ -186,3 +186,16 @@ test('English-only task labels are shown as 作業中 on public views', async t 
   const agents = await (await f.get('/api/agents')).json();
   assert.ok(!JSON.stringify(agents).includes('Rebuild narration'));
 });
+
+test('Grok経由の起動元は表示名に反映され、不正値は捨てられる', async t => {
+  const f = await fixture(t);
+  await f.send({ source: 'claude', session_id: 'grok1', launcher: 'grok', member_id: 'watanabe' });
+  await f.send({ source: 'claude', session_id: 'grok1', event: 'activity', tool: 'Read', member_id: 'watanabe' });
+  await f.send({ source: 'claude', session_id: 'plain', launcher: '<script>', member_id: 'kobayashi' });
+  const body = await (await f.get('/api/monitor')).json();
+  assert.equal(body.sessions.find(s => s.session_id === 'grok1').launcher, 'grok');
+  assert.equal(body.sessions.find(s => s.session_id === 'plain').launcher, undefined);
+  assert.deepEqual(body.summary.by_launcher, { grok: 1 });
+  assert.equal(body.agents.find(a => a.member_id === 'watanabe').command, 'Claude Code（Grok経由）');
+  assert.equal(body.agents.find(a => a.member_id === 'kobayashi').command, 'Claude Code');
+});

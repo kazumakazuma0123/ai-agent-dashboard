@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import os
 import plistlib
 import tempfile
 import unittest
@@ -167,3 +168,51 @@ class ClaudeAndPayloadTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class GrokAppTests(unittest.TestCase):
+    def home_with(self, text):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        home = Path(directory.name)
+        if text is not None:
+            path = home / sr.GROK_STATUS
+            path.parent.mkdir(parents=True)
+            path.write_text(text)
+        return home
+
+    GOOD = '{"version":1,"pid":53160,"appVersion":"1.1.0","startedAtMs":1794786527254,"signedIn":true}'
+
+    def test_running_app_reported(self):
+        apps = sr.collect_apps(self.home_with(self.GOOD), alive=lambda pid: True)
+        self.assertEqual(len(apps), 1)
+        app = apps[0]
+        self.assertEqual((app['id'], app['running'], app['signed_in'], app['app_version']), ('grok-bot', True, True, '1.1.0'))
+        self.assertTrue(app['started_at'].startswith('2026-'))
+        self.assertEqual(set(app), {'id', 'name', 'running', 'signed_in', 'app_version', 'started_at'})
+
+    def test_dead_pid_means_stopped_and_signed_out(self):
+        apps = sr.collect_apps(self.home_with(self.GOOD.replace('true', 'false')), alive=lambda pid: False)
+        self.assertEqual((apps[0]['running'], apps[0]['signed_in']), (False, False))
+
+    def test_missing_or_broken_file_adds_nothing(self):
+        self.assertEqual(sr.collect_apps(self.home_with(None)), [])
+        self.assertEqual(sr.collect_apps(self.home_with('{not json')), [])
+        self.assertEqual(sr.collect_apps(self.home_with('[1,2]')), [])
+
+    def test_unsafe_version_dropped(self):
+        apps = sr.collect_apps(self.home_with('{"pid":1,"appVersion":"1.0 /Users/x","signedIn":true}'), alive=lambda pid: True)
+        self.assertNotIn('app_version', apps[0])
+
+    def test_pid_alive_for_self_and_nonexistent(self):
+        self.assertTrue(sr.pid_alive(os.getpid()))
+        self.assertFalse(sr.pid_alive(2 ** 22 + 12345))
+
+    def test_payload_has_apps_only_when_present_and_survives_errors(self):
+        home = self.home_with(self.GOOD)
+        payload = sr.build_payload('Mac mini', NOW, {}, home=home)
+        self.assertEqual(payload['apps'][0]['id'], 'grok-bot')
+        self.assertNotIn('apps', sr.build_payload('MacBook', NOW, {}, home=self.home_with(None)))
+        broken = sr.build_payload('Mac mini', NOW, {}, home=self.home_with('garbage'))
+        self.assertNotIn('apps', broken)
+        self.assertIn('tasks', broken)

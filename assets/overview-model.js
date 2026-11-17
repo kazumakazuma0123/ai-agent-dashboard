@@ -83,6 +83,22 @@
     }
     return { known: freshHosts > 0, entries: entries.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id)).slice(0, limit), staleHosts, freshHosts };
   }
+  // 常駐アプリ（Grok Bot）の稼働。レポートが30分以上来ていないマシンは「状況不明」
+  function appStatuses(resource, now = Date.now()) {
+    if (!resourceFresh(resource, now) || !Array.isArray(resource?.data?.hosts)) return [];
+    const result = [];
+    for (const host of resource.data.hosts) {
+      if (!record(host)) continue;
+      const age = now - time(host.collected_at), receivedAge = now - time(host.received_at);
+      const fresh = Number.isFinite(age) && age >= 0 && age < 30 * MINUTE && Number.isFinite(receivedAge) && receivedAge >= 0 && receivedAge < 30 * MINUTE;
+      for (const app of Array.isArray(host.apps) ? host.apps : []) {
+        if (!record(app)) continue;
+        const state = !fresh ? 'unknown' : !app.running ? 'stopped' : !app.signed_in ? 'nologin' : 'running';
+        result.push({ name: String(app.name || 'アプリ'), host: String(host.host), state, label: { unknown: '状況不明', stopped: '停止中', nologin: '未ログイン', running: '稼働中' }[state], checkedAt: time(host.collected_at) });
+      }
+    }
+    return result;
+  }
   function handoff(row) {
     const p = row.project;
     return [
@@ -103,5 +119,5 @@
     if (/^\/(?!\/)[^\s\\]*$/.test(input)) return input;
     try { const url = new URL(input); return url.protocol === 'https:' && !url.username && !url.password ? url.href : null; } catch { return null; }
   }
-  root.MonitorOverview = { today, dateDay, resourceFresh, healthFresh, information, healthFor, matchingSessions, projectView, rows, upcoming, handoff, safeUrl };
+  root.MonitorOverview = { today, dateDay, resourceFresh, healthFresh, information, healthFor, matchingSessions, projectView, rows, upcoming, appStatuses, handoff, safeUrl };
 })(globalThis);

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 import time
 import urllib.request
@@ -226,7 +227,61 @@ def attach_agent_label(data, event, label_dir):
         if label:
             event.update(label_metadata(label))
 
-def normalized(data, source):
+GROK_MARK = 'Grok Bot'
+
+def process_table():
+    """ps を1回だけ呼び、{pid: (ppid, 実行ファイル名)} を返す。失敗時は空。"""
+    try:
+        out = subprocess.run(['ps', '-axo', 'pid=,ppid=,comm='], capture_output=True, text=True, timeout=1.0).stdout
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    table = {}
+    for line in out.splitlines():
+        parts = line.split(None, 2)
+        if len(parts) == 3 and parts[0].isdigit() and parts[1].isdigit():
+            table[int(parts[0])] = (int(parts[1]), parts[2])
+    return table
+
+def detect_grok(environ=None, table_loader=process_table, start_pid=None):
+    """Grok Bot から起動されたか。環境変数 NODE_PATH を先に見て、無ければ親プロセスを最大8段たどる。
+    見るのは「Grok Bot」という文字列の有無だけで、パスや環境変数の中身は保存も送信もしない。"""
+    try:
+        environ = os.environ if environ is None else environ
+        if GROK_MARK + '.app' in (environ.get('NODE_PATH') or ''):
+            return True
+        table = table_loader()
+        pid = os.getppid() if start_pid is None else start_pid
+        for _ in range(8):
+            entry = table.get(pid)
+            if not entry:
+                return False
+            if GROK_MARK in entry[1]:
+                return True
+            pid = entry[0]
+            if pid <= 1:
+                return False
+    except Exception:
+        pass
+    return False
+
+def launcher_for(session_id, label_dir, detector=detect_grok):
+    """セッション単位で判定結果を覚え、毎回 ps を呼ばない。判定できなければ None。"""
+    try:
+        path = label_file(label_dir, 'launcher:' + str(session_id))
+        if path.exists():
+            saved = json.loads(path.read_text())
+            if isinstance(saved, dict) and saved.get('launcher') in ('grok', ''):
+                return saved['launcher'] or None
+        value = 'grok' if detector() else ''
+        path.write_text(json.dumps({'launcher': value, 'at': time.time()}))
+        return value or None
+    except Exception:
+        try:
+            return 'grok' if detector() else None
+        except Exception:
+            return None
+
+def normalized(data, source, launcher=None):
     name = data.get('hook_event_name')
     if name not in EVENTS or not isinstance(data.get('session_id'), str):
         return None
@@ -246,6 +301,8 @@ def normalized(data, source):
     if name in ('SessionStart', 'UserPromptSubmit', 'SubagentStart'):
         result['project'] = project
     result.update(task_metadata(data))
+    if launcher == 'grok':
+        result['launcher'] = 'grok'
     # Never forward tool arguments, output, prompts, transcript paths or absolute cwd.
     if name in ('PostToolUse', 'PostToolUseFailure'):
         tool = data.get('tool_name', '')
@@ -334,6 +391,9 @@ def main():
             name = data.get('hook_event_name')
             event = normalized(data, args.source)
             if event:
+                launcher = launcher_for(data['session_id'][:200], args.label_dir)
+                if launcher:
+                    event['launcher'] = launcher
                 try:
                     attach_agent_label(data, event, args.label_dir)
                 except OSError:

@@ -13,6 +13,53 @@ from unittest.mock import patch
 import monitor_hook as hook
 import install_hooks as installer
 
+class GrokLauncherTests(unittest.TestCase):
+    ENV_GROK = {'NODE_PATH': '/Applications/Grok Bot.app/Contents/Resources/app.asar/dist/deps'}
+
+    def test_node_path_detects_without_calling_ps(self):
+        def boom():
+            raise AssertionError('ps must not run')
+        self.assertTrue(hook.detect_grok(self.ENV_GROK, table_loader=boom))
+
+    def test_no_node_path_and_no_grok_parent(self):
+        table = {100: (50, '/usr/bin/zsh'), 50: (1, '/sbin/launchd')}
+        self.assertFalse(hook.detect_grok({}, table_loader=lambda: table, start_pid=100))
+        self.assertFalse(hook.detect_grok({'NODE_PATH': '/usr/lib/node_modules'}, table_loader=lambda: table, start_pid=100))
+
+    def test_parent_chain_detects_grok(self):
+        table = {100: (90, '/bin/zsh'), 90: (80, '/usr/local/bin/claude'),
+                 80: (70, '/Applications/Grok Bot.app/Contents/MacOS/Grok Bot'), 70: (1, '/sbin/launchd')}
+        self.assertTrue(hook.detect_grok({}, table_loader=lambda: table, start_pid=100))
+
+    def test_chain_limited_to_eight_levels_and_failures_are_silent(self):
+        table = {i: (i - 1, '/bin/x') for i in range(2, 30)}
+        table[10] = (9, '/Applications/Grok Bot.app/Contents/MacOS/Grok Bot')
+        self.assertFalse(hook.detect_grok({}, table_loader=lambda: table, start_pid=25))
+        def broken():
+            raise OSError('ps failed')
+        self.assertFalse(hook.detect_grok({}, table_loader=broken, start_pid=25))
+
+    def test_event_has_launcher_only_when_detected_and_no_paths(self):
+        payload = dict(hook_event_name='SessionStart', session_id='s', cwd='/private/user/project')
+        event = hook.normalized(payload, 'claude', launcher='grok')
+        self.assertEqual(event['launcher'], 'grok')
+        self.assertNotIn('Grok Bot.app', json.dumps(event))
+        self.assertNotIn('launcher', hook.normalized(payload, 'claude'))
+        self.assertNotIn('launcher', hook.normalized(payload, 'claude', launcher='evil'))
+
+    def test_launcher_is_cached_per_session(self):
+        with tempfile.TemporaryDirectory() as directory:
+            calls = []
+            def detector():
+                calls.append(1)
+                return True
+            self.assertEqual(hook.launcher_for('sess', directory, detector), 'grok')
+            self.assertEqual(hook.launcher_for('sess', directory, lambda: self.fail('cache miss')), 'grok')
+            self.assertEqual(len(calls), 1)
+            self.assertIsNone(hook.launcher_for('other', directory, lambda: False))
+            self.assertIsNone(hook.launcher_for('other', directory, lambda: self.fail('cache miss')))
+
+
 class HooksTests(unittest.TestCase):
     def payload(self, event='PostToolUse'):
         return dict(hook_event_name=event, session_id='session', cwd='/private/user/project',

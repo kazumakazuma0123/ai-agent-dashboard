@@ -82,3 +82,35 @@ test('ファイルへ原子的に保存し、再起動後も読み込める。�
   writeFileSync(f.filePath, '{broken')
   assert.throws(() => new ScheduleStore({ filePath: f.filePath }), /Cannot load schedules/)
 })
+
+const grok = (over = {}) => ({ id: 'grok-bot', name: 'Grok Bot', running: true, signed_in: true, app_version: '1.1.0', started_at: '2026-10-17T08:00:00+09:00', ...over })
+
+test('apps はマシンごとに保存され、公開GETで返る（無いマシンは空配列）', async t => {
+  const f = await fixture(t)
+  assert.equal((await f.post(payload({ host: 'Mac mini', apps: [grok()] }))).status, 200)
+  assert.equal((await f.post(payload({ host: 'MacBook' }))).status, 200)
+  const body = await (await f.get()).json()
+  const mini = body.hosts.find(h => h.host === 'Mac mini')
+  assert.equal(mini.apps.length, 1)
+  assert.equal(mini.apps[0].running, true)
+  assert.equal(mini.apps[0].app_version, '1.1.0')
+  assert.deepEqual(body.hosts.find(h => h.host === 'MacBook').apps, [])
+})
+
+test('apps の不正な項目・値・ID・バージョンは400', async t => {
+  const f = await fixture(t)
+  const bad = [
+    { id: 'other-app' }, { running: 'yes' }, { signed_in: 1 }, { app_version: '1.0 /Users/x' },
+    { started_at: 'いつか' }, { command: 'rm -rf /' },
+  ]
+  for (const over of bad) assert.equal((await f.post(payload({ apps: [grok(over)] }))).status, 400, JSON.stringify(over))
+  assert.equal((await f.post(payload({ apps: 'x' }))).status, 400)
+  assert.equal((await f.post(payload({ apps: Array(6).fill(grok()) }))).status, 400)
+})
+
+test('apps は再起動後も復元される', async t => {
+  const f = await fixture(t)
+  await f.post(payload({ host: 'Mac mini', apps: [grok({ running: false })] }))
+  const store = new ScheduleStore({ filePath: f.filePath, now: () => now })
+  assert.equal(store.snapshot().hosts[0].apps[0].running, false)
+})

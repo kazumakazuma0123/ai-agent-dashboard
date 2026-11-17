@@ -74,3 +74,23 @@ test('summary action opens the same active-project group that the count describe
   const count = view.context.MONITOR_PROJECTS.filter(project => project.group === 'active').length
   assert.equal(view.element('result-count').textContent, `${count} / ${view.context.MONITOR_PROJECTS.length} 件`)
 })
+
+test('Grok Bot の稼働表示：稼働中・停止中・未ログイン・30分以上古いマシンは状況不明', async () => {
+  const fresh = new Date(Date.now() - 60_000).toISOString()
+  const old = new Date(Date.now() - 45 * 60_000).toISOString()
+  const app = over => ({ id: 'grok-bot', name: 'Grok Bot', running: true, signed_in: true, ...over })
+  const hosts = [
+    { host: 'Mac mini', collected_at: fresh, received_at: fresh, tasks: [], apps: [app()] },
+    { host: 'Mac B', collected_at: fresh, received_at: fresh, tasks: [], apps: [app({ running: false })] },
+    { host: 'Mac C', collected_at: fresh, received_at: fresh, tasks: [], apps: [app({ signed_in: false })] },
+    { host: 'Mac D', collected_at: old, received_at: old, tasks: [], apps: [app()] },
+  ]
+  const view = page('', path => path === '/api/health-status'
+    ? { monitor: { state: 'ok', generatedAt: fresh }, items: [] } : path === '/api/monitor' ? { sessions: [] } : { hosts })
+  await settle()
+  const html = view.element('source-status').innerHTML
+  assert.match(html, /稼働中（Mac mini）/)
+  assert.match(html, /停止中（Mac B）/)
+  assert.match(html, /未ログイン（Mac C）/)
+  assert.match(html, /状況不明（Mac D）/)
+})
