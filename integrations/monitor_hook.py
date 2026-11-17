@@ -80,6 +80,19 @@ def label_member(label):
                 return member
     return None
 
+# ホテル運営部の作業は、作業名の言葉で部長・集客・清掃に分ける（清掃を先に見る：「清掃アプリに予約が届く」は清掃）
+HOTEL_CWD = re.compile(r'hotel|HOTEL|sui-tablet')
+HOTEL_STAFF = [
+    ('takahashi', re.compile(r'清掃|掃除|客室準備|備品|リネン|アメニティ')),
+    ('ito', re.compile(r'(?i)集客|OTA|Instagram|インスタ|口コミ|レビュー|料金|価格|予約|広告|SNS|Booking|じゃらん|楽天トラベル|Airbnb|宣伝|販促|プロフィール|投稿')),
+]
+
+def hotel_member(label):
+    for member, pattern in HOTEL_STAFF:
+        if pattern.search(label):
+            return member
+    return None
+
 def label_metadata(label):
     result = dict(task=label)
     member = label_member(label)
@@ -102,6 +115,19 @@ SCHEDULED_NAMES = {
     'video-production-runner': '年金チャンネル 制作ランナー',
     'weekly-theme-planner': '年金チャンネル テーマ分析とスケジュール更新',
 }
+
+# 定期タスクの担当者（起動した部屋のフォルダ名では決まらないため、タスクIDで決める）
+SCHEDULED_MEMBERS = {
+    'youtube-post-publish-monitor': 'sato',
+    'video-production-runner': 'sato',
+    'weekly-theme-planner': 'sato',
+}
+
+def scheduled_task_member(prompt):
+    if not isinstance(prompt, str):
+        return None
+    match = SCHEDULED_PREFIX.match(prompt[:300])
+    return SCHEDULED_MEMBERS.get(match.group(1)) if match else None
 
 def scheduled_task_label(prompt):
     """定期タスクの起動文の先頭タグからタスクIDだけを取り出し、設定の表示名に置き換える（依頼文そのものは送らない）。"""
@@ -168,12 +194,21 @@ def task_metadata(data):
         label = scheduled_task_label(data.get('prompt')) or environment_label()
         if label:
             result['task'] = label
+        member = scheduled_task_member(data.get('prompt'))
+        if member:
+            result.update(member_id=member, assignment='explicit')
     if name == 'PreToolUse':
         arguments = data.get('tool_input') if isinstance(data.get('tool_input'), dict) else {}
         if data.get('tool_name') in ('Agent', 'Task', 'Bash'):
             label = work_label(arguments.get('description'))
             if label:
-                result.update(label_metadata(label))
+                meta = label_metadata(label)
+                cwd = data.get('cwd') if isinstance(data.get('cwd'), str) else ''
+                if meta.get('member_id') == 'nakamura' or ('member_id' not in meta and HOTEL_CWD.search(cwd)):
+                    staff = hotel_member(label)
+                    if staff:
+                        meta.update(member_id=staff, assignment='explicit')
+                result.update(meta)
             elif data.get('tool_name') == 'Bash' and isinstance(arguments.get('description'), str):
                 # 英語などで表示できない説明文のとき、古い見出しが残り続けないよう汎用表示で上書きする。
                 result['task'] = '作業を実行中'

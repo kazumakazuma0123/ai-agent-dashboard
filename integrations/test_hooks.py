@@ -215,7 +215,7 @@ class HooksTests(unittest.TestCase):
         data.update(tool_name='Agent', tool_input={'prompt': 'SECRET', 'description': '【ホテル運営部】OTA説明文の見直し'})
         event = hook.normalized(data, 'claude')
         self.assertEqual((event['task'], event['member_id'], event['assignment']),
-                         ('【ホテル運営部】OTA説明文の見直し', 'nakamura', 'explicit'))
+                         ('【ホテル運営部】OTA説明文の見直し', 'ito', 'explicit'))  # ホテル運営部の集客系は集客担当へ振り分け
         self.assertNotIn('SECRET', json.dumps(event))
         # Post通知や説明文のないツールは作業名を送らず、直前の表示を保つ
         data.update(hook_event_name='PostToolUse')

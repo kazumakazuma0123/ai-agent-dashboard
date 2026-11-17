@@ -73,6 +73,23 @@ app.post('/api/proxy', async (req, res) => {
   }
 })
 
+// ── POST /slack-reply — Slack返信（Vercel hotel-cleaning-app → Funnel → 本サーバー）を claude proxy の /slack-reply へそのまま渡す ──
+// 2026-11-07 追加。本番の route.ts は SLACK_REPLY_URL 未設定時に Funnel の /slack-reply へ直接送るため、ここが無いと404で止まっていた。
+// 合言葉（secret）の確認は claude proxy 側が行う。ここでは中身を変えずに渡すだけ。
+app.post('/slack-reply', async (req, res) => {
+  try {
+    const resp = await fetch(`${CLAUDE_PROXY_URL}/slack-reply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body || {}),
+      signal: AbortSignal.timeout(10000),
+    })
+    res.status(resp.status).send(await resp.text())
+  } catch (e) {
+    res.status(502).json({ error: e.message })
+  }
+})
+
 // /api/deploy・/api/vps-file はVPS専用だったため2026-10-17のMac mini移行で削除（外部公開するのでファイル書き込み・コマンド実行の口を残さない）
 
 const PORT = process.env.PORT || 3001
