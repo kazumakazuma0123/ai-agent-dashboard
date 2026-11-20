@@ -1,18 +1,28 @@
 {
   "buildCommand": "node scripts/build.mjs",
   "outputDirectory": "public",
-  "rewrites": [
+  "headers": [
     {
-      "source": "/api/:path*",
-      "destination": "https://onos-mac-mini.tailb3f9c0.ts.net/api/:path*"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ],
-  "headers": [{
-    "source": "/(.*)",
-    "headers": [
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "Referrer-Policy", "value": "no-referrer" },
-      { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
-    ]
-  }]
+  "functions": {
+    "api/[...path].js": {
+      "maxDuration": 30
+    }
+  }
 }

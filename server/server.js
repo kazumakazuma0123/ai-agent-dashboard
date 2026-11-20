@@ -3,9 +3,17 @@ import cors from 'cors'
 import compression from 'compression'
 import path from 'path'
 import { fileURLToPath } from 'node:url'
+import { timingSafeEqual } from 'node:crypto'
 import { installMonitor } from './monitor-api.js'
 import { installHealthStatus } from './health-status.js'
 import { installSchedules } from './schedules.js'
+
+// ---- ログにISO8601タイムスタンプを付与（server.log の障害時刻照合用） ----
+const _origLog = console.log.bind(console)
+const _origErr = console.error.bind(console)
+const _ts = () => new Date().toISOString()
+console.log = (...args) => _origLog(`[${_ts()}]`, ...args)
+console.error = (...args) => _origErr(`[${_ts()}]`, ...args)
 
 const app = express()
 app.use(cors())
@@ -15,6 +23,16 @@ app.use(express.json({ limit: '50kb' }))
 
 const API_KEY = process.env.API_KEY
 if (!API_KEY) { console.error('環境変数 API_KEY が設定されていません'); process.exit(1) }
+
+// ── 門番（2026-11-20 SEC-06）：Funnelでインターネットに公開されているため、鍵（x-api-key）の無い要求は全て401にする ──
+// 例外は Slack受信の入口 POST /slack-reply だけ（中身の合言葉 secret は claude proxy 側が確認する）。
+// 画面（Vercel）は Vercel側の中継関数が鍵を付けて読む。フック・定期タスク報告は自分で鍵を付けて送る。
+const keyOk = k => typeof k === 'string' && k.length === API_KEY.length && timingSafeEqual(Buffer.from(k), Buffer.from(API_KEY))
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/slack-reply') return next()
+  if (keyOk(req.headers['x-api-key'])) return next()
+  res.status(401).json({ error: 'unauthorized' })
+})
 
 // ── 社員マスタ（常駐表示） ──
 const MEMBERS = [
